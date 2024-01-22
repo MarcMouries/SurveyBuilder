@@ -1,11 +1,17 @@
 class SurveyBuilder {
-    static create(json) {
-        const surveyContainer = document.getElementById('survey-container');
 
-        json.elements.forEach(element => {
+    constructor(json, containerId) {
+        this.json = json;
+        this.surveyContainer = document.getElementById(containerId);
+        this.questionNumber = 1; 
+        this.createSurvey();
+    }
+
+    createSurvey() {
+        this.json.elements.forEach(element => {
             switch (element.type) {
                 case "ranking":
-                    this.createRankingQuestion(element, surveyContainer);
+                    this.createRankingQuestion(element, this.surveyContainer);
                     break;
                 // Additional cases for other question types
                 default:
@@ -14,15 +20,15 @@ class SurveyBuilder {
         });
 
         this.addDragAndDrop();
-        this.createCompleteButton(surveyContainer);
+        this.createCompleteButton(this.surveyContainer);
     }
 
-    static createRankingQuestion(element, container) {
+    createRankingQuestion(element, container) {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
 
         const title = document.createElement('h3');
-        title.textContent = element.title;
+        title.textContent = `${this.questionNumber}. ${element.title}`; 
         questionDiv.appendChild(title);
 
         const rankingList = document.createElement('div');
@@ -54,8 +60,7 @@ class SurveyBuilder {
         questionDiv.appendChild(rankingList);
         container.appendChild(questionDiv);
     }
-
-    static addDragAndDrop() {
+    addDragAndDrop() {
         const lists = document.querySelectorAll('.ranking-list');
 
         lists.forEach(list => {
@@ -88,7 +93,7 @@ class SurveyBuilder {
         });
     }
 
-    static createCompleteButton(container) {
+    createCompleteButton(container) {
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'button-container';
         const completeButton = document.createElement('button');
@@ -99,11 +104,11 @@ class SurveyBuilder {
         container.appendChild(buttonContainer);
     }
 
-    static printSurveyResults() {
+    printSurveyResults() {
         const surveyData = {
             responses: []
         };
-
+    
         const rankingLists = document.querySelectorAll('.ranking-list');
         rankingLists.forEach((list, index) => {
             const question = list.closest('.question').querySelector('h3').textContent;
@@ -111,56 +116,57 @@ class SurveyBuilder {
                 rank: idx + 1,
                 text: item.querySelector('.choice-text').textContent
             }));
-
+    
             surveyData.responses.push({ question, answers });
         });
 
-        console.log("Survey Results:", JSON.stringify(surveyData));
+}
+
+
+// MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...
+
+     getDragAfterElement(list, y) {
+        const draggableElements = [...list.querySelectorAll('.ranking-item:not(.dragging)')];
+    
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    } 
+    
+    
+    updateDraggedItemIndex(draggedItem, list) {
+        let newIndex = 0;
+        Array.from(list.children).forEach((item, index) => {
+            if (item !== draggedItem && item.getBoundingClientRect().top < draggedItem.getBoundingClientRect().bottom) {
+                newIndex = index + 1;
+            }
+        });
+    
+        const indexDiv = draggedItem.querySelector('.index');
+        if (indexDiv) {
+            indexDiv.textContent = newIndex + 1; // +1 because index is 0-based
+        }
+    }
+    
+    
+     updateAllIndexes(list) {
+        const items = list.querySelectorAll('.ranking-item');
+        items.forEach((item, index) => {
+            const indexDiv = item.querySelector('.index');
+            if (indexDiv) {
+                indexDiv.textContent = index + 1;
+            }
+        });
     }
 
-    // ... Other necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes ...
 }
 
 //export default SurveyBuilder;
 // Attach SurveyBuilder to the window object to make it globally accessible
 window.SurveyBuilder = SurveyBuilder;
-
-
-function getDragAfterElement(list, y) {
-    const draggableElements = [...list.querySelectorAll('.ranking-item:not(.dragging)')];
-
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-function updateDraggedItemIndex(draggedItem, list) {
-    let newIndex = 0;
-    Array.from(list.children).forEach((item, index) => {
-        if (item !== draggedItem && item.getBoundingClientRect().top < draggedItem.getBoundingClientRect().bottom) {
-            newIndex = index + 1;
-        }
-    });
-
-    const indexDiv = draggedItem.querySelector('.index');
-    if (indexDiv) {
-        indexDiv.textContent = newIndex + 1; // +1 because index is 0-based
-    }
-}
-
-
-function updateAllIndexes(list) {
-    const items = list.querySelectorAll('.ranking-item');
-    items.forEach((item, index) => {
-        const indexDiv = item.querySelector('.index');
-        if (indexDiv) {
-            indexDiv.textContent = index + 1;
-        }
-    });
-}
