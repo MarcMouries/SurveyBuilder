@@ -21,6 +21,25 @@ html, body {
     height: 100%;
 }
 
+#page-header {
+    display: flex;
+    align-items: center; /* Vertically center the contents */
+    justify-content: center; /* Horizontally center the contents */
+    padding: 10px;
+}
+
+.logo-container {
+    margin-right: 15px;
+}
+._logo-container img {
+    max-width: 200px;
+    height: auto;
+}
+
+.header-title {
+    font-size: 1.5em; 
+}
+
 /* Desktop Styles */
 @media only screen and (min-width: 601px) {
     #survey-container {
@@ -159,15 +178,9 @@ html, body {
     background-color: #61D84E;
 }
 
-.logo-container {
-    text-align: center;
-    margin-bottom: 20px;
-}
 
-.logo-container img {
-    max-width: 200px;
-    height: auto;
-}
+
+
 
 .dragging {
     opacity: 0.5;
