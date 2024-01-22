@@ -1,3 +1,12 @@
+@font-face {
+    font-family: 'Gilroy-Regular';
+    src: url('fonts/gilroy-regular-webfont.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+
 /* Default styles for desktop */
 #survey-container {
     max-width: 600px; /* Adjust as needed for desktop */
@@ -8,6 +17,17 @@
     border-radius: 4px;
 }
 
+body {
+    font-family: 'Gilroy-Regular', Arial, sans-serif;
+    font-size: 16px; /* Standard font size for desktop */
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.choice-text {
+    font-size: 1.0em;
+}
 /* Media query for mobile screens */
 @media (max-width: 600px) {
     #survey-container {
@@ -17,23 +37,26 @@
         border-radius: 0; 
         */
     }
+    body {
+        font-size: 20px; 
+    }
+    .question h3 {
+        font-size: 1.4em;
+    }
+
+    .choice-text {
+        font-size: 1.2em;
+    }
 }
 
 
-
-
-
-
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 20px;
+.question {
+    font-family: 'Gilroy-Regular' !important;
 }
 
 .question h3 {
     font-size: 1.2em;
-    color: #003366;
+    color: #1d1d1d;
     margin-bottom: 10px;
 }
 
@@ -57,7 +80,7 @@ body {
     margin-right: 10px;
     font-weight: bold;
     user-select: none;
-    color: #007bff;
+    color: #1d1d1d;
     font-size: 1.5em;
     cursor: grab;
 }
@@ -78,9 +101,7 @@ body {
 }
 
 
-.choice-text {
-    /* Additional styling for choice text if needed */
-}
+
 
 .button-container {
     text-align: right;
