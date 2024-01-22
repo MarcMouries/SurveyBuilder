@@ -3,15 +3,15 @@
       {
         "type": "ranking",
         "name": "forms-list",
-        "title": "Please rank the following forms from the most important to the least",
+        "title": "Rank the following forms from the most important to the least",
         "isRequired": true,
         "choices": [
           "Form A",
           "Form B",
           "Form C",
-          "Form D"        ]
+          "Form D"
+        ]
       }
-    ],
-    "showQuestionNumbers": false
+    ]
   }
   
