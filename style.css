@@ -1,109 +1,108 @@
-
+/* Reset and Box Sizing */
 *, *:before, *:after {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-  }
-  
-  html, body { margin: 0; padding: 0; min-height: 100%; }
-
-
-
-
-html, body {
-    font-family: 'Open Sans', sans-serif !important;
-    font-size: 12px; /* Standard font size for desktop */
-    background-color: #f4f4f4;
-    /* prevents moving around the page on mobile */
-    position: fixed;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
 }
 
-#page-header {
+/* Basic Reset for HTML and Body */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-family: 'Open Sans', sans-serif !important;
+}
+
+/* Style for Header */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: white;
     display: flex;
-    align-items: center; /* Vertically center the contents */
-    justify-content: center; /* Horizontally center the contents */
+    align-items: center;
+    justify-content: center;
     padding: 10px;
 }
 
 .logo-container {
     margin-right: 15px;
 }
-._logo-container img {
+
+.logo-container img {
     max-width: 200px;
     height: auto;
 }
 
 .header-title {
-    font-size: 1.5em; 
+    font-size: 1.5em;
 }
 
-/* Desktop Styles */
-@media only screen and (min-width: 601px) {
+/* Main Content Styles */
+body {
+    font-size: 12px; /* Standard font size for desktop */
+    background-color: #f4f4f4;
+    overflow: auto; /* Allow scrolling */
+    padding-top: 60px; /* Height of the header */
+}
+
+#survey-container {
+    margin: 1rem auto;
+    max-width: 600px;
+    background-color: #fff;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    margin-bottom: 80px; /* Space for 'Complete' button */
+}
+
+/* Media Query for Mobile Screens */
+@media only screen and (max-width: 600px) {
+    body {
+        font-size: 18px; /* Larger font size for mobile */
+    }
+
     #survey-container {
-        max-width: 600px;
+        width: calc(100% - 2rem);
         margin: 1rem;
-        background-color: #fff;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-radius: 4px;
-    }
-    .choice-text {
-        font-size: 0.8em;
-    }
-    
-}
-
-
-/* Media query for mobile screens and high pixel density screens */
-@media only screen and (max-width: 600px), 
-       only screen and (-webkit-device-pixel-ratio: 2), 
-       only screen and (-webkit-device-pixel-ratio: 3) {
-    #survey-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0.5rem;
-        padding: 1rem;
         box-shadow: none;
         border-radius: 0;
     }
-    body {
-        font-size: 18px;
-    }
+
     .question-title {
         font-size: 1.2em;
     }
+
     .choice-text {
         font-size: 1.1em;
     }
 }
 
-/* Style for text input */
-.single-line-text-input {
-    width: calc(100% - 16px); /* Full width with padding */
+/* Input and Textarea Styles */
+input, textarea {
+    font-family: inherit;
+    width: calc(100% - 16px);
     padding: 8px;
     margin-top: 10px;
-    border: 1px solid #ddd; /* Light border */
-    border-radius: 4px; /* Rounded corners */
-    font-size: 1em; /* Suitable font size */
-    box-sizing: border-box; /* Include padding and border in the width */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+    box-sizing: border-box;
 }
 
-/* Style for each question like a card */
-.question {
-    background-color: #fff; /* White background */
-    border: 1px solid #eee; /* Light border for the card */
-    border-radius: 8px; /* Rounded corners for the card */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    padding: 20px; /* Padding inside the card */
-    margin-bottom: 20px; /* Space between each card/question */
-}
-
+/* Styles for Question and Ranking Items */
 .question {
     font-weight: normal;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
 }
+
 .question-number {
     font-weight: bold;
 }
@@ -112,8 +111,6 @@ html, body {
     font-size: 1.2em;
     color: #1d1d1d;
     margin-bottom: 10px;
-    font-weight: normal;
-
 }
 
 .ranking-list {
@@ -135,53 +132,33 @@ html, body {
 .drag-icon {
     margin-right: 10px;
     font-weight: bold;
-    user-select: none;
     color: #1d1d1d;
     font-size: 1.5em;
     cursor: grab;
 }
 
 .index {
-    width: 25px; 
-    height: 25px; 
-    line-height: 25px; 
-    text-align: center; 
-    border-radius: 50%; 
-    background-color: #61D84E; 
-    color: white; 
-    font-weight: bold; 
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+    border-radius: 50%;
+    background-color: #61D84E;
+    color: white;
+    font-weight: bold;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 10px; 
+    margin-right: 10px;
 }
 
-
-
-
+/* Complete Button Container and Button Styles */
 .button-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
     text-align: right;
-}
-
-.complete-button {
+    background-color: white;
     padding: 10px 20px;
-    background-color: #61D84E;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
-    margin-top: 20px;
-}
-
-.complete-button:hover {
-    background-color: #61D84E;
-}
-
-
-
-
-
-.dragging {
-    opacity: 0.5;
-}
+    box-shadow: 0 -2px 4px rgba(0,

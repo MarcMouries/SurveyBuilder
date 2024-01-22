@@ -15,7 +15,10 @@ class SurveyBuilder {
                     break;
                 case "single-line-text":
                     this.createSingleLineTextQuestion(element, this.surveyContainer);
-                    break;               
+                    break;
+                case "multi-line-text":
+                    this.createMultiLineTextQuestion(element, this.surveyContainer);
+                    break;
                 default:
                     console.error("Unsupported question type:", element.type);
             }
@@ -35,6 +38,8 @@ class SurveyBuilder {
         title.appendChild(questionNumberSpan);
 
         title.append(questionText);
+
+        this.questionNumber++;
 
         return title;
     }
@@ -56,6 +61,22 @@ class SurveyBuilder {
         container.appendChild(questionDiv);
     }
 
+    createMultiLineTextQuestion(element, container) {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question';
+
+        const title = this.createQuestionTitle(element.title);
+        questionDiv.appendChild(title);
+
+        const textArea = document.createElement('textarea');
+        textArea.name = element.name;
+        textArea.required = element.isRequired;
+        textArea.className = 'multi-line-text-input'; // CSS class for styling
+        textArea.placeholder = 'Enter your comments here...'; // Optional placeholder text
+        questionDiv.appendChild(textArea);
+
+        container.appendChild(questionDiv);
+    }
 
     createRankingQuestion(element, container) {
         const questionDiv = document.createElement('div');
@@ -142,20 +163,20 @@ class SurveyBuilder {
         const surveyData = {
             responses: []
         };
-    
+
         this.json.questions.forEach(element => {
-            const questionData = { 
+            const questionData = {
                 questionName: element.name,
                 questionTitle: element.title,
-                answer: null 
+                answer: null
             };
-    
+
             switch (element.type) {
                 case 'single-line-text':
                     const textInput = this.surveyContainer.querySelector(`input[name="${element.name}"]`);
                     questionData.answer = textInput ? textInput.value : '';
                     break;
-    
+
                 case 'ranking':
                     const rankingItems = Array.from(this.surveyContainer.querySelectorAll(`.${element.name} .ranking-item`));
                     console.log(rankingItems);
@@ -166,17 +187,17 @@ class SurveyBuilder {
                         }));
                     }
                     break;
-    
+
                 // Handle other question types if necessary
             }
-    
+
             surveyData.responses.push(questionData);
         });
-    
+
         console.log("Survey Results:", JSON.stringify(surveyData, null, 2));
     }
-    
-    
+
+
 
 
     // MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...

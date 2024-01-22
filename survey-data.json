@@ -3,7 +3,7 @@
       {
         "type": "single-line-text",
         "name": "agency_name",
-        "title": "Name of the agency you work for",
+        "title": "Name of the federal agency you work for?",
         "isRequired": true
       },
       {
@@ -15,8 +15,15 @@
           "Form A",
           "Form B",
           "Form C",
-          "Form D"
+          "Form D",
+          "Form E"
         ]
+      },
+      {
+        "type": "multi-line-text",
+        "name": "comments",
+        "title" : "Any additional comments or feedback you'd like to share?",
+        "isRequired": false
       }
     ]
   }
