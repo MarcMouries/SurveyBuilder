@@ -1,17 +1,4 @@
 
-
-
-
-/* Default styles for desktop */
-#survey-container {
-    max-width: 600px; /* Adjust as needed for desktop */
-    margin: auto;
-    background-color: #fff;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-radius: 4px;
-}
-
 body {
     font-family: 'Gilroy-Regular', Arial, sans-serif;
     font-size: 16px; /* Standard font size for desktop */
@@ -20,27 +7,44 @@ body {
     padding: 20px;
 }
 
-.choice-text {
-    font-size: 1.0em;
-}
-/* Media query for mobile screens */
-@media (max-width: 600px) {
+
+/* Desktop Styles */
+@media only screen and (min-width: 601px) {
     #survey-container {
-        width: 100%; 
-        /*max-width: none; 
-        box-shadow: none; 
-        border-radius: 0; 
-        */
+        max-width: 600px;
+        margin: 1rem;
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 4px;
+    }
+    .choice-text {
+        font-size: 1.0em;
+    }
+    
+}
+
+
+/* Media query for mobile screens and high pixel density screens */
+@media only screen and (max-width: 600px), 
+       only screen and (-webkit-device-pixel-ratio: 2), 
+       only screen and (-webkit-device-pixel-ratio: 3) {
+    #survey-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0.5rem;
+        padding: 0.5rem;
+        box-shadow: none;
+        border-radius: 0;
     }
     body {
-        font-size: 20px; 
+        font-size: 18px;
     }
     .question h3 {
-        font-size: 1.4em;
+        font-size: 1.6em;
     }
-
     .choice-text {
-        font-size: 1.2em;
+        font-size: 1.3em;
     }
 }
 
