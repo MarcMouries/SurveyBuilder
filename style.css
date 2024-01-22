@@ -5,12 +5,15 @@
     box-sizing: border-box;
   }
   
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+
+
+
+
 html, body {
-    font-family: 'Gilroy-Regular', Arial, sans-serif;
-    font-size: 16px; /* Standard font size for desktop */
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 12px; /* Standard font size for desktop */
     background-color: #f4f4f4;
-    margin: 0;
-    padding: 20px;
     /* prevents moving around the page on mobile */
     position: fixed;
     overflow: hidden;
@@ -24,12 +27,12 @@ html, body {
         max-width: 600px;
         margin: 1rem;
         background-color: #fff;
-        padding: 20px;
+        padding: 1rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         border-radius: 4px;
     }
     .choice-text {
-        font-size: 1.0em;
+        font-size: 0.8em;
     }
     
 }
@@ -43,30 +46,55 @@ html, body {
         width: 100%;
         max-width: 100%;
         margin: 0.5rem;
-        padding: 0.5rem;
+        padding: 1rem;
         box-shadow: none;
         border-radius: 0;
     }
     body {
         font-size: 18px;
     }
-    .question h3 {
-        font-size: 1.6em;
+    .question-title {
+        font-size: 1.2em;
     }
     .choice-text {
-        font-size: 1.3em;
+        font-size: 1.1em;
     }
 }
 
-
-.question {
-    font-family: 'Gilroy-Regular' !important;
+/* Style for text input */
+.single-line-text-input {
+    width: calc(100% - 16px); /* Full width with padding */
+    padding: 8px;
+    margin-top: 10px;
+    border: 1px solid #ddd; /* Light border */
+    border-radius: 4px; /* Rounded corners */
+    font-size: 1em; /* Suitable font size */
+    box-sizing: border-box; /* Include padding and border in the width */
 }
 
-.question h3 {
+/* Style for each question like a card */
+.question {
+    background-color: #fff; /* White background */
+    border: 1px solid #eee; /* Light border for the card */
+    border-radius: 8px; /* Rounded corners for the card */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    padding: 20px; /* Padding inside the card */
+    margin-bottom: 20px; /* Space between each card/question */
+}
+
+.question {
+    font-weight: normal;
+}
+.question-number {
+    font-weight: bold;
+}
+
+.question-title {
     font-size: 1.2em;
     color: #1d1d1d;
     margin-bottom: 10px;
+    font-weight: normal;
+
 }
 
 .ranking-list {
