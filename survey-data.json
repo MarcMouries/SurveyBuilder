@@ -1,8 +1,14 @@
 {
-    "elements": [
+    "questions": [
+      {
+        "type": "single-line-text",
+        "name": "agency_name",
+        "title": "Name of the agency you work for",
+        "isRequired": true
+      },
       {
         "type": "ranking",
-        "name": "forms-list",
+        "name": "fed_forms_ranking",
         "title": "Rank the following forms from the most important to the least",
         "isRequired": true,
         "choices": [

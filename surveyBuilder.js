@@ -3,19 +3,21 @@ class SurveyBuilder {
     constructor(json, containerId) {
         this.json = json;
         this.surveyContainer = document.getElementById(containerId);
-        this.questionNumber = 1; 
+        this.questionNumber = 1;
         this.createSurvey();
     }
 
     createSurvey() {
-        this.json.elements.forEach(element => {
+        this.json.questions.forEach(element => {
             switch (element.type) {
                 case "ranking":
                     this.createRankingQuestion(element, this.surveyContainer);
                     break;
-                // Additional cases for other question types
+                case "single-line-text":
+                    this.createSingleLineTextQuestion(element, this.surveyContainer);
+                    break;               
                 default:
-                    console.warn("Unsupported question type:", element.type);
+                    console.error("Unsupported question type:", element.type);
             }
         });
 
@@ -23,16 +25,48 @@ class SurveyBuilder {
         this.createCompleteButton(this.surveyContainer);
     }
 
+    createQuestionTitle(questionText) {
+        const title = document.createElement('h3');
+        title.className = 'question-title';
+
+        const questionNumberSpan = document.createElement('span');
+        questionNumberSpan.className = 'question-number';
+        questionNumberSpan.textContent = `Q${this.questionNumber}. `;
+        title.appendChild(questionNumberSpan);
+
+        title.append(questionText);
+
+        return title;
+    }
+
+    createSingleLineTextQuestion(element, container) {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question';
+
+        const title = this.createQuestionTitle(element.title);
+        questionDiv.appendChild(title);
+
+        const inputField = document.createElement('input');
+        inputField.type = 'text';
+        inputField.name = element.name;
+        inputField.required = element.isRequired;
+        inputField.className = 'single-line-text-input';
+        questionDiv.appendChild(inputField);
+
+        container.appendChild(questionDiv);
+    }
+
+
     createRankingQuestion(element, container) {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
 
-        const title = document.createElement('h3');
-        title.textContent = `${this.questionNumber}. ${element.title}`; 
+        const title = this.createQuestionTitle(element.title);
         questionDiv.appendChild(title);
 
         const rankingList = document.createElement('div');
-        rankingList.className = 'ranking-list';
+        rankingList.className = `ranking-list ${element.name}`;
+
 
         element.choices.forEach((choice, index) => {
             const listItem = document.createElement('div');
@@ -67,13 +101,13 @@ class SurveyBuilder {
             list.addEventListener('dragover', e => {
                 e.preventDefault();
                 const draggable = document.querySelector('.dragging');
-                const afterElement = getDragAfterElement(list, e.clientY);
+                const afterElement = this.getDragAfterElement(list, e.clientY);
                 if (afterElement) {
                     list.insertBefore(draggable, afterElement);
                 } else if (draggable) {
                     list.appendChild(draggable);
                 }
-                updateDraggedItemIndex(draggable, list);
+                this.updateDraggedItemIndex(draggable, list);
             });
 
             list.addEventListener('dragstart', e => {
@@ -82,13 +116,13 @@ class SurveyBuilder {
 
             list.addEventListener('dragend', e => {
                 e.target.classList.remove('dragging');
-                updateAllIndexes(list);
+                this.updateAllIndexes(list);
             });
 
             // If you have a 'drop' event, you can also update indexes there
             list.addEventListener('drop', e => {
                 e.preventDefault();
-                updateAllIndexes(list);
+                this.updateAllIndexes(list);
             });
         });
     }
@@ -109,25 +143,47 @@ class SurveyBuilder {
             responses: []
         };
     
-        const rankingLists = document.querySelectorAll('.ranking-list');
-        rankingLists.forEach((list, index) => {
-            const question = list.closest('.question').querySelector('h3').textContent;
-            const answers = Array.from(list.querySelectorAll('.ranking-item')).map((item, idx) => ({
-                rank: idx + 1,
-                text: item.querySelector('.choice-text').textContent
-            }));
+        this.json.questions.forEach(element => {
+            const questionData = { 
+                questionName: element.name,
+                questionTitle: element.title,
+                answer: null 
+            };
     
-            surveyData.responses.push({ question, answers });
+            switch (element.type) {
+                case 'single-line-text':
+                    const textInput = this.surveyContainer.querySelector(`input[name="${element.name}"]`);
+                    questionData.answer = textInput ? textInput.value : '';
+                    break;
+    
+                case 'ranking':
+                    const rankingItems = Array.from(this.surveyContainer.querySelectorAll(`.${element.name} .ranking-item`));
+                    console.log(rankingItems);
+                    if (rankingItems.length) {
+                        questionData.answer = rankingItems.map((item, idx) => ({
+                            rank: idx + 1,
+                            text: item.querySelector('.choice-text').textContent.trim()
+                        }));
+                    }
+                    break;
+    
+                // Handle other question types if necessary
+            }
+    
+            surveyData.responses.push(questionData);
         });
-
-}
-
-
-// MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...
-
-     getDragAfterElement(list, y) {
-        const draggableElements = [...list.querySelectorAll('.ranking-item:not(.dragging)')];
     
+        console.log("Survey Results:", JSON.stringify(surveyData, null, 2));
+    }
+    
+    
+
+
+    // MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...
+
+    getDragAfterElement(list, y) {
+        const draggableElements = [...list.querySelectorAll('.ranking-item:not(.dragging)')];
+
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
             const offset = y - box.top - box.height / 2;
@@ -137,9 +193,9 @@ class SurveyBuilder {
                 return closest;
             }
         }, { offset: Number.NEGATIVE_INFINITY }).element;
-    } 
-    
-    
+    }
+
+
     updateDraggedItemIndex(draggedItem, list) {
         let newIndex = 0;
         Array.from(list.children).forEach((item, index) => {
@@ -147,15 +203,15 @@ class SurveyBuilder {
                 newIndex = index + 1;
             }
         });
-    
+
         const indexDiv = draggedItem.querySelector('.index');
         if (indexDiv) {
             indexDiv.textContent = newIndex + 1; // +1 because index is 0-based
         }
     }
-    
-    
-     updateAllIndexes(list) {
+
+
+    updateAllIndexes(list) {
         const items = list.querySelectorAll('.ranking-item');
         items.forEach((item, index) => {
             const indexDiv = item.querySelector('.index');
