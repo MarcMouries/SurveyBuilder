@@ -171,9 +171,39 @@ input, textarea {
     border-radius: 4px;
     cursor: pointer;
     font-size: 1em;
-    /* Positioning and spacing if needed */
 }
 
 .complete-button:hover {
     background-color: #529c41; /* Darker green on hover for visual feedback */
+}
+
+.thank-you-container {
+    text-align: center;
+    padding: 20px;
+    max-width: 600px;
+    margin: 50px auto;
+}
+
+.thank-you-container h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+.thank-you-container p {
+    font-size: 1em;
+    margin-bottom: 30px;
+}
+
+.thank-you-container .button-container {
+    display: flex;
+    justify-content: center;
+}
+
+.thank-you-container .button-container .secondary-button {
+    margin-right: 10px;
+    background-color: #ccc; 
+}
+
+.thank-you-container .button-container .primary-button {
+    background-color: #61D84E; 
 }

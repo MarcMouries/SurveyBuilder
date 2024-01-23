@@ -8,6 +8,10 @@ class SurveyBuilder {
     }
 
     createSurvey() {
+
+        this.createSurveyTitle(this.json.surveyTitle, this.surveyContainer);
+        this.createSurveyDescription(this.json.surveyDescription, this.surveyContainer);
+
         this.json.questions.forEach(element => {
             switch (element.type) {
                 case "ranking":
@@ -26,6 +30,22 @@ class SurveyBuilder {
 
         this.addDragAndDrop();
         this.createCompleteButton(this.surveyContainer);
+    }
+
+    createSurveyTitle(surveyTitle, container) {
+        const title = document.createElement('h3');
+        title.className = 'survey-title';
+        title.textContent = surveyTitle;
+
+        container.appendChild(title);
+    }
+
+    createSurveyDescription(surveyDescription, container) {
+        const description = document.createElement('p');
+        description.className = 'survey-description';
+        description.textContent = surveyDescription;
+
+        container.appendChild(description);
     }
 
     createQuestionTitle(questionText) {
@@ -71,8 +91,8 @@ class SurveyBuilder {
         const textArea = document.createElement('textarea');
         textArea.name = element.name;
         textArea.required = element.isRequired;
-        textArea.className = 'multi-line-text-input'; // CSS class for styling
-        textArea.placeholder = 'Enter your comments here...'; // Optional placeholder text
+        textArea.className = 'multi-line-text-input';
+        textArea.placeholder = 'Enter your comments here...';
         questionDiv.appendChild(textArea);
 
         container.appendChild(questionDiv);
@@ -115,6 +135,8 @@ class SurveyBuilder {
         questionDiv.appendChild(rankingList);
         container.appendChild(questionDiv);
     }
+
+
     addDragAndDrop() {
         const lists = document.querySelectorAll('.ranking-list');
 
@@ -154,9 +176,14 @@ class SurveyBuilder {
         const completeButton = document.createElement('button');
         completeButton.className = 'complete-button';
         completeButton.textContent = 'Complete';
-        completeButton.addEventListener('click', () => this.printSurveyResults());
+        completeButton.addEventListener('click', () => this.finishSurvey());
         buttonContainer.appendChild(completeButton);
         container.appendChild(buttonContainer);
+    }
+
+    finishSurvey() {
+        this.printSurveyResults();
+        this.displayThankYouPage();
     }
 
     printSurveyResults() {
@@ -197,7 +224,26 @@ class SurveyBuilder {
         console.log("Survey Results:", JSON.stringify(surveyData, null, 2));
     }
 
+    displayThankYouPage() {
+        // Clear the survey container
+        this.surveyContainer.innerHTML = '';
+        // Create the thank you message container
+        const thankYouContainer = document.createElement('div');
+        thankYouContainer.className = 'thank-you-container';
 
+        // Add content to the thank you container
+        thankYouContainer.innerHTML = `
+            <h2>Thank you for your input.</h2>
+            <p>You can close this page. </p>
+            <p>Learn more about <a href="https://servicenow.com">Creator Workflows</a>.</>
+            <div class="button-container">
+                <button class="secondary-button">Prev</button>
+                <button class="primary-button">Done</button>
+            </div>
+        `;
+        // Append the thank you container to the survey container
+        this.surveyContainer.appendChild(thankYouContainer);
+    }
 
 
     // MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...
@@ -227,7 +273,7 @@ class SurveyBuilder {
 
         const indexDiv = draggedItem.querySelector('.index');
         if (indexDiv) {
-            indexDiv.textContent = newIndex + 1; // +1 because index is 0-based
+            indexDiv.textContent = newIndex + 1;
         }
     }
 
