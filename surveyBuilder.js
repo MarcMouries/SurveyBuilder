@@ -43,7 +43,7 @@ class SurveyBuilder {
     createSurveyDescription(surveyDescription, container) {
         const description = document.createElement('p');
         description.className = 'survey-description';
-        description.textContent = surveyDescription;
+        description.innerHTML = surveyDescription;
 
         container.appendChild(description);
     }
