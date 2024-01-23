@@ -15,16 +15,17 @@ html, body {
 
 /* Style for Header */
 header {
-    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: white;
+    background-color: #032d42;
+
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 10px;
+    margin-bottom: 40px;
 }
 
 .logo-container {
@@ -40,12 +41,15 @@ header {
     font-size: 1.5em;
 }
 
+.survey-title {
+    text-align: center;
+    font-size: 2rem;
+}
 /* Main Content Styles */
 body {
-    font-size: 12px; /* Standard font size for desktop */
+    font-size: 14px; /* Standard font size for desktop */
     background-color: #f4f4f4;
     overflow: auto; /* Allow scrolling */
-    padding-top: 60px; /* Height of the header */
 }
 
 #survey-container {
