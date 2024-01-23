@@ -49,10 +49,10 @@ body {
 }
 
 #survey-container {
-    margin: 1rem auto;
+    margin: 10px auto;
     max-width: 600px;
     background-color: #fff;
-    padding: 1rem;
+    padding: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     border-radius: 4px;
     margin-bottom: 80px; /* Space for 'Complete' button */
@@ -65,8 +65,8 @@ body {
     }
 
     #survey-container {
-        width: calc(100% - 2rem);
-        margin: 1rem;
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
         box-shadow: none;
         border-radius: 0;
     }
@@ -96,10 +96,6 @@ input, textarea {
 .question {
     font-weight: normal;
     background-color: #fff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
     margin-bottom: 20px;
 }
 
