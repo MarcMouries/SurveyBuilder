@@ -182,11 +182,14 @@ class SurveyBuilder {
     }
 
     finishSurvey() {
-        this.printSurveyResults();
+        const responses = this.getResponses();
+        if (this.completeCallback) {
+            this.completeCallback(responses);
+        }
         this.displayThankYouPage();
     }
 
-    printSurveyResults() {
+    getResponses() {
         const surveyData = {
             responses: []
         };
@@ -219,9 +222,13 @@ class SurveyBuilder {
             }
 
             surveyData.responses.push(questionData);
+            
         });
+        return surveyData;
+    }
 
-        console.log("Survey Results:", JSON.stringify(surveyData, null, 2));
+    onComplete(callbackFunction) {
+        this.completeCallback = callbackFunction;
     }
 
     displayThankYouPage() {
