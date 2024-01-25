@@ -4,27 +4,30 @@ class SurveyBuilder {
         this.json = json;
         this.surveyContainer = document.getElementById(containerId);
         this.questionNumber = 1;
+        this.responses = {};
         this.createSurvey();
     }
 
     createSurvey() {
-
         this.createSurveyTitle(this.json.surveyTitle, this.surveyContainer);
         this.createSurveyDescription(this.json.surveyDescription, this.surveyContainer);
 
-        this.json.questions.forEach(element => {
+        this.json.questions.forEach((element, index) => {
             switch (element.type) {
                 case "ranking":
-                    this.createRankingQuestion(element, this.surveyContainer);
+                    this.createRankingQuestion(element, index);
                     break;
                 case "single-line-text":
-                    this.createSingleLineTextQuestion(element, this.surveyContainer);
+                    this.createSingleLineTextQuestion(element, index);
                     break;
                 case "multi-line-text":
-                    this.createMultiLineTextQuestion(element, this.surveyContainer);
+                    this.createMultiLineTextQuestion(element, index);
+                    break;
+                case "yes-no":
+                    this.createYesNoQuestion(element, index);
                     break;
                 default:
-                    console.error("Unsupported question type:", element.type);
+                    console.error("Unsupported question type: " + element.type);
             }
         });
 
@@ -32,6 +35,28 @@ class SurveyBuilder {
         this.createCompleteButton(this.surveyContainer);
     }
 
+    setResponse(questionName, response) {
+        this.responses[questionName] = response;
+    }
+
+    evaluateVisibilityConditions() {
+        // Go through each question and determine if it should be shown based on the visible_when condition
+        this.json.questions.forEach((question, index) => {
+            const questionElement = this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
+            if (question.visible_when) {
+                const condition = question.visible_when.split('=').map(s => s.trim());
+                const questionToCheck = condition[0];
+                const expectedAnswer = condition[1].toLowerCase();
+                const actualAnswer = this.responses[questionToCheck] ? this.responses[questionToCheck].toLowerCase() : null;
+
+                if (actualAnswer === expectedAnswer) {
+                    questionElement.style.display = 'block';
+                } else {
+                    questionElement.style.display = 'none';
+                }
+            }
+        });
+    }
     createSurveyTitle(surveyTitle, container) {
         const title = document.createElement('h3');
         title.className = 'survey-title';
@@ -55,7 +80,7 @@ class SurveyBuilder {
         const questionNumberSpan = document.createElement('span');
         questionNumberSpan.className = 'question-number';
         questionNumberSpan.textContent = `Q${this.questionNumber}. `;
-        title.appendChild(questionNumberSpan);
+        //title.appendChild(questionNumberSpan);
 
         title.append(questionText);
 
@@ -64,9 +89,61 @@ class SurveyBuilder {
         return title;
     }
 
-    createSingleLineTextQuestion(element, container) {
+    createYesNoQuestion(element, index) {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question yes-no-question';
+        questionDiv.dataset.index = index.toString();
+
+        const title = this.createQuestionTitle(element.title);
+        questionDiv.appendChild(title);
+
+        // Create the switch-field container
+        const yesNoField = document.createElement('div');
+        yesNoField.className = 'yes-no';
+
+        // Create Yes radio button
+        const yesRadio = this.createRadio('Yes', element.name, `${element.name}-yes`);
+        const yesLabel = this.createLabel(`${element.name}-yes`, 'Yes');
+        yesNoField.appendChild(yesRadio);
+        yesNoField.appendChild(yesLabel);
+
+        // Create No radio button
+        const noRadio = this.createRadio('No', element.name, `${element.name}-no`);
+        const noLabel = this.createLabel(`${element.name}-no`, 'No');
+        yesNoField.appendChild(noRadio);
+        yesNoField.appendChild(noLabel);
+
+        questionDiv.appendChild(yesNoField);
+        this.surveyContainer.appendChild(questionDiv);
+
+        // Event listener to store response
+        yesNoField.addEventListener('change', (event) => {
+            this.setResponse(element.name, event.target.value);
+            this.evaluateVisibilityConditions();
+        });
+    }
+
+    createRadio(value, name, id) {
+        const radioInput = document.createElement('input');
+        radioInput.type = 'radio';
+        radioInput.id = id;
+        radioInput.name = name;
+        radioInput.value = value;
+        return radioInput;
+    }
+
+    createLabel(forId, text) {
+        const label = document.createElement('label');
+        label.htmlFor = forId;
+        label.textContent = text;
+        return label;
+    }
+
+
+    createSingleLineTextQuestion(element, index) {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
+        questionDiv.dataset.index = index.toString();
 
         const title = this.createQuestionTitle(element.title);
         questionDiv.appendChild(title);
@@ -78,12 +155,18 @@ class SurveyBuilder {
         inputField.className = 'single-line-text-input';
         questionDiv.appendChild(inputField);
 
-        container.appendChild(questionDiv);
+        this.surveyContainer.appendChild(questionDiv);
+
+        // Event listener for input change
+        inputField.addEventListener('input', () => {
+            this.setResponse(element.name, inputField.value);
+        });
     }
 
-    createMultiLineTextQuestion(element, container) {
+    createMultiLineTextQuestion(element, index) {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
+        questionDiv.dataset.index = index.toString();
 
         const title = this.createQuestionTitle(element.title);
         questionDiv.appendChild(title);
@@ -95,12 +178,17 @@ class SurveyBuilder {
         textArea.placeholder = 'Enter your comments here...';
         questionDiv.appendChild(textArea);
 
-        container.appendChild(questionDiv);
+        this.surveyContainer.appendChild(questionDiv);
+
+        textArea.addEventListener('input', () => {
+            this.setResponse(element.name, textArea.value);
+        });
     }
 
-    createRankingQuestion(element, container) {
+    createRankingQuestion(element, index) {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question';
+        questionDiv.dataset.index = index.toString();
 
         const title = this.createQuestionTitle(element.title);
         questionDiv.appendChild(title);
@@ -133,7 +221,7 @@ class SurveyBuilder {
         });
 
         questionDiv.appendChild(rankingList);
-        container.appendChild(questionDiv);
+        this.surveyContainer.appendChild(questionDiv);
     }
 
 
@@ -184,7 +272,7 @@ class SurveyBuilder {
     finishSurvey() {
         const responses = this.getResponses();
         if (this.completeCallback) {
-            this.completeCallback(responses);
+            this.completeCallback(this.responses);
         }
         this.displayThankYouPage();
     }
@@ -222,7 +310,7 @@ class SurveyBuilder {
             }
 
             surveyData.responses.push(questionData);
-            
+
         });
         return surveyData;
     }
