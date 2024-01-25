@@ -13,7 +13,7 @@
       "title": "Name of the federal agency you work for?",
       "isRequired": true,
       "visible_when": "federal-forms-regular = Yes",
-      "data": [
+      "options": [
         "NASA",
         "NOAA",
         "NSF",

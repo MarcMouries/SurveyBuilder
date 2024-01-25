@@ -113,7 +113,7 @@ class SurveyBuilder {
         const dataList = document.createElement('datalist');
         dataList.id = `${element.name}-list`;
 
-        element.data.forEach(optionValue => {
+        element.options.forEach(optionValue => {
             const option = document.createElement('option');
             option.value = optionValue;
             dataList.appendChild(option);
