@@ -14,9 +14,13 @@
       "isRequired": true,
       "visible_when": "federal-forms-regular = Yes",
       "options": [
-        "NASA",
-        "NOAA",
+        "a", "b", "c", "d", "e", 
+        "Federal Aviation Administration", 
+        "g", "h",
+        "NASA - National Aeronautics and Space Administration",
+        "NOAA - National Oceanic and Atmospheric Administration",
         "NSF",
+        "State Department",
         "U.S. Citizenship and Immigration Services",
         "United States Marshals Service"
       ]
