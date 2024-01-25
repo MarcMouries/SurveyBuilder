@@ -26,6 +26,10 @@ class SurveyBuilder {
                 case "yes-no":
                     this.createYesNoQuestion(element, index);
                     break;
+                case "select":
+                    this.createSelectQuestion(element, index);
+                    break;
+
                 default:
                     console.error("Unsupported question type: " + element.type);
             }
@@ -88,6 +92,45 @@ class SurveyBuilder {
 
         return title;
     }
+
+
+    createSelectQuestion(element, index) {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question select-question';
+        questionDiv.dataset.index = index.toString();
+
+        const title = this.createQuestionTitle(element.title);
+        questionDiv.appendChild(title);
+
+        // Create input for typing and searching
+        const input = document.createElement('input');
+        input.setAttribute('list', `${element.name}-list`);
+        input.name = element.name;
+        input.placeholder = "Start typing";
+
+
+        // Create datalist for search suggestions
+        const dataList = document.createElement('datalist');
+        dataList.id = `${element.name}-list`;
+
+        element.data.forEach(optionValue => {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            dataList.appendChild(option);
+        });
+
+        questionDiv.appendChild(input);
+        questionDiv.appendChild(dataList);
+        this.surveyContainer.appendChild(questionDiv);
+
+        // Event listener for input change
+        input.addEventListener('input', () => {
+            this.setResponse(element.name, input.value);
+        });
+    }
+
+
+
 
     createYesNoQuestion(element, index) {
         const questionDiv = document.createElement('div');
@@ -328,14 +371,14 @@ class SurveyBuilder {
 
         // Add content to the thank you container
         thankYouContainer.innerHTML = `
-            <h2>Thank you for your input.</h2>
-            <p>You can close this page. </p>
-            <p>Learn more about <a href="https://servicenow.com">Creator Workflows</a>.</>
-            <div class="button-container">
-                <button class="secondary-button">Prev</button>
-                <button class="primary-button">Done</button>
-            </div>
-        `;
+        <h2>Thank you for your input.</h2>
+        <p>You can close this page. </p>
+        <p>Learn more about <a href="https://servicenow.com">Creator Workflows</a>.</>
+        <div class="button-container">
+            <button class="secondary-button">Prev</button>
+            <button class="primary-button">Done</button>
+        </div>
+    `;
         // Append the thank you container to the survey container
         this.surveyContainer.appendChild(thankYouContainer);
     }

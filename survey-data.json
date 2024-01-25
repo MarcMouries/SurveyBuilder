@@ -8,11 +8,18 @@
       "title": "Do you regularly fill in or approve federal forms?"
     },
     {
-      "type": "single-line-text",
+      "type": "select",
       "name": "agency_name",
       "title": "Name of the federal agency you work for?",
       "isRequired": true,
-      "visible_when": "federal-forms-regular = Yes"
+      "visible_when": "federal-forms-regular = Yes",
+      "data": [
+        "NASA",
+        "NOAA",
+        "NSF",
+        "U.S. Citizenship and Immigration Services",
+        "United States Marshals Service"
+      ]
     },
     {
       "type": "ranking",

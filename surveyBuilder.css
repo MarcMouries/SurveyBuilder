@@ -99,6 +99,19 @@ body {
     box-shadow: none;
 }
 
+.question.select-question input {
+    width: 100%; /* Full width of the container */
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.question.select-question datalist {
+    /* Styles to ensure alignment with the input */
+    width: 100%;
+}
 
 
 /* Desktop Styles */
