@@ -13,13 +13,12 @@
       "title": "Name of the federal agency you work for?",
       "isRequired": true,
       "visible_when": "federal-forms-regular = Yes",
-      "options": [
-        "a", "b", "c", "d", "e", 
+      "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text=",
+      "_OLD_options": [
         "Federal Aviation Administration", 
-        "g", "h",
         "NASA - National Aeronautics and Space Administration",
         "NOAA - National Oceanic and Atmospheric Administration",
-        "NSF",
+        "NSF - National Science Foundation",
         "State Department",
         "U.S. Citizenship and Immigration Services",
         "United States Marshals Service"

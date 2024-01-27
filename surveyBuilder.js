@@ -102,34 +102,53 @@ class SurveyBuilder {
         const title = this.createQuestionTitle(element.title);
         questionDiv.appendChild(title);
 
-        // Create input for typing and searching
         const input = document.createElement('input');
         input.setAttribute('list', `${element.name}-list`);
         input.name = element.name;
         input.placeholder = "Start typing";
 
-
-        // Create datalist for search suggestions
         const dataList = document.createElement('datalist');
         dataList.id = `${element.name}-list`;
-
-        element.options.forEach(optionValue => {
-            const option = document.createElement('option');
-            option.value = optionValue;
-            dataList.appendChild(option);
-        });
 
         questionDiv.appendChild(input);
         questionDiv.appendChild(dataList);
         this.surveyContainer.appendChild(questionDiv);
 
-        // Event listener for input change
-        input.addEventListener('input', () => {
-            this.setResponse(element.name, input.value);
-        });
+        if (element.options) {
+            element.options.forEach(optionValue => {
+                const option = document.createElement('option');
+                option.value = optionValue;
+                dataList.appendChild(option);
+            });
+        } else if (element.options_source) {
+            input.addEventListener('input', () => {
+                const inputValue = input.value.trim();
+                if (inputValue.length >= 2) {
+                    this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
+                } else {
+                    dataList.innerHTML = ''; // Clear the datalist if input is less than 2 characters
+                }
+            });
+        } else {
+            console.error("Options or options_source must be defined for the select question type: " + element.name);
+        }
     }
 
+    fetchAndUpdateOptions(url, query, dataList) {
+        if (!url || !dataList) return;
 
+        fetch(`${url}${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                dataList.innerHTML = ''; // Clear existing options
+                data.result.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    dataList.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching options:', error));
+    }
 
 
     createYesNoQuestion(element, index) {

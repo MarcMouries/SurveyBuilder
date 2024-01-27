@@ -111,6 +111,12 @@ body {
 .question.select-question datalist {
     /* Styles to ensure alignment with the input */
     width: 100%;
+    max-height: 100px;
+    overflow-y: auto;
+}
+datalist {
+    max-height: 100px;
+    overflow-y: auto;
 }
 
 
