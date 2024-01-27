@@ -4,7 +4,7 @@
   "questions": [
     {
       "type": "yes-no",
-      "name": "federal-forms-regular",
+      "name": "use-federal-forms",
       "title": "Do you regularly fill in or approve federal forms?"
     },
     {
@@ -12,16 +12,16 @@
       "name": "agency_name",
       "title": "Name of the federal agency you work for?",
       "isRequired": true,
-      "visible_when": "federal-forms-regular = Yes",
-      "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text=",
-      "_OLD_options": [
-        "Federal Aviation Administration", 
+      "visible_when": "use-federal-forms = Yes",
+      "_options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text=",
+      "options": [
+        "FAA  - Federal Aviation Administration", 
         "NASA - National Aeronautics and Space Administration",
         "NOAA - National Oceanic and Atmospheric Administration",
-        "NSF - National Science Foundation",
+        "NSF  - National Science Foundation",
         "State Department",
-        "U.S. Citizenship and Immigration Services",
-        "United States Marshals Service"
+        "USCIS - U.S. Citizenship and Immigration Services",
+        "USMS - United States Marshals Service"
       ]
     },
     {

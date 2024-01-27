@@ -1,3 +1,11 @@
+import { 
+    createRankingQuestion,
+    createYesNoQuestion, 
+    createSelectQuestion, 
+    createSingleLineTextQuestion,
+    createMultiLineTextQuestion
+ } from './question-types/index.js';
+
 class SurveyBuilder {
 
     constructor(json, containerId) {
@@ -15,19 +23,19 @@ class SurveyBuilder {
         this.json.questions.forEach((element, index) => {
             switch (element.type) {
                 case "ranking":
-                    this.createRankingQuestion(element, index);
+                    createRankingQuestion.call(this, element, index);
                     break;
                 case "single-line-text":
-                    this.createSingleLineTextQuestion(element, index);
+                    createSingleLineTextQuestion.call(this, element, index);
                     break;
                 case "multi-line-text":
-                    this.createMultiLineTextQuestion(element, index);
+                    createMultiLineTextQuestion.call(this, element, index);
                     break;
                 case "yes-no":
-                    this.createYesNoQuestion(element, index);
+                    createYesNoQuestion.call(this, element, index);
                     break;
                 case "select":
-                    this.createSelectQuestion(element, index);
+                    createSelectQuestion.call(this, element, index);
                     break;
 
                 default:
@@ -77,213 +85,6 @@ class SurveyBuilder {
         container.appendChild(description);
     }
 
-    createQuestionTitle(questionText) {
-        const title = document.createElement('h3');
-        title.className = 'question-title';
-
-        const questionNumberSpan = document.createElement('span');
-        questionNumberSpan.className = 'question-number';
-        questionNumberSpan.textContent = `Q${this.questionNumber}. `;
-        //title.appendChild(questionNumberSpan);
-
-        title.append(questionText);
-
-        this.questionNumber++;
-
-        return title;
-    }
-
-
-    createSelectQuestion(element, index) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'question select-question';
-        questionDiv.dataset.index = index.toString();
-
-        const title = this.createQuestionTitle(element.title);
-        questionDiv.appendChild(title);
-
-        const input = document.createElement('input');
-        input.setAttribute('list', `${element.name}-list`);
-        input.name = element.name;
-        input.placeholder = "Start typing";
-
-        const dataList = document.createElement('datalist');
-        dataList.id = `${element.name}-list`;
-
-        questionDiv.appendChild(input);
-        questionDiv.appendChild(dataList);
-        this.surveyContainer.appendChild(questionDiv);
-
-        if (element.options) {
-            element.options.forEach(optionValue => {
-                const option = document.createElement('option');
-                option.value = optionValue;
-                dataList.appendChild(option);
-            });
-        } else if (element.options_source) {
-            input.addEventListener('input', () => {
-                const inputValue = input.value.trim();
-                if (inputValue.length >= 2) { // Check if input length is at least 2
-                    this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
-                } else {
-                    dataList.innerHTML = ''; // Clear the datalist if input is too short
-                }
-            });
-        }
-    }
-
-
-    fetchAndUpdateOptions(url, query, dataList) {
-        if (!url || !dataList) return;
-
-        fetch(`${url}${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                dataList.innerHTML = ''; // Clear existing options
-                data.result.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.abbreviation;
-                    dataList.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error fetching options:', error));
-    }
-
-
-    createYesNoQuestion(element, index) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'question yes-no-question';
-        questionDiv.dataset.index = index.toString();
-
-        const title = this.createQuestionTitle(element.title);
-        questionDiv.appendChild(title);
-
-        // Create the switch-field container
-        const yesNoField = document.createElement('div');
-        yesNoField.className = 'yes-no';
-
-        // Create Yes radio button
-        const yesRadio = this.createRadio('Yes', element.name, `${element.name}-yes`);
-        const yesLabel = this.createLabel(`${element.name}-yes`, 'Yes');
-        yesNoField.appendChild(yesRadio);
-        yesNoField.appendChild(yesLabel);
-
-        // Create No radio button
-        const noRadio = this.createRadio('No', element.name, `${element.name}-no`);
-        const noLabel = this.createLabel(`${element.name}-no`, 'No');
-        yesNoField.appendChild(noRadio);
-        yesNoField.appendChild(noLabel);
-
-        questionDiv.appendChild(yesNoField);
-        this.surveyContainer.appendChild(questionDiv);
-
-        // Event listener to store response
-        yesNoField.addEventListener('change', (event) => {
-            this.setResponse(element.name, event.target.value);
-            this.evaluateVisibilityConditions();
-        });
-    }
-
-    createRadio(value, name, id) {
-        const radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.id = id;
-        radioInput.name = name;
-        radioInput.value = value;
-        return radioInput;
-    }
-
-    createLabel(forId, text) {
-        const label = document.createElement('label');
-        label.htmlFor = forId;
-        label.textContent = text;
-        return label;
-    }
-
-
-    createSingleLineTextQuestion(element, index) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'question';
-        questionDiv.dataset.index = index.toString();
-
-        const title = this.createQuestionTitle(element.title);
-        questionDiv.appendChild(title);
-
-        const inputField = document.createElement('input');
-        inputField.type = 'text';
-        inputField.name = element.name;
-        inputField.required = element.isRequired;
-        inputField.className = 'single-line-text-input';
-        questionDiv.appendChild(inputField);
-
-        this.surveyContainer.appendChild(questionDiv);
-
-        // Event listener for input change
-        inputField.addEventListener('input', () => {
-            this.setResponse(element.name, inputField.value);
-        });
-    }
-
-    createMultiLineTextQuestion(element, index) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'question';
-        questionDiv.dataset.index = index.toString();
-
-        const title = this.createQuestionTitle(element.title);
-        questionDiv.appendChild(title);
-
-        const textArea = document.createElement('textarea');
-        textArea.name = element.name;
-        textArea.required = element.isRequired;
-        textArea.className = 'multi-line-text-input';
-        textArea.placeholder = 'Enter your comments here...';
-        questionDiv.appendChild(textArea);
-
-        this.surveyContainer.appendChild(questionDiv);
-
-        textArea.addEventListener('input', () => {
-            this.setResponse(element.name, textArea.value);
-        });
-    }
-
-    createRankingQuestion(element, index) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'question';
-        questionDiv.dataset.index = index.toString();
-
-        const title = this.createQuestionTitle(element.title);
-        questionDiv.appendChild(title);
-
-        const rankingList = document.createElement('div');
-        rankingList.className = `ranking-list ${element.name}`;
-
-
-        element.choices.forEach((choice, index) => {
-            const listItem = document.createElement('div');
-            listItem.setAttribute('draggable', true);
-            listItem.className = 'ranking-item';
-
-            const dragIcon = document.createElement('div');
-            dragIcon.className = 'drag-icon';
-            dragIcon.textContent = '≡';
-            listItem.appendChild(dragIcon);
-
-            const indexDiv = document.createElement('div');
-            indexDiv.className = 'index';
-            indexDiv.textContent = index + 1;
-            listItem.appendChild(indexDiv);
-
-            const choiceText = document.createElement('div');
-            choiceText.className = 'choice-text';
-            choiceText.textContent = choice;
-            listItem.appendChild(choiceText);
-
-            rankingList.appendChild(listItem);
-        });
-
-        questionDiv.appendChild(rankingList);
-        this.surveyContainer.appendChild(questionDiv);
-    }
 
 
     addDragAndDrop() {
@@ -366,8 +167,6 @@ class SurveyBuilder {
                         }));
                     }
                     break;
-
-                // Handle other question types if necessary
             }
 
             surveyData.responses.push(questionData);

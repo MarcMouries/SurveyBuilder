@@ -62,6 +62,68 @@ body {
     margin-bottom: 80px; /* Space for 'Complete' button */
 }
 
+.yes-no {
+    display: flex;
+    margin-bottom: 36px;
+    overflow: hidden;
+}
+
+.yes-no input[type="radio"] {
+    display: none; /* Hide the radio buttons */
+}
+
+.yes-no label {
+    /* Shared styles for both labels */
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-right: 5px; /* Space between the labels */
+}
+
+/* Style the label for 'Yes' when it's checked */
+.yes-no input[type="radio"][value="Yes"]:checked + label {
+    background-color: #a5dc86; /* Green */
+}
+
+/* Style the label for 'No' when it's checked */
+.yes-no input[type="radio"][value="No"]:checked + label {
+    background-color: #dc8686; /* Red */
+}
+
+
+.question.select-question input {
+    width: 100%; /* Full width of the container */
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.question.select-question datalist {
+    /* Styles to ensure alignment with the input */
+    width: 100%;
+    max-height: 100px;
+    overflow-y: auto;
+}
+datalist {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+
+/* Desktop Styles */
+@media only screen and (min-width: 601px) {
+    .question-title {
+        font-size: 1.2em;
+    }
+    .choice-text {
+        font-size: 0.8em;
+    }
+}
+
 /* Media Query for Mobile Screens */
 @media only screen and (max-width: 600px) {
     body {

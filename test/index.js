@@ -1,3 +1,5 @@
+
+
 function fetchSurveyData() {
     return fetch('survey-data.json')
         .then(response => response.json())

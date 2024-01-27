@@ -1,0 +1,12 @@
+{
+  "name": "surveybuilder",
+  "module": "src/surveyBuilder.js",
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
