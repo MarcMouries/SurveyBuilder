@@ -123,16 +123,18 @@ class SurveyBuilder {
         } else if (element.options_source) {
             input.addEventListener('input', () => {
                 const inputValue = input.value.trim();
-                if (inputValue.length >= 2) {
-                    this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
+                clearTimeout(this.debounceTimer);
+                if (inputValue.length >= 2) { // Check if input length is at least 2
+                    this.debounceTimer = setTimeout(() => {
+                        this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
+                    }, 300); // Adjust debounce time as needed
                 } else {
-                    dataList.innerHTML = ''; // Clear the datalist if input is less than 2 characters
+                    dataList.innerHTML = ''; // Clear the datalist if input is too short
                 }
             });
-        } else {
-            console.error("Options or options_source must be defined for the select question type: " + element.name);
         }
     }
+
 
     fetchAndUpdateOptions(url, query, dataList) {
         if (!url || !dataList) return;
