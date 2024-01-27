@@ -1,6 +1,86 @@
 import { createQuestionTitle } from './common.js';
 
-export function    createSelectQuestion(element, index) {
+
+
+export function createSelectQuestion(element, index) {
+    // Create the container, input field, and options container
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question custom-select-container';
+    questionDiv.dataset.index = index; // Store index for visibility conditions
+
+    const searchInput = document.createElement('input');
+    searchInput.className = 'custom-select-search';
+    searchInput.placeholder = 'Type to search...';
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'custom-options-container';
+
+    questionDiv.appendChild(searchInput);
+    questionDiv.appendChild(optionsContainer);
+    this.surveyContainer.appendChild(questionDiv);
+
+    // Event listener for focus to show the options container
+    searchInput.addEventListener('focus', () => {
+        optionsContainer.style.display = 'block'; // Show the options container
+        if (element.options) {
+            populateOptions(optionsContainer, element.options);
+        }
+    });
+
+    // Event listener for input to handle dynamic search/filtering
+    searchInput.addEventListener('input', () => {
+        const searchText = searchInput.value.trim();
+        if (searchText.length >= 2) {
+            if (element.options_source) {
+                // Fetch options dynamically if options_source is provided
+                fetchAndUpdateOptions(element.options_source, searchText, optionsContainer);
+            } else if (element.options) {
+                // Filter static options based on search text
+                filterOptions(searchText, element.options, optionsContainer);
+            }
+        } else {
+            // Populate with all options or clear if search is too short
+            element.options ? populateOptions(optionsContainer, element.options) : optionsContainer.innerHTML = '';
+        }
+    });
+
+    // Ensure that clicking outside the options container will close it
+    document.addEventListener('click', (event) => {
+        if (!questionDiv.contains(event.target)) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+}
+
+function fetchAndUpdateOptions(url, query, container) {
+    // Fetch options from the API and update the options container
+    // Implementation here...
+}
+
+function filterOptions(searchText, options, container) {
+    // Filter static options based on search text and update the options container
+    const filteredOptions = options.filter(option =>
+        option.toLowerCase().includes(searchText.toLowerCase())
+    );
+    populateOptions(container, filteredOptions);
+}
+
+function populateOptions(container, options) {
+    container.innerHTML = ''; // Clear existing options
+    options.forEach(optionValue => {
+        const optionDiv = document.createElement('div');
+        optionDiv.textContent = optionValue;
+        optionDiv.className = 'custom-option';
+        optionDiv.addEventListener('click', () => {
+            this.setResponse(element.name, optionValue);
+            container.style.display = 'none'; // Hide options container
+        });
+        container.appendChild(optionDiv);
+    });
+}
+
+
+export function createSelectQuestion_OLD(element, index) {
     const questionDiv = document.createElement('div');
     questionDiv.className = 'question select-question';
     questionDiv.dataset.index = index.toString();

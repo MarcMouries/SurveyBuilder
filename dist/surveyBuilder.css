@@ -114,6 +114,59 @@ datalist {
 }
 
 
+.custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-search {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.custom-options-container {
+    display: none; /* Hidden by default */
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+/* Mobile styles */
+@media (max-width: 600px) {
+    .custom-options-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: none;
+        height: 100%;
+    }
+}
+
+.custom-option {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option:hover {
+    background-color: #f0f0f0;
+}
+
+
+
 /* Desktop Styles */
 @media only screen and (min-width: 601px) {
     .question-title {
