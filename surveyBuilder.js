@@ -123,11 +123,8 @@ class SurveyBuilder {
         } else if (element.options_source) {
             input.addEventListener('input', () => {
                 const inputValue = input.value.trim();
-                clearTimeout(this.debounceTimer);
                 if (inputValue.length >= 2) { // Check if input length is at least 2
-                    this.debounceTimer = setTimeout(() => {
-                        this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
-                    }, 300); // Adjust debounce time as needed
+                    this.fetchAndUpdateOptions(element.options_source, inputValue, dataList);
                 } else {
                     dataList.innerHTML = ''; // Clear the datalist if input is too short
                 }
@@ -145,7 +142,7 @@ class SurveyBuilder {
                 dataList.innerHTML = ''; // Clear existing options
                 data.result.forEach(item => {
                     const option = document.createElement('option');
-                    option.value = item.name;
+                    option.value = item.abbreviation;
                     dataList.appendChild(option);
                 });
             })
