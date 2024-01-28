@@ -11,26 +11,26 @@ function createQuestionTitle(questionText) {
 }
 
 // src/question-types/yes-no.js
-function createYesNoQuestion(element2, index) {
+function createYesNoQuestion(element, index) {
   const questionDiv = document.createElement("div");
   questionDiv.className = "question yes-no-question";
   questionDiv.dataset.index = index.toString();
-  const title = createQuestionTitle(element2.title);
+  const title = createQuestionTitle(element.title);
   questionDiv.appendChild(title);
   const yesNoField = document.createElement("div");
   yesNoField.className = "yes-no";
-  const yesRadio = createRadio("Yes", element2.name, `${element2.name}-yes`);
-  const yesLabel = createLabel(`${element2.name}-yes`, "Yes");
+  const yesRadio = createRadio("Yes", element.name, `${element.name}-yes`);
+  const yesLabel = createLabel(`${element.name}-yes`, "Yes");
   yesNoField.appendChild(yesRadio);
   yesNoField.appendChild(yesLabel);
-  const noRadio = createRadio("No", element2.name, `${element2.name}-no`);
-  const noLabel = createLabel(`${element2.name}-no`, "No");
+  const noRadio = createRadio("No", element.name, `${element.name}-no`);
+  const noLabel = createLabel(`${element.name}-no`, "No");
   yesNoField.appendChild(noRadio);
   yesNoField.appendChild(noLabel);
   questionDiv.appendChild(yesNoField);
   this.surveyContainer.appendChild(questionDiv);
   yesNoField.addEventListener("change", (event) => {
-    this.setResponse(element2.name, event.target.value);
+    this.setResponse(element.name, event.target.value);
     this.evaluateVisibilityConditions();
   });
 }
@@ -48,119 +48,265 @@ var createLabel = function(forId, text) {
   label.textContent = text;
   return label;
 };
-// src/question-types/select.js
-function createSelectQuestion(element2, index) {
-  const questionDiv = document.createElement("div");
-  questionDiv.className = "question custom-select-container";
-  questionDiv.dataset.index = index;
-  const searchInput = document.createElement("input");
-  searchInput.className = "custom-select-search";
-  searchInput.placeholder = "Type to search...";
-  const optionsContainer = document.createElement("div");
-  optionsContainer.className = "custom-options-container";
-  questionDiv.appendChild(searchInput);
-  questionDiv.appendChild(optionsContainer);
-  this.surveyContainer.appendChild(questionDiv);
-  searchInput.addEventListener("focus", () => {
-    optionsContainer.style.display = "block";
-    if (element2.options) {
-      populateOptions(optionsContainer, element2.options);
+// src/question-types/search-input.js
+class SearchInput extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.build();
+    this.bindEvents();
+  }
+  build() {
+    this.shadowRoot.innerHTML = `
+            <style>
+                .search-input-wrapper {
+                    position: relative;
+                }
+
+                .input-value, .modal-container {
+                    width: 100%;
+                }
+
+                .input-value input, .header-filter-container input {
+                    width: calc(100% - 20px);
+                    padding: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: inherit;
+                }
+
+                .modal-container {
+                    display: none; /* Initially hidden */
+                    position: fixed;
+                    justify-content: space-between;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: white;
+                    z-index: 1000;
+                    flex-direction: column;
+                }
+
+                .header-filter-container {
+                    display: flex;
+                    padding: 12px;
+                }
+
+                .main-options-container {
+                    overflow-y: auto;
+                    flex-grow: 1;
+                    border: 1px solid #ccc; 
+                    margin: 10px 0;
+                }
+                .main-options-container .option {
+                    padding: 8px; /* Add padding to each option */
+                    margin: 2px 0; /* Small margin between options */
+                    cursor: pointer; 
+                    border-radius: 4px; 
+                    transition: background-color 0.3s; /* Smooth transition for hover effect */
+                }
+                .main-options-container .option:hover {
+                    background-color: #f0f0f0; 
+                }
+
+                .footer-actions-container {
+                    background-color: whitesmoke; 
+                    padding: 12px;
+                    text-align: center;
+                }
+                .footer-actions-container .button {
+                    padding: 10px 20px;
+                    background-color: #4CAF50; /* Green background */
+                    color: white; /* White text */
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer; /* Change cursor to indicate clickability */
+                    transition: background-color 0.3s; /* Smooth transition for hover effect */
+                }
+    
+                .footer-actions-container .button:hover {
+                    background-color: #45a049; /* Slightly darker green on hover */
+                }
+
+            </style>
+            <div class="search-input-wrapper">
+                <div class="input-value">
+                    <input type="text" autocomplete="off" placeholder="Type to search..."> 
+                </div>
+                <div class="modal-container">
+                    <div class="header-filter-container">
+                        <input type="text" autocomplete="off" placeholder="Type to search...">
+                        <button type="button" class="clear-icon" aria-label="Clear">&#x274C;</button>
+                    </div>
+                    <div class="main-options-container"></div>
+                    <div class="footer-actions-container">
+                        <button class="button cancel" type="button" title="Cancel" tabindex="0" role="button"><span>Cancel</span></button>
+                    </div>
+                </div>
+            </div>
+        `;
+    this.inputValue = this.shadowRoot.querySelector(".input-value input");
+    this.modalContainer = this.shadowRoot.querySelector(".modal-container");
+    this.filterInput = this.shadowRoot.querySelector(".header-filter-container input");
+    this.clearButton = this.shadowRoot.querySelector(".clear-icon");
+    this.optionsContainer = this.shadowRoot.querySelector(".main-options-container");
+    this.cancelButton = this.shadowRoot.querySelector(".button.cancel");
+  }
+  bindEvents() {
+    this.inputValue.addEventListener("focus", () => this.showModal());
+    this.cancelButton.addEventListener("click", () => this.hideModal());
+    this.filterInput.addEventListener("input", (e) => this.handleFilterInput(e.target.value));
+    this.clearButton.addEventListener("click", () => {
+      this.filterInput.value = "";
+      this.optionsContainer.innerHTML = "";
+      this.filterInput.focus();
+    });
+  }
+  showModal() {
+    this.inputValue.style.display = "none";
+    this.modalContainer.style.display = "flex";
+    this.filterInput.focus();
+  }
+  hideModal() {
+    this.modalContainer.style.display = "none";
+    this.inputValue.style.display = "block";
+  }
+  setConfig(config) {
+    this._config = config;
+  }
+  handleFilterInput(inputValue) {
+    this.optionsContainer.innerHTML = "";
+    if (inputValue.length >= 2) {
+      this.fetchOptions(inputValue).then((options) => {
+        options.forEach((option) => {
+          const optionDiv = document.createElement("div");
+          optionDiv.textContent = option;
+          optionDiv.classList.add("option");
+          optionDiv.addEventListener("click", () => this.selectOption(option));
+          this.optionsContainer.appendChild(optionDiv);
+        });
+      });
     }
-  });
-  searchInput.addEventListener("input", () => {
-    const searchText = searchInput.value.trim();
-    if (searchText.length >= 2) {
-      if (element2.options_source) {
-        fetchAndUpdateOptions(element2.options_source, searchText, optionsContainer);
-      } else if (element2.options) {
-        filterOptions(searchText, element2.options, optionsContainer);
+  }
+  fetchOptions(searchText) {
+    return new Promise((resolve, reject) => {
+      if (this._config.dynamic_options_service) {
+        const serviceUrl = `${this._config.dynamic_options_service}?query=${encodeURIComponent(searchText)}`;
+        fetch(serviceUrl).then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        }).then((data) => {
+          const options = data.map((item) => item.name);
+          resolve(options);
+        }).catch((error) => {
+          console.error("Error fetching dynamic options:", error);
+          reject(error);
+        });
+      } else if (this._config.static_options) {
+        const filteredOptions = this._config.static_options.filter((option) => option.toLowerCase().includes(searchText.toLowerCase()));
+        resolve(filteredOptions);
+      } else {
+        resolve([]);
       }
+    });
+  }
+  selectOption(option) {
+    this.inputValue.value = option;
+    this.hideModal();
+  }
+  onInput(event) {
+    const searchText = event.target.value.trim();
+    this.clearButton.style.visibility = searchText ? "visible" : "hidden";
+    if (searchText.length >= 2) {
+      this.updateOptions(searchText);
+      this.optionsContainer.style.display = "block";
     } else {
-      element2.options ? populateOptions(optionsContainer, element2.options) : optionsContainer.innerHTML = "";
+      this.clearOptions();
     }
-  });
-  document.addEventListener("click", (event) => {
-    if (!questionDiv.contains(event.target)) {
-      optionsContainer.style.display = "none";
-    }
+  }
+  onClear() {
+    this.inputField.value = "";
+    this.clearButton.style.visibility = "hidden";
+    this.hideOptions();
+    this.dispatchEvent(new CustomEvent("clear"));
+  }
+  clearOptions() {
+    this.optionsContainer.innerHTML = "";
+    this.optionsContainer.style.display = "none";
+  }
+}
+customElements.define("search-input", SearchInput);
+
+// src/question-types/select.js
+function createSelectQuestion(element, index) {
+  const questionDiv = document.createElement("div");
+  questionDiv.className = "question select-question";
+  questionDiv.dataset.index = index;
+  const title = createQuestionTitle(element.title);
+  questionDiv.appendChild(title);
+  const searchComponent = document.createElement("search-input");
+  questionDiv.appendChild(searchComponent);
+  this.surveyContainer.appendChild(questionDiv);
+  const config = {
+    static_options: element.options || [],
+    dynamic_options_service: element.options_source
+  };
+  searchComponent.setConfig(config);
+  searchComponent.addEventListener("optionSelected", (event) => {
+    const selectedOption = event.detail.option;
+    this.setResponse(element.name, selectedOption);
   });
 }
-var filterOptions = function(searchText, options, container) {
-  const filteredOptions = options.filter((option) => option.toLowerCase().includes(searchText.toLowerCase()));
-  populateOptions(container, filteredOptions);
-};
-var populateOptions = function(container, options) {
-  container.innerHTML = "";
-  options.forEach((optionValue) => {
-    const optionDiv = document.createElement("div");
-    optionDiv.textContent = optionValue;
-    optionDiv.className = "custom-option";
-    optionDiv.addEventListener("click", () => {
-      this.setResponse(element.name, optionValue);
-      container.style.display = "none";
-    });
-    container.appendChild(optionDiv);
-  });
-};
-var fetchAndUpdateOptions = function(url, query, dataList) {
-  if (!url || !dataList)
-    return;
-  fetch(`${url}${encodeURIComponent(query)}`).then((response) => response.json()).then((data) => {
-    dataList.innerHTML = "";
-    data.result.forEach((item) => {
-      const option = document.createElement("option");
-      option.value = item.abbreviation;
-      dataList.appendChild(option);
-    });
-  }).catch((error) => console.error("Error fetching options:", error));
-};
 // src/question-types/single-line.js
-function createSingleLineTextQuestion(element2, index) {
+function createSingleLineTextQuestion(element, index) {
   const questionDiv = document.createElement("div");
   questionDiv.className = "question";
   questionDiv.dataset.index = index.toString();
-  const title = createQuestionTitle(element2.title);
+  const title = createQuestionTitle(element.title);
   questionDiv.appendChild(title);
   const inputField = document.createElement("input");
   inputField.type = "text";
-  inputField.name = element2.name;
-  inputField.required = element2.isRequired;
+  inputField.name = element.name;
+  inputField.required = element.isRequired;
   inputField.className = "single-line-text-input";
   questionDiv.appendChild(inputField);
   this.surveyContainer.appendChild(questionDiv);
   inputField.addEventListener("input", () => {
-    this.setResponse(element2.name, inputField.value);
+    this.setResponse(element.name, inputField.value);
   });
 }
 // src/question-types/multi-line.js
-function createMultiLineTextQuestion(element2, index) {
+function createMultiLineTextQuestion(element, index) {
   const questionDiv = document.createElement("div");
   questionDiv.className = "question";
   questionDiv.dataset.index = index.toString();
-  const title = createQuestionTitle(element2.title);
+  const title = createQuestionTitle(element.title);
   questionDiv.appendChild(title);
   const textArea = document.createElement("textarea");
-  textArea.name = element2.name;
-  textArea.required = element2.isRequired;
+  textArea.name = element.name;
+  textArea.required = element.isRequired;
   textArea.className = "multi-line-text-input";
   textArea.placeholder = "Enter your comments here...";
   questionDiv.appendChild(textArea);
   this.surveyContainer.appendChild(questionDiv);
   textArea.addEventListener("input", () => {
-    this.setResponse(element2.name, textArea.value);
+    this.setResponse(element.name, textArea.value);
   });
 }
 
 // src/question-types/index.js
-function createRankingQuestion(element2, index) {
+function createRankingQuestion(element, index) {
   const questionDiv = document.createElement("div");
   questionDiv.className = "question";
   questionDiv.dataset.index = index.toString();
-  const title = createQuestionTitle(element2.title);
+  const title = createQuestionTitle(element.title);
   questionDiv.appendChild(title);
   const rankingList = document.createElement("div");
-  rankingList.className = `ranking-list ${element2.name}`;
-  element2.choices.forEach((choice, index2) => {
+  rankingList.className = `ranking-list ${element.name}`;
+  element.choices.forEach((choice, index2) => {
     const listItem = document.createElement("div");
     listItem.setAttribute("draggable", true);
     listItem.className = "ranking-item";
@@ -194,25 +340,25 @@ class SurveyBuilder {
   createSurvey() {
     this.createSurveyTitle(this.json.surveyTitle, this.surveyContainer);
     this.createSurveyDescription(this.json.surveyDescription, this.surveyContainer);
-    this.json.questions.forEach((element2, index) => {
-      switch (element2.type) {
+    this.json.questions.forEach((element, index) => {
+      switch (element.type) {
         case "ranking":
-          createRankingQuestion.call(this, element2, index);
+          createRankingQuestion.call(this, element, index);
           break;
         case "single-line-text":
-          createSingleLineTextQuestion.call(this, element2, index);
+          createSingleLineTextQuestion.call(this, element, index);
           break;
         case "multi-line-text":
-          createMultiLineTextQuestion.call(this, element2, index);
+          createMultiLineTextQuestion.call(this, element, index);
           break;
         case "yes-no":
-          createYesNoQuestion.call(this, element2, index);
+          createYesNoQuestion.call(this, element, index);
           break;
         case "select":
-          createSelectQuestion.call(this, element2, index);
+          createSelectQuestion.call(this, element, index);
           break;
         default:
-          console.error("Unsupported question type: " + element2.type);
+          console.error("Unsupported question type: " + element.type);
       }
     });
     this.addDragAndDrop();
@@ -297,19 +443,19 @@ class SurveyBuilder {
     const surveyData = {
       responses: []
     };
-    this.json.questions.forEach((element2) => {
+    this.json.questions.forEach((element) => {
       const questionData = {
-        questionName: element2.name,
-        questionTitle: element2.title,
+        questionName: element.name,
+        questionTitle: element.title,
         answer: null
       };
-      switch (element2.type) {
+      switch (element.type) {
         case "single-line-text":
-          const textInput = this.surveyContainer.querySelector(`input[name="${element2.name}"]`);
+          const textInput = this.surveyContainer.querySelector(`input[name="${element.name}"]`);
           questionData.answer = textInput ? textInput.value : "";
           break;
         case "ranking":
-          const rankingItems = Array.from(this.surveyContainer.querySelectorAll(`.${element2.name} .ranking-item`));
+          const rankingItems = Array.from(this.surveyContainer.querySelectorAll(`.${element.name} .ranking-item`));
           console.log(rankingItems);
           if (rankingItems.length) {
             questionData.answer = rankingItems.map((item, idx) => ({

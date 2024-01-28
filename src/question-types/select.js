@@ -1,8 +1,40 @@
 import { createQuestionTitle } from './common.js';
-
+import { SearchInput } from './search-input.js';
 
 
 export function createSelectQuestion(element, index) {
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question select-question';
+    questionDiv.dataset.index = index;
+
+    const title = createQuestionTitle(element.title);
+    questionDiv.appendChild(title);
+
+
+    // Instantiate the search-input component
+    const searchComponent = document.createElement('search-input');
+    questionDiv.appendChild(searchComponent);
+    this.surveyContainer.appendChild(questionDiv);
+
+    // Create configuration object for search-input
+    const config = {
+        static_options: element.options || [],
+        dynamic_options_service: element.options_source
+    };
+
+    // Apply the configuration to the search-input component
+    searchComponent.setConfig(config);
+
+    // Listen for selection from search-input and handle it
+    searchComponent.addEventListener('optionSelected', (event) => {
+        const selectedOption = event.detail.option;
+        // Handle the selected option (e.g., set the response)
+        this.setResponse(element.name, selectedOption);
+    });
+}
+
+
+export function createSelectQuestion_2(element, index) {
     // Create the container, input field, and options container
     const questionDiv = document.createElement('div');
     questionDiv.className = 'question custom-select-container';
@@ -23,7 +55,7 @@ export function createSelectQuestion(element, index) {
     searchInput.addEventListener('focus', () => {
         optionsContainer.style.display = 'block'; // Show the options container
         if (element.options) {
-            populateOptions(optionsContainer, element.options);
+            populateOptions.call(this, optionsContainer, element.name, element.options, searchInput);
         }
     });
 
@@ -33,14 +65,17 @@ export function createSelectQuestion(element, index) {
         if (searchText.length >= 2) {
             if (element.options_source) {
                 // Fetch options dynamically if options_source is provided
-                fetchAndUpdateOptions(element.options_source, searchText, optionsContainer);
+                fetchAndUpdateOptions.call(this, element.options_source, searchText, optionsContainer);
             } else if (element.options) {
                 // Filter static options based on search text
-                filterOptions(searchText, element.options, optionsContainer);
+                filterOptions.call(this, searchText, element.name, element.options, optionsContainer, searchInput);
             }
-        } else {
-            // Populate with all options or clear if search is too short
-            element.options ? populateOptions(optionsContainer, element.options) : optionsContainer.innerHTML = '';
+        }  else {
+            if (element.options) {
+                populateOptions.call(this, optionsContainer, element.name, element.options, searchInput);
+            } else {
+                optionsContainer.innerHTML = '';
+            }
         }
     });
 
@@ -57,22 +92,25 @@ function fetchAndUpdateOptions(url, query, container) {
     // Implementation here...
 }
 
-function filterOptions(searchText, options, container) {
-    // Filter static options based on search text and update the options container
+function filterOptions(searchText, elementName, options, container, inputField) {
     const filteredOptions = options.filter(option =>
         option.toLowerCase().includes(searchText.toLowerCase())
     );
-    populateOptions(container, filteredOptions);
+    populateOptions.call(this, container, elementName, filteredOptions, inputField);
 }
 
-function populateOptions(container, options) {
+
+function populateOptions(container, elementName, options, inputField) {
+
     container.innerHTML = ''; // Clear existing options
+
     options.forEach(optionValue => {
         const optionDiv = document.createElement('div');
         optionDiv.textContent = optionValue;
         optionDiv.className = 'custom-option';
         optionDiv.addEventListener('click', () => {
-            this.setResponse(element.name, optionValue);
+            this.setResponse(elementName, optionValue);
+            inputField.value = optionValue; // Set the selected value to the input field
             container.style.display = 'none'; // Hide options container
         });
         container.appendChild(optionDiv);
