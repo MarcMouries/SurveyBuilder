@@ -138,7 +138,6 @@ export class SearchInput extends HTMLElement {
         this.optionsContainer.innerHTML = '';
         if (inputValue.length >= 2) {
             // Fetch or filter options based on inputValue
-            // For demonstration, let's assume we have a method fetchOptions
             this.fetchOptions(inputValue).then(options => {
                 options.forEach(option => {
                     const optionDiv = document.createElement('div');
@@ -164,7 +163,8 @@ export class SearchInput extends HTMLElement {
                         return response.json();
                     })
                     .then(data => {
-                        const options = data.map(item => item.name);
+                        console.log("data received : ", data);
+                        const options = data.result.map(item => item.name);
                         resolve(options);
                     })
                     .catch(error => {
