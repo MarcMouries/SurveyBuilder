@@ -82,11 +82,11 @@ export class SearchInput extends HTMLElement {
             </style>
             <div class="search-input-wrapper">
                 <div class="input-value">
-                    <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
+                    <input type="text" autocomplete="off" placeholder="Type to search...">
                 </div>
                 <div class="modal-container">
                     <div class="header-filter-container">
-                        <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
+                        <input type="text" autocomplete="off" placeholder="Type to search...">
                         <button type="button" class="clear-icon" aria-label="Clear">&#x274C;</button>
                     </div>
                     <div class="main-options-container"></div>
