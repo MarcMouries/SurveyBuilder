@@ -10,10 +10,9 @@
     {
       "type": "select",
       "name": "agency_name",
-      "title": "Name of the federal agency you work for?",
+      "title": "Name of the federal agency you work for? (static)",
       "isRequired": true,
       "visible_when": "use-federal-forms = Yes",
-      "_options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text=",
       "options": [
         "CBP - Customs and Border Protection",
         "CDC - Centers for Disease Control and Prevention",
@@ -36,6 +35,15 @@
         "USMS - United States Marshals Service"
       ]
     },
+    {
+      "type": "select",
+      "name": "agency_name",
+      "title": "Name of the federal agency you work for? (dynamic)",
+      "isRequired": true,
+      "visible_when": "use-federal-forms = Yes",
+      "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text="
+    }
+,
     {
       "type": "ranking",
       "name": "fed_forms_ranking",
