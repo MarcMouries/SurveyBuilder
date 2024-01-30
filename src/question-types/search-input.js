@@ -154,7 +154,8 @@ export class SearchInput extends HTMLElement {
         return new Promise((resolve, reject) => {
             if (this._config.dynamic_options_service) {
                 // Fetch dynamic options from the service
-                const serviceUrl = `${this._config.dynamic_options_service}?query=${encodeURIComponent(searchText)}`;
+                const serviceUrl = `${this._config.dynamic_options_service}${encodeURIComponent(searchText)}`;
+                console.log("serviceUrl : ", serviceUrl);
                 fetch(serviceUrl)
                     .then(response => {
                         if (!response.ok) {
