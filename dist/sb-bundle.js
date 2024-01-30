@@ -96,22 +96,22 @@ class SearchInput extends HTMLElement {
                 .main-options-container {
                     overflow-y: auto;
                     flex-grow: 1;
-                    border: 1px solid #ccc; 
+                    border: 1px solid #ccc;
                     margin: 10px 0;
                 }
                 .main-options-container .option {
                     padding: 8px; /* Add padding to each option */
                     margin: 2px 0; /* Small margin between options */
-                    cursor: pointer; 
-                    border-radius: 4px; 
+                    cursor: pointer;
+                    border-radius: 4px;
                     transition: background-color 0.3s; /* Smooth transition for hover effect */
                 }
                 .main-options-container .option:hover {
-                    background-color: #f0f0f0; 
+                    background-color: #f0f0f0;
                 }
 
                 .footer-actions-container {
-                    background-color: whitesmoke; 
+                    background-color: whitesmoke;
                     padding: 12px;
                     text-align: center;
                 }
@@ -124,7 +124,7 @@ class SearchInput extends HTMLElement {
                     cursor: pointer; /* Change cursor to indicate clickability */
                     transition: background-color 0.3s; /* Smooth transition for hover effect */
                 }
-    
+
                 .footer-actions-container .button:hover {
                     background-color: #45a049; /* Slightly darker green on hover */
                 }
@@ -132,11 +132,11 @@ class SearchInput extends HTMLElement {
             </style>
             <div class="search-input-wrapper">
                 <div class="input-value">
-                    <input type="text" autocomplete="off" placeholder="Type to search..."> 
+                    <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
                 </div>
                 <div class="modal-container">
                     <div class="header-filter-container">
-                        <input type="text" autocomplete="off" placeholder="Type to search...">
+                        <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
                         <button type="button" class="clear-icon" aria-label="Clear">&#x274C;</button>
                     </div>
                     <div class="main-options-container"></div>
@@ -296,8 +296,7 @@ function createMultiLineTextQuestion(element, index) {
     this.setResponse(element.name, textArea.value);
   });
 }
-
-// src/question-types/index.js
+// src/question-types/ranking.js
 function createRankingQuestion(element, index) {
   const questionDiv = document.createElement("div");
   questionDiv.className = "question";
@@ -327,7 +326,6 @@ function createRankingQuestion(element, index) {
   questionDiv.appendChild(rankingList);
   this.surveyContainer.appendChild(questionDiv);
 }
-
 // src/surveyBuilder.js
 class SurveyBuilder {
   constructor(json, containerId) {

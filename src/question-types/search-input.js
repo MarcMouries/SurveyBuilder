@@ -46,22 +46,22 @@ export class SearchInput extends HTMLElement {
                 .main-options-container {
                     overflow-y: auto;
                     flex-grow: 1;
-                    border: 1px solid #ccc; 
+                    border: 1px solid #ccc;
                     margin: 10px 0;
                 }
                 .main-options-container .option {
                     padding: 8px; /* Add padding to each option */
                     margin: 2px 0; /* Small margin between options */
-                    cursor: pointer; 
-                    border-radius: 4px; 
+                    cursor: pointer;
+                    border-radius: 4px;
                     transition: background-color 0.3s; /* Smooth transition for hover effect */
                 }
                 .main-options-container .option:hover {
-                    background-color: #f0f0f0; 
+                    background-color: #f0f0f0;
                 }
 
                 .footer-actions-container {
-                    background-color: whitesmoke; 
+                    background-color: whitesmoke;
                     padding: 12px;
                     text-align: center;
                 }
@@ -74,7 +74,7 @@ export class SearchInput extends HTMLElement {
                     cursor: pointer; /* Change cursor to indicate clickability */
                     transition: background-color 0.3s; /* Smooth transition for hover effect */
                 }
-    
+
                 .footer-actions-container .button:hover {
                     background-color: #45a049; /* Slightly darker green on hover */
                 }
@@ -82,11 +82,11 @@ export class SearchInput extends HTMLElement {
             </style>
             <div class="search-input-wrapper">
                 <div class="input-value">
-                    <input type="text" autocomplete="off" placeholder="Type to search..."> 
+                    <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
                 </div>
                 <div class="modal-container">
                     <div class="header-filter-container">
-                        <input type="text" autocomplete="off" placeholder="Type to search...">
+                        <input type="text" inputmode="none" autocomplete="off" placeholder="Type to search...">
                         <button type="button" class="clear-icon" aria-label="Clear">&#x274C;</button>
                     </div>
                     <div class="main-options-container"></div>
@@ -103,7 +103,7 @@ export class SearchInput extends HTMLElement {
         this.filterInput = this.shadowRoot.querySelector('.header-filter-container input');
         this.clearButton = this.shadowRoot.querySelector('.clear-icon');
         this.optionsContainer = this.shadowRoot.querySelector('.main-options-container');
-        this.cancelButton = this.shadowRoot.querySelector('.button.cancel');        
+        this.cancelButton = this.shadowRoot.querySelector('.button.cancel');
     }
 
     bindEvents() {
@@ -136,7 +136,6 @@ export class SearchInput extends HTMLElement {
     handleFilterInput(inputValue) {
         // Clear existing options
         this.optionsContainer.innerHTML = '';
-    
         if (inputValue.length >= 2) {
             // Fetch or filter options based on inputValue
             // For demonstration, let's assume we have a method fetchOptions
@@ -184,17 +183,11 @@ export class SearchInput extends HTMLElement {
             }
         });
     }
-    
-
 
     selectOption(option) {
         this.inputValue.value = option;
         this.hideModal();
     }
-    
-
-
-
 
     onInput(event) {
         const searchText = event.target.value.trim();
@@ -216,8 +209,6 @@ export class SearchInput extends HTMLElement {
         // Dispatch a clear event if needed
         this.dispatchEvent(new CustomEvent('clear'));
     }
-
-
 
     clearOptions() {
         this.optionsContainer.innerHTML = '';
