@@ -1,4 +1,204 @@
-function X(E){const z=document.createElement("h3");z.className="question-title";const H=document.createElement("span");return H.className="question-number",H.textContent=`Q${this.questionNumber}. `,z.append(E),this.questionNumber++,z}function w(E,z){const H=document.createElement("div");H.className="question yes-no-question",H.dataset.index=z.toString();const J=X(E.title);H.appendChild(J);const G=document.createElement("div");G.className="yes-no";const K=f("Yes",E.name,`${E.name}-yes`),P=A(`${E.name}-yes`,"Yes");G.appendChild(K),G.appendChild(P);const W=f("No",E.name,`${E.name}-no`),Z=A(`${E.name}-no`,"No");G.appendChild(W),G.appendChild(Z),H.appendChild(G),this.surveyContainer.appendChild(H),G.addEventListener("change",(_)=>{this.setResponse(E.name,_.target.value),this.evaluateVisibilityConditions()})}var f=function(E,z,H){const J=document.createElement("input");return J.type="radio",J.id=H,J.name=z,J.value=E,J},A=function(E,z){const H=document.createElement("label");return H.htmlFor=E,H.textContent=z,H};class M extends HTMLElement{constructor(){super();this.attachShadow({mode:"open"}),this.build(),this.bindEvents()}build(){this.shadowRoot.innerHTML=`
+// src/question-types/common.ts
+function createQuestionTitle(questionText) {
+  const title = document.createElement("h3");
+  title.className = "question-title";
+  const questionNumberSpan = document.createElement("span");
+  questionNumberSpan.className = "question-number";
+  title.append(questionText);
+  return title;
+}
+
+// src/question-types/QuestionType.ts
+class QuestionType {
+  surveyBuilder;
+  questionDiv;
+  question;
+  constructor(surveyBuilder, question, index) {
+    this.surveyBuilder = surveyBuilder;
+    this.question = question;
+    this.questionDiv = document.createElement("div");
+    this.questionDiv.className = "question";
+    this.questionDiv.dataset.index = index.toString();
+    const title = createQuestionTitle(question.title);
+    this.questionDiv.appendChild(title);
+    this.setupResponseListener();
+  }
+  setupResponseListener() {
+    this.questionDiv.addEventListener("answerSelected", (event) => {
+      const customEvent = event;
+      const response = customEvent.detail;
+      this.surveyBuilder.setResponse(response);
+    });
+  }
+  show() {
+    this.questionDiv.style.display = "block";
+  }
+  hide() {
+    this.questionDiv.style.display = "none";
+  }
+}
+
+// src/question-types/select.ts
+class SelectQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.questionDiv.className += " select-question";
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    const searchComponent = document.createElement("search-input");
+    this.questionDiv.appendChild(searchComponent);
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    const config = {
+      static_options: question.options || [],
+      dynamic_options_service: question.options_source
+    };
+    searchComponent.setConfig(config);
+    searchComponent.addEventListener("optionSelected", (event) => {
+      const customEvent = event;
+      const selectedOption = customEvent.detail.option;
+      console.log("In searchComponent optionSelected: ", selectedOption);
+      const response = {
+        questionName: question.name,
+        response: selectedOption
+      };
+      const answerEvent = new CustomEvent("answerSelected", { detail: response });
+      this.questionDiv.dispatchEvent(answerEvent);
+    });
+  }
+}
+// src/question-types/multi-line.ts
+class MultiLineTextQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.questionDiv.className += " multi-line-question";
+    const textArea = document.createElement("textarea");
+    textArea.name = question.name;
+    textArea.required = question.isRequired;
+    textArea.className = "multi-line-text-input";
+    textArea.placeholder = "Enter your comments here...";
+    this.questionDiv.appendChild(textArea);
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    textArea.addEventListener("input", () => {
+      const response = {
+        questionName: question.name,
+        response: textArea.value
+      };
+      console.log("MultiLineTextQuestion input change", response);
+      const answerEvent = new CustomEvent("answerSelected", { detail: response });
+      this.questionDiv.dispatchEvent(answerEvent);
+    });
+  }
+}
+// src/question-types/ranking.ts
+class RankingQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.questionDiv.className += " ranking-question";
+    const rankingList = document.createElement("div");
+    rankingList.className = `ranking-list ${question.name}`;
+    question.choices.forEach((choice, index2) => {
+      const listItem = document.createElement("div");
+      listItem.setAttribute("draggable", "true");
+      listItem.className = "ranking-item";
+      const dragIcon = document.createElement("div");
+      dragIcon.className = "drag-icon";
+      dragIcon.textContent = "\u2261";
+      listItem.appendChild(dragIcon);
+      const indexDiv = document.createElement("div");
+      indexDiv.className = "index";
+      indexDiv.textContent = `${index2 + 1}`;
+      listItem.appendChild(indexDiv);
+      const choiceText = document.createElement("div");
+      choiceText.className = "choice-text";
+      choiceText.textContent = choice;
+      listItem.appendChild(choiceText);
+      rankingList.appendChild(listItem);
+    });
+    this.questionDiv.appendChild(rankingList);
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+  }
+}
+// src/question-types/yes-no.ts
+class YesNoQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.questionDiv.className += " yes-no-question";
+    const yesNoField = document.createElement("div");
+    yesNoField.className = "yes-no";
+    const yesRadio = this.createRadio("Yes", question.name, `${question.name}-yes`);
+    const yesLabel = this.createLabel(`${question.name}-yes`, "Yes");
+    yesNoField.appendChild(yesRadio);
+    yesNoField.appendChild(yesLabel);
+    const noRadio = this.createRadio("No", question.name, `${question.name}-no`);
+    const noLabel = this.createLabel(`${question.name}-no`, "No");
+    yesNoField.appendChild(noRadio);
+    yesNoField.appendChild(noLabel);
+    this.questionDiv.appendChild(yesNoField);
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    yesNoField.addEventListener("change", (event) => {
+      const target = event.target;
+      const response = {
+        questionName: question.name,
+        response: target.value
+      };
+      const answerEvent = new CustomEvent("answerSelected", { detail: response });
+      this.questionDiv.dispatchEvent(answerEvent);
+    });
+  }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
+  }
+  createLabel(forId, text) {
+    const label = document.createElement("label");
+    label.htmlFor = forId;
+    label.textContent = text;
+    return label;
+  }
+}
+// src/question-types/single-line.ts
+class SingleLineTextQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.questionDiv.className += " single-line-question";
+    const inputField = document.createElement("input");
+    inputField.type = "text";
+    inputField.name = question.name;
+    inputField.required = question.isRequired;
+    inputField.className = "single-line-text-input";
+    this.questionDiv.appendChild(inputField);
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    inputField.addEventListener("input", () => {
+      const response = {
+        questionName: question.name,
+        response: inputField.value
+      };
+      const answerEvent = new CustomEvent("answerSelected", { detail: response });
+      this.questionDiv.dispatchEvent(answerEvent);
+    });
+  }
+}
+// src/component/SearchInput.ts
+class SearchInput extends HTMLElement {
+  _config;
+  inputValue;
+  modalContainer;
+  filterInput;
+  clearButton;
+  optionsContainer;
+  cancelButton;
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.build();
+    this.bindEvents();
+  }
+  build() {
+    if (this.shadowRoot) {
+      this.shadowRoot.innerHTML = `
             <style>
                 .search-input-wrapper {
                     position: relative;
@@ -86,7 +286,215 @@ function X(E){const z=document.createElement("h3");z.className="question-title";
                     </div>
                 </div>
             </div>
-        `,this.inputValue=this.shadowRoot.querySelector(".input-value input"),this.modalContainer=this.shadowRoot.querySelector(".modal-container"),this.filterInput=this.shadowRoot.querySelector(".header-filter-container input"),this.clearButton=this.shadowRoot.querySelector(".clear-icon"),this.optionsContainer=this.shadowRoot.querySelector(".main-options-container"),this.cancelButton=this.shadowRoot.querySelector(".button.cancel")}bindEvents(){this.inputValue.addEventListener("focus",()=>this.showModal()),this.cancelButton.addEventListener("click",()=>this.hideModal()),this.filterInput.addEventListener("input",(E)=>this.handleFilterInput(E.target.value)),this.clearButton.addEventListener("click",()=>{this.filterInput.value="",this.optionsContainer.innerHTML="",this.filterInput.focus()})}showModal(){this.inputValue.style.display="none",this.modalContainer.style.display="flex",this.filterInput.focus()}hideModal(){this.modalContainer.style.display="none",this.inputValue.style.display="block"}setConfig(E){this._config=E}handleFilterInput(E){if(this.optionsContainer.innerHTML="",E.length>=2)this.fetchOptions(E).then((z)=>{z.forEach((H)=>{const J=document.createElement("div");J.textContent=H,J.classList.add("option"),J.addEventListener("click",()=>this.selectOption(H)),this.optionsContainer.appendChild(J)})})}fetchOptions(E){return new Promise((z,H)=>{if(this._config.dynamic_options_service){const J=`${this._config.dynamic_options_service}${encodeURIComponent(E)}`;console.log("serviceUrl : ",J),fetch(J).then((G)=>{if(!G.ok)throw new Error("Network response was not ok");return G.json()}).then((G)=>{console.log("data received : ",G);const K=G.result.map((P)=>P.name);z(K)}).catch((G)=>{console.error("Error fetching dynamic options:",G),H(G)})}else if(this._config.static_options){const J=this._config.static_options.filter((G)=>G.toLowerCase().includes(E.toLowerCase()));z(J)}else z([])})}selectOption(E){this.inputValue.value=E,this.hideModal()}onInput(E){const z=E.target.value.trim();if(this.clearButton.style.visibility=z?"visible":"hidden",z.length>=2)this.updateOptions(z),this.optionsContainer.style.display="block";else this.clearOptions()}onClear(){this.inputField.value="",this.clearButton.style.visibility="hidden",this.hideOptions(),this.dispatchEvent(new CustomEvent("clear"))}clearOptions(){this.optionsContainer.innerHTML="",this.optionsContainer.style.display="none"}}customElements.define("search-input",M);function U(E,z){const H=document.createElement("div");H.className="question select-question",H.dataset.index=z;const J=X(E.title);H.appendChild(J);const G=document.createElement("search-input");H.appendChild(G),this.surveyContainer.appendChild(H);const K={static_options:E.options||[],dynamic_options_service:E.options_source};G.setConfig(K),G.addEventListener("optionSelected",(P)=>{const W=P.detail.option;this.setResponse(E.name,W)})}function Y(E,z){const H=document.createElement("div");H.className="question",H.dataset.index=z.toString();const J=X(E.title);H.appendChild(J);const G=document.createElement("input");G.type="text",G.name=E.name,G.required=E.isRequired,G.className="single-line-text-input",H.appendChild(G),this.surveyContainer.appendChild(H),G.addEventListener("input",()=>{this.setResponse(E.name,G.value)})}function B(E,z){const H=document.createElement("div");H.className="question",H.dataset.index=z.toString();const J=X(E.title);H.appendChild(J);const G=document.createElement("textarea");G.name=E.name,G.required=E.isRequired,G.className="multi-line-text-input",G.placeholder="Enter your comments here...",H.appendChild(G),this.surveyContainer.appendChild(H),G.addEventListener("input",()=>{this.setResponse(E.name,G.value)})}function R(E,z){const H=document.createElement("div");H.className="question",H.dataset.index=z.toString();const J=X(E.title);H.appendChild(J);const G=document.createElement("div");G.className=`ranking-list ${E.name}`,E.choices.forEach((K,P)=>{const W=document.createElement("div");W.setAttribute("draggable",!0),W.className="ranking-item";const Z=document.createElement("div");Z.className="drag-icon",Z.textContent="\u2261",W.appendChild(Z);const _=document.createElement("div");_.className="index",_.textContent=P+1,W.appendChild(_);const $=document.createElement("div");$.className="choice-text",$.textContent=K,W.appendChild($),G.appendChild(W)}),H.appendChild(G),this.surveyContainer.appendChild(H)}class S{constructor(E,z){this.json=E,this.surveyContainer=document.getElementById(z),this.questionNumber=1,this.responses={},this.createSurvey()}createSurvey(){this.createSurveyTitle(this.json.surveyTitle,this.surveyContainer),this.createSurveyDescription(this.json.surveyDescription,this.surveyContainer),this.json.questions.forEach((E,z)=>{switch(E.type){case"ranking":R.call(this,E,z);break;case"single-line-text":Y.call(this,E,z);break;case"multi-line-text":B.call(this,E,z);break;case"yes-no":w.call(this,E,z);break;case"select":U.call(this,E,z);break;default:console.error("Unsupported question type: "+E.type)}}),this.addDragAndDrop(),this.createCompleteButton(this.surveyContainer)}setResponse(E,z){this.responses[E]=z}evaluateVisibilityConditions(){this.json.questions.forEach((E,z)=>{const H=this.surveyContainer.querySelector(`.question[data-index="${z}"]`);if(E.visible_when){const J=E.visible_when.split("=").map((W)=>W.trim()),G=J[0],K=J[1].toLowerCase();if((this.responses[G]?this.responses[G].toLowerCase():null)===K)H.style.display="block";else H.style.display="none"}})}createSurveyTitle(E,z){const H=document.createElement("h3");H.className="survey-title",H.textContent=E,z.appendChild(H)}createSurveyDescription(E,z){const H=document.createElement("p");H.className="survey-description",H.innerHTML=E,z.appendChild(H)}addDragAndDrop(){document.querySelectorAll(".ranking-list").forEach((z)=>{z.addEventListener("dragover",(H)=>{H.preventDefault();const J=document.querySelector(".dragging"),G=this.getDragAfterElement(z,H.clientY);if(G)z.insertBefore(J,G);else if(J)z.appendChild(J);this.updateDraggedItemIndex(J,z)}),z.addEventListener("dragstart",(H)=>{H.target.classList.add("dragging")}),z.addEventListener("dragend",(H)=>{H.target.classList.remove("dragging"),this.updateAllIndexes(z)}),z.addEventListener("drop",(H)=>{H.preventDefault(),this.updateAllIndexes(z)})})}createCompleteButton(E){const z=document.createElement("div");z.className="button-container";const H=document.createElement("button");H.className="complete-button",H.textContent="Complete",H.addEventListener("click",()=>this.finishSurvey()),z.appendChild(H),E.appendChild(z)}finishSurvey(){const E=this.getResponses();if(this.completeCallback)this.completeCallback(this.responses);this.displayThankYouPage()}getResponses(){const E={responses:[]};return this.json.questions.forEach((z)=>{const H={questionName:z.name,questionTitle:z.title,answer:null};switch(z.type){case"single-line-text":const J=this.surveyContainer.querySelector(`input[name="${z.name}"]`);H.answer=J?J.value:"";break;case"ranking":const G=Array.from(this.surveyContainer.querySelectorAll(`.${z.name} .ranking-item`));if(console.log(G),G.length)H.answer=G.map((K,P)=>({rank:P+1,text:K.querySelector(".choice-text").textContent.trim()}));break}E.responses.push(H)}),E}onComplete(E){this.completeCallback=E}displayThankYouPage(){this.surveyContainer.innerHTML="";const E=document.createElement("div");E.className="thank-you-container",E.innerHTML=`
+        `;
+      this.inputValue = this.shadowRoot.querySelector(".input-value input");
+      this.modalContainer = this.shadowRoot.querySelector(".modal-container");
+      this.filterInput = this.shadowRoot.querySelector(".header-filter-container input");
+      this.clearButton = this.shadowRoot.querySelector(".clear-icon");
+      this.optionsContainer = this.shadowRoot.querySelector(".main-options-container");
+      this.cancelButton = this.shadowRoot.querySelector(".button.cancel");
+    }
+  }
+  bindEvents() {
+    this.inputValue.addEventListener("focus", () => this.showModal());
+    this.cancelButton.addEventListener("click", () => this.hideModal());
+    this.filterInput.addEventListener("input", (e) => this.handleFilterInput(e.target.value));
+    this.clearButton.addEventListener("click", () => {
+      this.filterInput.value = "";
+      this.optionsContainer.innerHTML = "";
+      this.filterInput.focus();
+    });
+  }
+  showModal() {
+    this.inputValue.style.display = "none";
+    this.modalContainer.style.display = "flex";
+    this.filterInput.focus();
+  }
+  hideModal() {
+    this.modalContainer.style.display = "none";
+    this.inputValue.style.display = "block";
+  }
+  setConfig(config) {
+    this._config = config;
+  }
+  handleFilterInput(inputValue) {
+    this.optionsContainer.innerHTML = "";
+    if (inputValue.length >= 2) {
+      this.fetchOptions(inputValue).then((options) => {
+        options.forEach((option) => {
+          const optionDiv = document.createElement("div");
+          optionDiv.textContent = option;
+          optionDiv.classList.add("option");
+          optionDiv.addEventListener("click", () => this.onSelectOption(option));
+          this.optionsContainer.appendChild(optionDiv);
+        });
+      });
+    }
+  }
+  onSelectOption(optionSelected) {
+    this.inputValue.value = optionSelected;
+    this.hideModal();
+    const event = new CustomEvent("optionSelected", {
+      detail: { option: optionSelected }
+    });
+    this.dispatchEvent(event);
+  }
+  fetchOptions(searchText) {
+    return new Promise((resolve, reject) => {
+      if (this._config.dynamic_options_service) {
+        const serviceUrl = `${this._config.dynamic_options_service}${encodeURIComponent(searchText)}`;
+        console.log("serviceUrl : ", serviceUrl);
+        fetch(serviceUrl).then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        }).then((data) => {
+          console.log("data received : ", data);
+          const options = data.result.map((item) => item.name);
+          resolve(options);
+        }).catch((error) => {
+          console.error("Error fetching dynamic options:", error);
+          reject(error);
+        });
+      } else if (this._config.static_options) {
+        const filteredOptions = this._config.static_options.filter((option) => option.toLowerCase().includes(searchText.toLowerCase()));
+        resolve(filteredOptions);
+      } else {
+        resolve([]);
+      }
+    });
+  }
+  onClear() {
+    this.filterInput.value = "";
+    this.clearButton.style.visibility = "hidden";
+    this.clearOptions();
+    this.dispatchEvent(new CustomEvent("clear"));
+  }
+  clearOptions() {
+    this.optionsContainer.innerHTML = "";
+    this.optionsContainer.style.display = "none";
+  }
+}
+customElements.define("search-input", SearchInput);
+// src/SurveyBuilder.ts
+class SurveyBuilder {
+  surveyContainer;
+  config;
+  questionNumber;
+  questions;
+  responses;
+  completeCallback;
+  constructor(config, containerId) {
+    this.config = config;
+    const containerElement = document.getElementById(containerId);
+    if (!containerElement) {
+      throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
+    }
+    this.surveyContainer = containerElement;
+    this.questionNumber = 1;
+    this.responses = {};
+    this.questions = [];
+    this.createSurvey();
+  }
+  createSurvey() {
+    this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
+    this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
+    this.config.questions.forEach((question, index) => {
+      switch (question.type) {
+        case "ranking":
+          this.questions.push(new RankingQuestion(this, question, index));
+          break;
+        case "single-line-text":
+          this.questions.push(new SingleLineTextQuestion(this, question, index));
+          break;
+        case "multi-line-text":
+          this.questions.push(new MultiLineTextQuestion(this, question, index));
+          break;
+        case "yes-no":
+          this.questions.push(new YesNoQuestion(this, question, index));
+          break;
+        case "select":
+          this.questions.push(new SelectQuestion(this, question, index));
+          break;
+        default:
+          console.error("Unsupported question type: " + question.type);
+      }
+    });
+    this.createCompleteButton(this.surveyContainer);
+  }
+  setResponse(response) {
+    this.responses[response.questionName] = response.response;
+    this.evaluateVisibilityConditions(response);
+  }
+  evaluateVisibilityConditions(response) {
+    console.log("evaluateVisibilityConditions for ", response.questionName);
+    this.questions.forEach((questionComponent) => {
+      const question = questionComponent.question;
+      if (question.visible_when) {
+        const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s) => s.trim());
+        console.log("  question: ", question.name);
+        if (conditionQuestionName === response.questionName) {
+          const actualAnswer = this.responses[conditionQuestionName];
+          console.log("condition  : " + conditionValue + " -  Answer : " + actualAnswer);
+          if (actualAnswer === conditionValue) {
+            questionComponent.show();
+          } else {
+            questionComponent.hide();
+          }
+        }
+      }
+    });
+  }
+  getQuestionElement(index) {
+    let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");
+    console.log("allQuestionElements", allQuestionElements);
+    console.log(allQuestionElements.length);
+    return this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
+  }
+  createSurveyTitle(surveyTitle, container) {
+    const title = document.createElement("h3");
+    title.className = "survey-title";
+    title.textContent = surveyTitle;
+    container.appendChild(title);
+  }
+  createSurveyDescription(surveyDescription, container) {
+    const description = document.createElement("p");
+    description.className = "survey-description";
+    description.innerHTML = surveyDescription;
+    container.appendChild(description);
+  }
+  createCompleteButton(container) {
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "button-container";
+    const completeButton = document.createElement("button");
+    completeButton.className = "complete-button";
+    completeButton.textContent = "Complete";
+    completeButton.addEventListener("click", () => this.finishSurvey());
+    buttonContainer.appendChild(completeButton);
+    container.appendChild(buttonContainer);
+  }
+  finishSurvey() {
+    const responses = this.getResponses();
+    if (this.completeCallback) {
+      this.completeCallback(this.responses);
+    }
+    this.displayThankYouPage();
+  }
+  getResponses() {
+    const surveyData = {
+      responses: []
+    };
+    return surveyData;
+  }
+  onComplete(callbackFunction) {
+    this.completeCallback = callbackFunction;
+  }
+  displayThankYouPage() {
+    this.surveyContainer.innerHTML = "";
+    const thankYouContainer = document.createElement("div");
+    thankYouContainer.className = "thank-you-container";
+    thankYouContainer.innerHTML = `
         <h2>Thank you for your input.</h2>
         <p>You can close this page. </p>
         <p>Learn more about <a href="https://servicenow.com">Creator Workflows</a>.</>
@@ -94,4 +502,8 @@ function X(E){const z=document.createElement("h3");z.className="question-title";
             <button class="secondary-button">Prev</button>
             <button class="primary-button">Done</button>
         </div>
-    `,this.surveyContainer.appendChild(E)}getDragAfterElement(E,z){return[...E.querySelectorAll(".ranking-item:not(.dragging)")].reduce((J,G)=>{const K=G.getBoundingClientRect(),P=z-K.top-K.height/2;if(P<0&&P>J.offset)return{offset:P,element:G};else return J},{offset:Number.NEGATIVE_INFINITY}).element}updateDraggedItemIndex(E,z){let H=0;Array.from(z.children).forEach((G,K)=>{if(G!==E&&G.getBoundingClientRect().top<E.getBoundingClientRect().bottom)H=K+1});const J=E.querySelector(".index");if(J)J.textContent=H+1}updateAllIndexes(E){E.querySelectorAll(".ranking-item").forEach((H,J)=>{const G=H.querySelector(".index");if(G)G.textContent=J+1})}}window.SurveyBuilder=S;
+    `;
+    this.surveyContainer.appendChild(thankYouContainer);
+  }
+}
+window.SurveyBuilder = SurveyBuilder;

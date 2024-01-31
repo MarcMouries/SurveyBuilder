@@ -1,14 +1,13 @@
 { 
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "ESNext",
+    "lib": ["dom", "es2021"],
+    "target": "es2021",
+    "module": "ES2020",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
     "checkJs": false,
     
-
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -16,7 +15,7 @@
     "noEmit": true,
 
     /* Linting */
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true

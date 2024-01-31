@@ -1,4 +1,11 @@
 export class SearchInput extends HTMLElement {
+    private _config: any;
+    private inputValue: any;
+    private modalContainer: any;
+    private filterInput: any;
+    private clearButton: any;
+    private optionsContainer: any;
+    private cancelButton: any;
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -7,7 +14,9 @@ export class SearchInput extends HTMLElement {
     }
 
     build() {
-        this.shadowRoot.innerHTML = `
+        if (this.shadowRoot) {
+
+            this.shadowRoot.innerHTML = `
             <style>
                 .search-input-wrapper {
                     position: relative;
@@ -96,20 +105,21 @@ export class SearchInput extends HTMLElement {
                 </div>
             </div>
         `;
+            // Cache necessary elements
+            this.inputValue = this.shadowRoot.querySelector('.input-value input');
+            this.modalContainer = this.shadowRoot.querySelector('.modal-container');
+            this.filterInput = this.shadowRoot.querySelector('.header-filter-container input');
+            this.clearButton = this.shadowRoot.querySelector('.clear-icon');
+            this.optionsContainer = this.shadowRoot.querySelector('.main-options-container');
+            this.cancelButton = this.shadowRoot.querySelector('.button.cancel');
+        }
 
-        // Cache necessary elements
-        this.inputValue = this.shadowRoot.querySelector('.input-value input');
-        this.modalContainer = this.shadowRoot.querySelector('.modal-container');
-        this.filterInput = this.shadowRoot.querySelector('.header-filter-container input');
-        this.clearButton = this.shadowRoot.querySelector('.clear-icon');
-        this.optionsContainer = this.shadowRoot.querySelector('.main-options-container');
-        this.cancelButton = this.shadowRoot.querySelector('.button.cancel');
     }
 
     bindEvents() {
         this.inputValue.addEventListener('focus', () => this.showModal());
         this.cancelButton.addEventListener('click', () => this.hideModal());
-        this.filterInput.addEventListener('input', (e) => this.handleFilterInput(e.target.value));
+        this.filterInput.addEventListener('input', (e: any) => this.handleFilterInput(e.target.value));
         this.clearButton.addEventListener('click', () => {
             this.filterInput.value = '';
             this.optionsContainer.innerHTML = ''; // Clear options if needed
@@ -129,11 +139,25 @@ export class SearchInput extends HTMLElement {
     }
 
 
-    setConfig(config) {
+    setConfig(config: any) {
         this._config = config;
     }
 
-    handleFilterInput(inputValue) {
+      /*
+    onInput(event:any) {
+        const searchText = event.target.value.trim();
+        // Show clear button only if there's text
+        this.clearButton.style.visibility = searchText ? 'visible' : 'hidden';
+
+        if (searchText.length >= 2) {
+            this.updateOptions(searchText);
+            this.optionsContainer.style.display = 'block'; // Show options
+        } else {
+            this.clearOptions();
+        }
+    }
+*/  
+    handleFilterInput(inputValue: any) {
         // Clear existing options
         this.optionsContainer.innerHTML = '';
         if (inputValue.length >= 2) {
@@ -143,14 +167,23 @@ export class SearchInput extends HTMLElement {
                     const optionDiv = document.createElement('div');
                     optionDiv.textContent = option;
                     optionDiv.classList.add('option');
-                    optionDiv.addEventListener('click', () => this.selectOption(option));
+                    optionDiv.addEventListener('click', () => this.onSelectOption(option));
                     this.optionsContainer.appendChild(optionDiv);
                 });
             });
         }
     }
 
-    fetchOptions(searchText) {
+    onSelectOption(optionSelected: string) {
+        this.inputValue.value = optionSelected;
+        this.hideModal();
+        const event = new CustomEvent('optionSelected', { 
+            detail: { option: optionSelected }
+        });
+        this.dispatchEvent(event);
+    }
+
+    fetchOptions(searchText: string): Promise<string[]> {
         return new Promise((resolve, reject) => {
             if (this._config.dynamic_options_service) {
                 // Fetch dynamic options from the service
@@ -165,7 +198,7 @@ export class SearchInput extends HTMLElement {
                     })
                     .then(data => {
                         console.log("data received : ", data);
-                        const options = data.result.map(item => item.name);
+                        const options = data.result.map((item: any) => item.name);
                         resolve(options);
                     })
                     .catch(error => {
@@ -174,7 +207,7 @@ export class SearchInput extends HTMLElement {
                     });
             } else if (this._config.static_options) {
                 // Filter static options based on searchText
-                const filteredOptions = this._config.static_options.filter(option =>
+                const filteredOptions = this._config.static_options.filter((option: any) =>
                     option.toLowerCase().includes(searchText.toLowerCase())
                 );
                 resolve(filteredOptions);
@@ -185,28 +218,13 @@ export class SearchInput extends HTMLElement {
         });
     }
 
-    selectOption(option) {
-        this.inputValue.value = option;
-        this.hideModal();
-    }
 
-    onInput(event) {
-        const searchText = event.target.value.trim();
-        // Show clear button only if there's text
-        this.clearButton.style.visibility = searchText ? 'visible' : 'hidden';
 
-        if (searchText.length >= 2) {
-            this.updateOptions(searchText);
-            this.optionsContainer.style.display = 'block'; // Show options
-        } else {
-            this.clearOptions();
-        }
-    }
 
     onClear() {
-        this.inputField.value = ''; // Clear the input field
+        this.filterInput.value = ''; // Clear the filterInput field
         this.clearButton.style.visibility = 'hidden'; // Hide the clear button
-        this.hideOptions(); // Hide the options container
+        this.clearOptions();
         // Dispatch a clear event if needed
         this.dispatchEvent(new CustomEvent('clear'));
     }
