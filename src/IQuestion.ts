@@ -3,7 +3,7 @@ export interface IQuestion {
     name: string;
     isRequired: boolean;
     type: string;
-    choices : string[];
+    items : string[];
     options : string[];
     options_source: string[];
     visible_when: string;

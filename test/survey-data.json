@@ -49,7 +49,7 @@
       "name": "fed_forms_ranking",
       "title": "Rank the following forms from the most important to the least",
       "isRequired": true,
-      "choices": [
+      "items": [
         "Form A",
         "Form B",
         "Form C",
