@@ -17,8 +17,9 @@ class QuestionType {
     this.surveyBuilder = surveyBuilder;
     this.question = question;
     this.questionDiv = document.createElement("div");
-    this.questionDiv.className = "question";
+    this.questionDiv.className = `question ${question.type}-question`;
     this.questionDiv.dataset.index = index.toString();
+    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     const title = createQuestionTitle(question.title);
     this.questionDiv.appendChild(title);
     this.setupResponseListener();
@@ -42,11 +43,8 @@ class QuestionType {
 class SelectQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    this.questionDiv.className += " select-question";
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     const searchComponent = document.createElement("search-input");
     this.questionDiv.appendChild(searchComponent);
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     const config = {
       static_options: question.options || [],
       dynamic_options_service: question.options_source
@@ -69,20 +67,17 @@ class SelectQuestion extends QuestionType {
 class MultiLineTextQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    this.questionDiv.className += " multi-line-question";
     const textArea = document.createElement("textarea");
     textArea.name = question.name;
     textArea.required = question.isRequired;
     textArea.className = "multi-line-text-input";
     textArea.placeholder = "Enter your comments here...";
     this.questionDiv.appendChild(textArea);
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     textArea.addEventListener("input", () => {
       const response = {
         questionName: question.name,
         response: textArea.value
       };
-      console.log("MultiLineTextQuestion input change", response);
       const answerEvent = new CustomEvent("answerSelected", { detail: response });
       this.questionDiv.dispatchEvent(answerEvent);
     });
@@ -92,7 +87,6 @@ class MultiLineTextQuestion extends QuestionType {
 class RankingQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    this.questionDiv.className += " ranking-question";
     const rankingList = document.createElement("div");
     rankingList.className = `ranking-list ${question.name}`;
     question.choices.forEach((choice, index2) => {
@@ -114,14 +108,12 @@ class RankingQuestion extends QuestionType {
       rankingList.appendChild(listItem);
     });
     this.questionDiv.appendChild(rankingList);
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
   }
 }
 // src/question-types/yes-no.ts
 class YesNoQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    this.questionDiv.className += " yes-no-question";
     const yesNoField = document.createElement("div");
     yesNoField.className = "yes-no";
     const yesRadio = this.createRadio("Yes", question.name, `${question.name}-yes`);
@@ -133,7 +125,6 @@ class YesNoQuestion extends QuestionType {
     yesNoField.appendChild(noRadio);
     yesNoField.appendChild(noLabel);
     this.questionDiv.appendChild(yesNoField);
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     yesNoField.addEventListener("change", (event) => {
       const target = event.target;
       const response = {
@@ -163,14 +154,12 @@ class YesNoQuestion extends QuestionType {
 class SingleLineTextQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    this.questionDiv.className += " single-line-question";
     const inputField = document.createElement("input");
     inputField.type = "text";
     inputField.name = question.name;
     inputField.required = question.isRequired;
     inputField.className = "single-line-text-input";
     this.questionDiv.appendChild(inputField);
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     inputField.addEventListener("input", () => {
       const response = {
         questionName: question.name,
@@ -433,8 +422,8 @@ class SurveyBuilder {
       const question = questionComponent.question;
       if (question.visible_when) {
         const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s) => s.trim());
-        console.log("  question: ", question.name);
         if (conditionQuestionName === response.questionName) {
+          console.log(" Evaluate Visibility for Question: ", question.name);
           const actualAnswer = this.responses[conditionQuestionName];
           console.log("condition  : " + conditionValue + " -  Answer : " + actualAnswer);
           if (actualAnswer === conditionValue) {

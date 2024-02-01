@@ -12,8 +12,10 @@ export abstract class QuestionType implements IQuestionComponent {
     constructor(protected surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         this.question = question;
         this.questionDiv = document.createElement('div');
-        this.questionDiv.className = 'question';
+        this.questionDiv.className = `question ${question.type}-question`;
         this.questionDiv.dataset.index = index.toString();
+
+        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
 
         const title = createQuestionTitle(question.title);
         this.questionDiv.appendChild(title);

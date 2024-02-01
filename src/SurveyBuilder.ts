@@ -76,11 +76,9 @@ class SurveyBuilder implements ISurveyBuilder {
             const question = questionComponent.question;
             if (question.visible_when) {
                 const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s: string) => s.trim());
-
-                console.log("  question: ", question.name);
-
                 // Check if the condition is related to the response question
                 if (conditionQuestionName === response.questionName) {
+                    console.log(" Evaluate Visibility for Question: ", question.name);
                     const actualAnswer = this.responses[conditionQuestionName];
                     console.log("condition  : " + conditionValue + " -  Answer : " + actualAnswer);
 

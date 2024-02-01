@@ -7,7 +7,7 @@ export class SingleLineTextQuestion extends QuestionType {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-        this.questionDiv.className += ' single-line-question';
+        //this.questionDiv.className += ' single-line-question';
 
         const inputField = document.createElement('input');
         inputField.type = 'text';
@@ -16,7 +16,6 @@ export class SingleLineTextQuestion extends QuestionType {
         inputField.className = 'single-line-text-input';
         this.questionDiv.appendChild(inputField);
 
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
 
         // Event listener for response change
         inputField.addEventListener('input', () => {

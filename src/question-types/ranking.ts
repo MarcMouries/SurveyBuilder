@@ -6,7 +6,7 @@ export class RankingQuestion extends QuestionType {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-        this.questionDiv.className += ' ranking-question';
+        //this.questionDiv.className += ' ranking-question';
 
         const rankingList = document.createElement('div');
         rankingList.className = `ranking-list ${question.name}`;
@@ -35,6 +35,5 @@ export class RankingQuestion extends QuestionType {
         });
 
         this.questionDiv.appendChild(rankingList);
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     }
 }

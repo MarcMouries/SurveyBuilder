@@ -7,7 +7,7 @@ export class YesNoQuestion extends QuestionType {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-        this.questionDiv.className += ' yes-no-question';
+        //this.questionDiv.className += ' yes-no-question';
 
         // Create the switch-field container
         const yesNoField = document.createElement('div');
@@ -26,7 +26,6 @@ export class YesNoQuestion extends QuestionType {
         yesNoField.appendChild(noLabel);
 
         this.questionDiv.appendChild(yesNoField);
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
 
         // Event listener for response change
         yesNoField.addEventListener('change', (event) => {

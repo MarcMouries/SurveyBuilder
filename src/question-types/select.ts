@@ -8,15 +8,12 @@ export class SelectQuestion extends QuestionType {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-        this.questionDiv.className += ' select-question';
+        //this.questionDiv.className += ' select-question';
 
         // Specific implementation for select question
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
-
         const searchComponent = document.createElement('search-input') as SearchInput;
 
         this.questionDiv.appendChild(searchComponent);
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
 
         // Create configuration object for search-input
         const config = {
