@@ -62,6 +62,12 @@
       "name": "comments",
       "title": "Any additional comments or feedback you'd like to share?",
       "isRequired": false
+    },
+    {
+      "type": "single-line-text",
+      "name": "Email",
+      "title": "Enter your email if you want to be contacted about this.",
+      "isRequired": false
     }
   ]
 }
