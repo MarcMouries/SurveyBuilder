@@ -49,14 +49,71 @@ export class SearchInput extends HTMLElement {
 
                 .header-filter-container {
                     display: flex;
-                    padding: 12px;
+                    padding: 8px;
                 }
+
+                .header-filter-container .search-icon {
+                    position: absolute;
+                    left: 10px; 
+                    pointer-events: none;
+                }
+
+                .header-filter-container .input-with-clear {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                .header-filter-container .input-with-clear input {
+                    flex-grow: 1;
+                    _width: 100%;
+                    padding-left: 40px; /* Space for the search icon */
+                    padding-right: 30px; /* Space for the clear icon */
+
+                    _padding: 12px 16px 12px 12px; /* padding to not overlap with the clear icon */
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                }
+
+                /* Additional styles to ensure the clear button only shows when there's text */
+                .header-filter-container input:valid + .clear-icon {
+                    display: block;
+                }
+
+                .header-filter-container .input-with-clear .magnifier-icon {
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    fill: #293E41; 
+                }
+                
+                .header-filter-container .clear-icon {
+                    position: absolute;
+                    right: 10px;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    padding: 0;
+                    color: #293E40;
+                }
+                                
+                .header-filter-container .clear-icon svg {
+                    width: 16px;
+                    height: 16px;
+                    fill: currentColor;
+                }
+                
+
 
                 .main-options-container {
                     overflow-y: auto;
                     flex-grow: 1;
                     border: 1px solid #ccc;
-                    margin: 10px 0;
+                    
+                    margin-left: 8px;
+                    margin-right: 8px;
                 }
                 .main-options-container .option {
                     padding: 8px; /* Add padding to each option */
@@ -80,12 +137,12 @@ export class SearchInput extends HTMLElement {
                     color: white; /* White text */
                     border: none;
                     border-radius: 4px;
-                    cursor: pointer; /* Change cursor to indicate clickability */
-                    transition: background-color 0.3s; /* Smooth transition for hover effect */
+                    cursor: pointer; 
+                    transition: background-color 0.3s; 
                 }
 
                 .footer-actions-container .button:hover {
-                    background-color: #45a049; /* Slightly darker green on hover */
+                    background-color: #45a049;
                 }
 
             </style>
@@ -95,10 +152,27 @@ export class SearchInput extends HTMLElement {
                 </div>
                 <div class="modal-container">
                     <div class="header-filter-container">
-                        <input type="text" autocomplete="off" placeholder="Type to search...">
-                        <button type="button" class="clear-icon" aria-label="Clear">&#x274C;</button>
-                    </div>
-                    <div class="main-options-container"></div>
+                        <div class="input-with-clear">
+                        <svg class="search-icon" width="28px" height="28px" viewBox="0 0 28 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                            <g id="Group-6" transform="translate(1.000000, 1.000000)" stroke="#293E41" stroke-width="1.8">
+                                <ellipse id="Oval" transform="translate(11.982318, 12.085276) rotate(-45.000000) translate(-11.982318, -12.085276) " cx="11.9823181" cy="12.0852763" rx="7.8125" ry="7.90909091"></ellipse>
+                                <path d="M21.0889963,17.3736826 L21.0889963,25.0067188" id="Line-2" stroke-linecap="square" transform="translate(21.088996, 21.139916) rotate(-45.000000) translate(-21.088996, -21.139916) "></path>
+                            </g>
+                        </g>
+                    </svg>
+                            <input type="text" autocomplete="off" placeholder="Type to search...">
+                            <button type="button" class="clear-icon" aria-label="Clear">
+                                <svg width="19px" height="19px" viewBox="0 0 19 19" xmlns="http://www.w3.org/2000/svg">
+                                    <g stroke-linecap="square" stroke="#293E40" stroke-width="1.8">
+                                        <path d="M15.5361199,15.5563492 L0,0"></path>
+                                        <path d="M0,15.5563492 L15.5361199,0"></path>
+                                    </g>
+                                </svg>
+                            </button>
+                        </div>
+                </div>
+                        <div class="main-options-container"></div>
                     <div class="footer-actions-container">
                         <button class="button cancel" type="button" title="Cancel" tabindex="0" role="button"><span>Cancel</span></button>
                     </div>
@@ -138,25 +212,10 @@ export class SearchInput extends HTMLElement {
         this.inputValue.style.display = 'block'; // Show the initial input
     }
 
-
     setConfig(config: any) {
         this._config = config;
     }
 
-      /*
-    onInput(event:any) {
-        const searchText = event.target.value.trim();
-        // Show clear button only if there's text
-        this.clearButton.style.visibility = searchText ? 'visible' : 'hidden';
-
-        if (searchText.length >= 2) {
-            this.updateOptions(searchText);
-            this.optionsContainer.style.display = 'block'; // Show options
-        } else {
-            this.clearOptions();
-        }
-    }
-*/  
     handleFilterInput(inputValue: any) {
         // Clear existing options
         this.optionsContainer.innerHTML = '';
