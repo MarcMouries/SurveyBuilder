@@ -267,6 +267,16 @@ input, textarea {
     margin-right: 10px;
 }
 
+.ranking-list .placeholder {
+    background-color: #f0f0f0;
+    border: 2px dashed #cccccc;
+    margin: 4px 0;
+    padding: 10px;
+    text-align: center;
+    font-style: italic;
+}
+
+
 /* Complete Button Container and Button Styles */
 .button-container {
     position: fixed;
