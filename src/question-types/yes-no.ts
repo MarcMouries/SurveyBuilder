@@ -1,7 +1,8 @@
 import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
-import { QuestionType } from "./QuestionType.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
+import { QuestionType } from "./QuestionType.ts";
+import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
 export class YesNoQuestion extends QuestionType {
 
@@ -34,9 +35,7 @@ export class YesNoQuestion extends QuestionType {
                 questionName: question.name,
                 response: target.value
             };
-            const answerEvent = new CustomEvent<IQuestionResponse>(
-                'answerSelected', { detail: response });
-            this.questionDiv.dispatchEvent(answerEvent);
+            this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });
     }
 

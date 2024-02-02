@@ -3,6 +3,7 @@ import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { SearchInput } from '../component/SearchInput.ts';
 import { QuestionType } from "./QuestionType.ts";
+import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
 export class SelectQuestion extends QuestionType {
 
@@ -33,10 +34,7 @@ export class SelectQuestion extends QuestionType {
                 questionName: question.name,
                 response: selectedOption
             };
-            const answerEvent = new CustomEvent<IQuestionResponse>(
-                'answerSelected', { detail: response });
-
-            this.questionDiv.dispatchEvent(answerEvent);
+            this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });
     }
 }
