@@ -22,7 +22,20 @@ export class SearchInput extends HTMLElement {
                     position: relative;
                 }
 
-                .input-value, .modal-container {
+                .modal-container {
+                    display: none; /* Initially hidden */
+                    position: fixed;
+                    justify-content: space-between;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: white;
+                    z-index: 9999;
+                    flex-direction: column;
+                }
+
+                .input-value
                     width: 100%;
                 }
 
@@ -34,18 +47,7 @@ export class SearchInput extends HTMLElement {
                     font-size: inherit;
                 }
 
-                .modal-container {
-                    display: none; /* Initially hidden */
-                    position: fixed;
-                    justify-content: space-between;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: white;
-                    z-index: 1000;
-                    flex-direction: column;
-                }
+
 
                 .header-filter-container {
                     display: flex;
