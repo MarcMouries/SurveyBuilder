@@ -280,7 +280,20 @@ class SearchInput extends HTMLElement {
                     position: relative;
                 }
 
-                .input-value, .modal-container {
+                .modal-container {
+                    display: none; /* Initially hidden */
+                    position: fixed;
+                    justify-content: space-between;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: white;
+                    z-index: 9999;
+                    flex-direction: column;
+                }
+
+                .input-value
                     width: 100%;
                 }
 
@@ -292,18 +305,7 @@ class SearchInput extends HTMLElement {
                     font-size: inherit;
                 }
 
-                .modal-container {
-                    display: none; /* Initially hidden */
-                    position: fixed;
-                    justify-content: space-between;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: white;
-                    z-index: 1000;
-                    flex-direction: column;
-                }
+
 
                 .header-filter-container {
                     display: flex;
@@ -615,14 +617,13 @@ class SurveyBuilder {
     container.appendChild(description);
   }
   createCompleteButton(container) {
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "button-container";
+    const footer = document.createElement("footer");
     const completeButton = document.createElement("button");
     completeButton.className = "complete-button";
     completeButton.textContent = "Complete";
     completeButton.addEventListener("click", () => this.finishSurvey());
-    buttonContainer.appendChild(completeButton);
-    container.appendChild(buttonContainer);
+    footer.appendChild(completeButton);
+    container.appendChild(footer);
   }
   finishSurvey() {
     const responses = this.getResponses();

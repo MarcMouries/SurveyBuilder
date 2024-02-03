@@ -59,7 +59,6 @@ class SurveyBuilder implements ISurveyBuilder {
             }
         });
 
-        //this.addDragAndDrop();
         this.createCompleteButton(this.surveyContainer);
     }
 
@@ -117,14 +116,13 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     createCompleteButton(container: HTMLElement) {
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'button-container';
+        const footer = document.createElement('footer');
         const completeButton = document.createElement('button');
         completeButton.className = 'complete-button';
         completeButton.textContent = 'Complete';
         completeButton.addEventListener('click', () => this.finishSurvey());
-        buttonContainer.appendChild(completeButton);
-        container.appendChild(buttonContainer);
+        footer.appendChild(completeButton);
+        container.appendChild(footer);
     }
 
     finishSurvey() {

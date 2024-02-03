@@ -1,12 +1,15 @@
 /* Reset and Box Sizing */
-*, *:before, *:after {
+*,
+*:before,
+*:after {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
 }
 
 /* Basic Reset for HTML and Body */
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -41,15 +44,18 @@ header {
     text-align: center;
     font-size: 1.6rem;
 }
+
 .header-title {
     font-size: 1.4em;
 }
 
 /* Main Content Styles */
 body {
-    font-size: 14px; /* Standard font size for desktop */
+    font-size: 14px;
+    /* Standard font size for desktop */
     background-color: #f4f4f4;
-    overflow: auto; /* Allow scrolling */
+    overflow: auto;
+    /* Allow scrolling */
 }
 
 #survey-container {
@@ -57,9 +63,10 @@ body {
     max-width: 600px;
     background-color: #fff;
     padding: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-radius: 4px;
-    margin-bottom: 80px; /* Space for 'Complete' button */
+    margin-bottom: 80px;
+    /* Space for 'Complete' button */
 }
 
 .yes-no {
@@ -69,7 +76,8 @@ body {
 }
 
 .yes-no input[type="radio"] {
-    display: none; /* Hide the radio buttons */
+    display: none;
+    /* Hide the radio buttons */
 }
 
 .yes-no label {
@@ -79,22 +87,26 @@ body {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-right: 5px; /* Space between the labels */
+    margin-right: 5px;
+    /* Space between the labels */
 }
 
 /* Style the label for 'Yes' when it's checked */
-.yes-no input[type="radio"][value="Yes"]:checked + label {
-    background-color: #a5dc86; /* Green */
+.yes-no input[type="radio"][value="Yes"]:checked+label {
+    background-color: #a5dc86;
+    /* Green */
 }
 
 /* Style the label for 'No' when it's checked */
-.yes-no input[type="radio"][value="No"]:checked + label {
-    background-color: #dc8686; /* Red */
+.yes-no input[type="radio"][value="No"]:checked+label {
+    background-color: #dc8686;
+    /* Red */
 }
 
 
 .question.select-question input {
-    width: 100%; /* Full width of the container */
+    width: 100%;
+    /* Full width of the container */
     padding: 8px;
     margin-top: 5px;
     border: 1px solid #ddd;
@@ -108,6 +120,7 @@ body {
     max-height: 100px;
     overflow-y: auto;
 }
+
 datalist {
     max-height: 100px;
     overflow-y: auto;
@@ -128,7 +141,8 @@ datalist {
 }
 
 .custom-options-container {
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     position: absolute;
     z-index: 1000;
     width: 100%;
@@ -136,7 +150,7 @@ datalist {
     overflow-y: auto;
     background: white;
     border: 1px solid #ccc;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
 }
 
 /* Mobile styles */
@@ -172,6 +186,7 @@ datalist {
     .question-title {
         font-size: 1.2em;
     }
+
     .choice-text {
         font-size: 0.8em;
     }
@@ -180,7 +195,8 @@ datalist {
 /* Media Query for Mobile Screens */
 @media only screen and (max-width: 600px) {
     body {
-        font-size: 16px; /* Larger font size for mobile */
+        font-size: 16px;
+        /* Larger font size for mobile */
     }
 
     #survey-container {
@@ -200,7 +216,8 @@ datalist {
 }
 
 /* Input and Textarea Styles */
-input, textarea {
+input,
+textarea {
     font-family: inherit;
     width: calc(100% - 16px);
     padding: 8px;
@@ -278,6 +295,14 @@ input, textarea {
 
 
 /* Complete Button Container and Button Styles */
+
+footer {
+    background-color: #f7f7f7;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
 .button-container {
     position: fixed;
     bottom: 0;
@@ -286,11 +311,13 @@ input, textarea {
     text-align: right;
     background-color: white;
     padding: 10px 20px;
- 
+
 }
+
 .complete-button {
     padding: 10px 20px;
-    background-color: #61D84E; /* Green background */
+    background-color: #61D84E;
+    /* Green background */
     color: white;
     border: none;
     border-radius: 4px;
@@ -299,7 +326,8 @@ input, textarea {
 }
 
 .complete-button:hover {
-    background-color: #529c41; /* Darker green on hover for visual feedback */
+    background-color: #529c41;
+    /* Darker green on hover for visual feedback */
 }
 
 .thank-you-container {
@@ -326,9 +354,9 @@ input, textarea {
 
 .thank-you-container .button-container .secondary-button {
     margin-right: 10px;
-    background-color: #ccc; 
+    background-color: #ccc;
 }
 
 .thank-you-container .button-container .primary-button {
-    background-color: #61D84E; 
+    background-color: #61D84E;
 }
