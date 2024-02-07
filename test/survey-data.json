@@ -8,7 +8,7 @@
       "title": "Do you regularly fill in or approve federal forms?"
     },
     {
-      "type": "YesNoQuestion2",
+      "type": "yes-no",
       "name": "use-federal-forms2",
       "title": "Do you regularly fill in or approve federal forms?"
     },
@@ -21,6 +21,17 @@
         "Summer",
         "Fall",
         "Winter"
+      ]
+    },
+    {
+      "type": "multi-choice",
+      "name": "fruits",
+      "title": "Which of the following fruits do you like? (Select all that apply)",
+      "items": [
+        "Apples",
+        "Bananas",
+        "Cherries",
+        "Dates"
       ]
     },
     {
