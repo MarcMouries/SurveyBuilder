@@ -17,7 +17,7 @@ export class YesNoQuestion extends QuestionType {
 
         // Create the radio container
         const yesNoField = document.createElement('div');
-        yesNoField.className = 'yes-no';
+        yesNoField.className = 'items';
 
         // Create Yes radio button
         const yesRadio = this.createRadio('Yes', question.name, `${question.name}-yes`);
