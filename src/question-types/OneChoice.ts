@@ -26,18 +26,22 @@ export class OneChoice extends AbstractChoice {
         choiceContainer.className = 'items';
 
         if (this.items) {
-
             this.items.forEach((item, i) => {
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.className = 'item';
+
                 const radioId = `${this.question.name}-${i}`;
                 const radio = this.createRadio(item, this.question.name, radioId);
                 const label = this.createLabel(radioId, item);
 
-                choiceContainer.appendChild(radio);
-                choiceContainer.appendChild(label);
+                wrapperDiv.appendChild(radio);
+                wrapperDiv.appendChild(label);
+                choiceContainer.appendChild(wrapperDiv);
             });
         } else {
             console.warn("Items are undefined for question:", this.question.name);
         }
+
         this.questionDiv.appendChild(choiceContainer);
 
         // Event listener for response change
@@ -49,5 +53,13 @@ export class OneChoice extends AbstractChoice {
             };
             this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });
+    }
+    createRadio(value: string, name: string, id: string) {
+        const radioInput = document.createElement('input');
+        radioInput.type = 'radio';
+        radioInput.id = id;
+        radioInput.name = name;
+        radioInput.value = value;
+        return radioInput;
     }
 }
