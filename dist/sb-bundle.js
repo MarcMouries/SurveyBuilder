@@ -15,7 +15,6 @@ class QuestionType {
   question;
   constructor(surveyBuilder, question, index) {
     this.surveyBuilder = surveyBuilder;
-    console.log(surveyBuilder, question, index);
     this.question = question;
     this.questionDiv = document.createElement("div");
     this.questionDiv.className = `question ${question.type}-question`;
@@ -198,45 +197,6 @@ class RankingQuestion extends QuestionType {
       rank: index + 1,
       item: item.querySelector(".item-text")?.textContent ?? "Unknown Item"
     }));
-  }
-}
-// src/question-types/yes-no.ts
-class YesNoQuestion extends QuestionType {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-    const yesNoField = document.createElement("div");
-    yesNoField.className = "yes-no";
-    const yesRadio = this.createRadio("Yes", question.name, `${question.name}-yes`);
-    const yesLabel = this.createLabel(`${question.name}-yes`, "Yes");
-    yesNoField.appendChild(yesRadio);
-    yesNoField.appendChild(yesLabel);
-    const noRadio = this.createRadio("No", question.name, `${question.name}-no`);
-    const noLabel = this.createLabel(`${question.name}-no`, "No");
-    yesNoField.appendChild(noRadio);
-    yesNoField.appendChild(noLabel);
-    this.questionDiv.appendChild(yesNoField);
-    yesNoField.addEventListener("change", (event) => {
-      const target = event.target;
-      const response = {
-        questionName: question.name,
-        response: target.value
-      };
-      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
-    });
-  }
-  createRadio(value, name, id) {
-    const radioInput = document.createElement("input");
-    radioInput.type = "radio";
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    return radioInput;
-  }
-  createLabel(forId, text) {
-    const label = document.createElement("label");
-    label.htmlFor = forId;
-    label.textContent = text;
-    return label;
   }
 }
 // src/question-types/single-line.ts
@@ -534,14 +494,6 @@ class AbstractChoice extends QuestionType {
     this.items = question.items;
     this.renderChoices();
   }
-  createRadio(value, name, id) {
-    const radioInput = document.createElement("input");
-    radioInput.type = "radio";
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    return radioInput;
-  }
   createLabel(forId, text) {
     const label = document.createElement("label");
     label.htmlFor = forId;
@@ -560,11 +512,14 @@ class OneChoice extends AbstractChoice {
     choiceContainer.className = "items";
     if (this.items) {
       this.items.forEach((item, i) => {
+        const wrapperDiv = document.createElement("div");
+        wrapperDiv.className = "item";
         const radioId = `${this.question.name}-${i}`;
         const radio = this.createRadio(item, this.question.name, radioId);
         const label = this.createLabel(radioId, item);
-        choiceContainer.appendChild(radio);
-        choiceContainer.appendChild(label);
+        wrapperDiv.appendChild(radio);
+        wrapperDiv.appendChild(label);
+        choiceContainer.appendChild(wrapperDiv);
       });
     } else {
       console.warn("Items are undefined for question:", this.question.name);
@@ -579,6 +534,14 @@ class OneChoice extends AbstractChoice {
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
   }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
+  }
 }
 
 // src/question-types/YesNoQuestion.ts
@@ -586,6 +549,49 @@ class YesNoQuestion2 extends OneChoice {
   constructor(surveyBuilder, question, index) {
     const modifiedQuestion = { ...question, items: ["Yes", "No"] };
     super(surveyBuilder, modifiedQuestion, index);
+  }
+}
+
+// src/question-types/MultiChoice.ts
+class MultiChoice extends AbstractChoice {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+  }
+  renderChoices() {
+    const choiceContainer = document.createElement("div");
+    choiceContainer.className = "items";
+    this.items.forEach((item, i) => {
+      const wrapperDiv = document.createElement("div");
+      wrapperDiv.className = "item";
+      const checkboxId = `${this.question.name}-${i}`;
+      const checkbox = this.createCheckbox(item, this.question.name, checkboxId);
+      const label = this.createLabel(checkboxId, item);
+      wrapperDiv.appendChild(checkbox);
+      wrapperDiv.appendChild(label);
+      choiceContainer.appendChild(wrapperDiv);
+    });
+    this.questionDiv.appendChild(choiceContainer);
+    choiceContainer.addEventListener("change", () => {
+      const selectedOptions = this.items.filter((_, i) => {
+        const checkbox = document.getElementById(`${this.question.name}-${i}`);
+        return checkbox && checkbox.checked;
+      }).map((item, i) => {
+        return { value: item, index: i };
+      });
+      const response = {
+        questionName: this.question.name,
+        response: selectedOptions
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+  createCheckbox(value, name, id) {
+    const checkboxInput = document.createElement("input");
+    checkboxInput.type = "checkbox";
+    checkboxInput.id = id;
+    checkboxInput.name = name;
+    checkboxInput.value = value;
+    return checkboxInput;
   }
 }
 
@@ -624,13 +630,16 @@ class SurveyBuilder {
           this.questions.push(new MultiLineTextQuestion(this, question, index));
           break;
         case "yes-no":
-          this.questions.push(new YesNoQuestion(this, question, index));
+          this.questions.push(new YesNoQuestion2(this, question, index));
           break;
         case "YesNoQuestion2":
           this.questions.push(new YesNoQuestion2(this, question, index));
           break;
         case "one-choice":
           this.questions.push(new OneChoice(this, question, index));
+          break;
+        case "multi-choice":
+          this.questions.push(new MultiChoice(this, question, index));
           break;
         case "select":
           this.questions.push(new SelectQuestion(this, question, index));

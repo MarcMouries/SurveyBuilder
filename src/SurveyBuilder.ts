@@ -11,6 +11,7 @@ import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { YesNoQuestion2 } from './question-types/YesNoQuestion.ts';
 import { OneChoice } from './question-types/OneChoice.ts';
+import { MultiChoice } from './question-types/MultiChoice.ts';
 
 
 class SurveyBuilder implements ISurveyBuilder {
@@ -51,7 +52,8 @@ class SurveyBuilder implements ISurveyBuilder {
                     this.questions.push(new MultiLineTextQuestion(this, question, index));
                     break;
                 case "yes-no":
-                    this.questions.push(new YesNoQuestion(this, question, index));
+                    //this.questions.push(new YesNoQuestion(this, question, index));
+                    this.questions.push(new YesNoQuestion2(this, question, index));
                     break;
                 case "YesNoQuestion2":
                     this.questions.push(new YesNoQuestion2(this, question, index));
@@ -59,6 +61,9 @@ class SurveyBuilder implements ISurveyBuilder {
                 case "one-choice":
                     this.questions.push(new OneChoice(this, question, index));
                     break;
+                case "multi-choice":
+                        this.questions.push(new MultiChoice(this, question, index));
+                        break;
                 case "select":
                     this.questions.push(new SelectQuestion(this, question, index));
                     break;
