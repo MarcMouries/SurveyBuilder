@@ -20,15 +20,6 @@ export abstract class AbstractChoice extends QuestionType {
 
     protected abstract renderChoices(): void;
 
-    protected createRadio(value: string, name: string, id: string) {
-        const radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.id = id;
-        radioInput.name = name;
-        radioInput.value = value;
-        return radioInput;
-    }
-
     protected createLabel(forId: string, text: string) {
         const label = document.createElement('label');
         label.htmlFor = forId;
