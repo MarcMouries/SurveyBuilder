@@ -8,6 +8,22 @@
       "title": "Do you regularly fill in or approve federal forms?"
     },
     {
+      "type": "YesNoQuestion2",
+      "name": "use-federal-forms2",
+      "title": "Do you regularly fill in or approve federal forms?"
+    },
+    {
+      "type": "one-choice",
+      "name": "favorite-season",
+      "title": "What is your favorite season?",
+      "items": [
+        "Spring",
+        "Summer",
+        "Fall",
+        "Winter"
+      ]
+    },
+    {
       "type": "select",
       "name": "agency_name",
       "title": "Name of the federal agency you work for? (static)",

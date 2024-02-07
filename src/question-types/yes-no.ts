@@ -1,16 +1,21 @@
 import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
-import { QuestionType } from "./QuestionType.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
+import { QuestionType } from "./QuestionType.ts";
 
+/**
+ * A subclass of OneChoice specifically designed for Yes/No questions. 
+ * It provides a binary choice between two radio buttons labeled 'Yes' and 'No'.
+ * Example Question: "Do you have any previous experience with our products?"
+ * (*) Yes () No
+ */
 export class YesNoQuestion extends QuestionType {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-        //this.questionDiv.className += ' yes-no-question';
 
-        // Create the switch-field container
+        // Create the radio container
         const yesNoField = document.createElement('div');
         yesNoField.className = 'yes-no';
 

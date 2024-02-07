@@ -15,6 +15,7 @@ class QuestionType {
   question;
   constructor(surveyBuilder, question, index) {
     this.surveyBuilder = surveyBuilder;
+    console.log(surveyBuilder, question, index);
     this.question = question;
     this.questionDiv = document.createElement("div");
     this.questionDiv.className = `question ${question.type}-question`;
@@ -276,8 +277,11 @@ class SearchInput extends HTMLElement {
     if (this.shadowRoot) {
       this.shadowRoot.innerHTML = `
             <style>
-                .search-input-wrapper {
+                .search-input {
                     position: relative;
+                }
+
+                .search-input .input-value {
                 }
 
                 .modal-container {
@@ -293,10 +297,6 @@ class SearchInput extends HTMLElement {
                     flex-direction: column;
                 }
 
-                .input-value
-                    width: 100%;
-                }
-
                 .input-value input, .header-filter-container input {
                     width: calc(100% - 20px);
                     padding: 10px;
@@ -304,8 +304,6 @@ class SearchInput extends HTMLElement {
                     border-radius: 4px;
                     font-size: inherit;
                 }
-
-
 
                 .header-filter-container {
                     display: flex;
@@ -400,27 +398,25 @@ class SearchInput extends HTMLElement {
                     cursor: pointer; 
                     transition: background-color 0.3s; 
                 }
-
                 .footer-actions-container .button:hover {
                     background-color: #45a049;
                 }
-
             </style>
-            <div class="search-input-wrapper">
+            <div class="search-input">
                 <div class="input-value">
                     <input type="text" autocomplete="off" placeholder="Type to search...">
                 </div>
                 <div class="modal-container">
                     <div class="header-filter-container">
                         <div class="input-with-clear">
-                        <svg class="search-icon" width="28px" height="28px" viewBox="0 0 28 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                            <g id="Group-6" transform="translate(1.000000, 1.000000)" stroke="#293E41" stroke-width="1.8">
-                                <ellipse id="Oval" transform="translate(11.982318, 12.085276) rotate(-45.000000) translate(-11.982318, -12.085276) " cx="11.9823181" cy="12.0852763" rx="7.8125" ry="7.90909091"></ellipse>
-                                <path d="M21.0889963,17.3736826 L21.0889963,25.0067188" id="Line-2" stroke-linecap="square" transform="translate(21.088996, 21.139916) rotate(-45.000000) translate(-21.088996, -21.139916) "></path>
-                            </g>
-                        </g>
-                    </svg>
+                            <svg class="search-icon" width="28px" height="28px" viewBox="0 0 28 28" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                    <g id="Group-6" transform="translate(1.000000, 1.000000)" stroke="#293E41" stroke-width="1.8">
+                                        <ellipse id="Oval" transform="translate(11.982318, 12.085276) rotate(-45.000000) translate(-11.982318, -12.085276) " cx="11.9823181" cy="12.0852763" rx="7.8125" ry="7.90909091"></ellipse>
+                                        <path d="M21.0889963,17.3736826 L21.0889963,25.0067188" id="Line-2" stroke-linecap="square" transform="translate(21.088996, 21.139916) rotate(-45.000000) translate(-21.088996, -21.139916) "></path>
+                                    </g>
+                                </g>
+                            </svg>
                             <input type="text" autocomplete="off" placeholder="Type to search...">
                             <button type="button" class="clear-icon" aria-label="Clear">
                                 <svg width="19px" height="19px" viewBox="0 0 19 19" xmlns="http://www.w3.org/2000/svg">
@@ -431,8 +427,9 @@ class SearchInput extends HTMLElement {
                                 </svg>
                             </button>
                         </div>
-                </div>
-                        <div class="main-options-container"></div>
+                    </div>
+                    <div class="main-options-container">
+                    </div>
                     <div class="footer-actions-container">
                         <button class="button cancel" type="button" title="Cancel" tabindex="0" role="button"><span>Cancel</span></button>
                     </div>
@@ -529,6 +526,69 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
+// src/question-types/AbstractChoice.ts
+class AbstractChoice extends QuestionType {
+  items = [];
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.items = question.items;
+    this.renderChoices();
+  }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
+  }
+  createLabel(forId, text) {
+    const label = document.createElement("label");
+    label.htmlFor = forId;
+    label.textContent = text;
+    return label;
+  }
+}
+
+// src/question-types/OneChoice.ts
+class OneChoice extends AbstractChoice {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+  }
+  renderChoices() {
+    const choiceContainer = document.createElement("div");
+    choiceContainer.className = "items";
+    if (this.items) {
+      this.items.forEach((item, i) => {
+        const radioId = `${this.question.name}-${i}`;
+        const radio = this.createRadio(item, this.question.name, radioId);
+        const label = this.createLabel(radioId, item);
+        choiceContainer.appendChild(radio);
+        choiceContainer.appendChild(label);
+      });
+    } else {
+      console.warn("Items are undefined for question:", this.question.name);
+    }
+    this.questionDiv.appendChild(choiceContainer);
+    choiceContainer.addEventListener("change", (event) => {
+      const target = event.target;
+      const response = {
+        questionName: this.question.name,
+        response: target.value
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+}
+
+// src/question-types/YesNoQuestion.ts
+class YesNoQuestion2 extends OneChoice {
+  constructor(surveyBuilder, question, index) {
+    const modifiedQuestion = { ...question, items: ["Yes", "No"] };
+    super(surveyBuilder, modifiedQuestion, index);
+  }
+}
+
 // src/SurveyBuilder.ts
 class SurveyBuilder {
   surveyContainer;
@@ -565,6 +625,12 @@ class SurveyBuilder {
           break;
         case "yes-no":
           this.questions.push(new YesNoQuestion(this, question, index));
+          break;
+        case "YesNoQuestion2":
+          this.questions.push(new YesNoQuestion2(this, question, index));
+          break;
+        case "one-choice":
+          this.questions.push(new OneChoice(this, question, index));
           break;
         case "select":
           this.questions.push(new SelectQuestion(this, question, index));
