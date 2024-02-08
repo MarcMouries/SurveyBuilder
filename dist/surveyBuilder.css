@@ -218,6 +218,14 @@ body {
 
 
 
+/** Follow up Question */
+.followup-input-question .input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+
+
 
 .question.select-question input {
     width: 100%;
