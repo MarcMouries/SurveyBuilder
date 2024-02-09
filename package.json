@@ -1,9 +1,10 @@
 {
   "name": "surveybuilder",
-  "module": "src/surveyBuilder.js",
+  "module": "src/SurveyBuilder.js",
   "type": "module",
   "scripts": {
-    "build" : "bun build  ./src/survey.js --outfile=./dist/sb-bundle.js"
+    "build" : "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js",
+    "dev"   : "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js --watch"
   },
   "devDependencies": {
     "@types/bun": "latest"
