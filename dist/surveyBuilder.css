@@ -1,3 +1,25 @@
+:root {
+    --primary-bg-color: #032d42;
+    --secondary-bg-color: #f4f4f4;
+    --primary-color: #61D84E;
+    --error-color: #dc8686;
+    --border-color: #ddd;
+    --text-color: #444;
+    --placeholder-color: #888;
+    --button-hover-bg-color: #529c41;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --input-border-color: #ddd;
+    --input-bg-color: #fff;
+    /* custom control variables */
+    --custom-control-size: 26px;
+    --custom-control-border: 2px solid var(--border-color);
+    --custom-control-border-radius: 5px;
+    --custom-control-selected-size: 20px;
+    --custom-control-left-position: 5px;
+    --custom-control-padding-right: 40px
+
+}
+
 /* Reset and Box Sizing */
 *,
 *:before,
@@ -69,6 +91,31 @@ body {
     /* Space for 'Complete' button */
 }
 
+
+/** ALL Questions */
+.question label {
+font-size: 1.2em;
+color: #444;
+_font-size: 16px;
+}
+
+.question .items label{
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+    background-color: #f7f7f7;
+}
+
+.one-choice-question .item label, .multi-choice-question .item label {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    padding-left: var(--custom-control-padding-right);
+}
+
 /* Yes No Question */
 .yes-no-question .items {
     display: flex;
@@ -108,52 +155,76 @@ body {
     margin-bottom: 8px;
 }
 
-/* Hide the actual radio input */
-.one-choice-question .item input[type="radio"] {
+/* Hide the actual radio and checkbox */
+.one-choice-question .item input[type="radio"],
+.multi-choice-question .item input[type="checkbox"] { 
     display: none;
 }
 
-/* Style the label to look like a custom radio button */
-.one-choice-question .item label {
-    position: relative;
-    padding-left: 25px;
-    cursor: pointer;
-    display: inline-block;
-    color: #444; /* Change as needed */
-    font-size: 16px; /* Change as needed */
-}
-/* Create a custom radio button */
+/* Create a custom control appearance for both radio and checkbox */
 .one-choice-question .item label:before {
     content: '';
     position: absolute;
-    left: 0;
+    left: var(--custom-control-left-position);
     top: 50%;
     transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #888; /* Change as needed */
-    border-radius: 50%;
-    background-color: #fff; /* Change as needed */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Optional: Adds a subtle shadow for depth */
+    width: var(--custom-control-size);
+    height: var(--custom-control-size);
+    border: var(--custom-control-border);
+    _border-width: 2px 2px 4px;
+    border-radius: 50%; 
+    background-color: var(--input-bg-color);
+    box-shadow: 0 1px 2px var(--shadow-color);
 }
-/* Style for when the radio input is checked: a colored dot inside the custom radio button */
+/* Filled circle for checked radio */
 .one-choice-question .item input[type="radio"]:checked + label:after {
     content: '';
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: var(--custom-control-selected-size);
+    height: var(--custom-control-selected-size);
     border-radius: 50%;
-    left: 3px;
-    top: calc(50% - 5px);
-    background-color: #61D84E; /* Change as needed */
+    left: calc(var(--custom-control-left-position) + (var(--custom-control-size) - var(--custom-control-selected-size)) / 2);
+    top: calc(50% - var(--custom-control-selected-size) / 2);
+    background-color: var(--primary-color);
 }
 
 
-/* Optional: change label styles when the radio input is checked */
-.one-choice-question .item input[type="radio"]:checked + label {
-    _color: #5b9bd5; /* Change as needed */
-    font-weight: bold; /* Change as needed */
+/* Custom Checkbox Appearance */
+.multi-choice-question .item label:before {
+    content: '';
+    position: absolute;
+    left: var(--custom-control-left-position);
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--custom-control-size);
+    height: var(--custom-control-size);
+    border: var(--custom-control-border);
+    _border-width: 2px 2px 4px;
+    border-radius: var(--custom-control-border-radius);
+    background-color: var(--input-bg-color);
+    box-shadow: 0 1px 2px var(--shadow-color);
 }
+
+/* Filled square for checked checkbox */
+.multi-choice-question .item input[type="checkbox"]:checked + label:after {
+    content: '';
+    position: absolute;
+    width: var(--custom-control-selected-size);
+    height: var(--custom-control-selected-size);
+    border-radius: var(--custom-control-border-radius);
+    left: calc(var(--custom-control-left-position) + (var(--custom-control-size) - var(--custom-control-selected-size)) / 2);
+    top: calc(50% - var(--custom-control-selected-size) / 2);
+    background-color: var(--primary-color);
+}
+
+
+/* Additional styles for label when control is checked */
+.one-choice-question .item input[type="radio"]:checked + label,
+.multi-choice-question .item input[type="checkbox"]:checked + label {
+    font-weight: bold;
+}
+
+
 
 
 /** Multi Choice */
@@ -168,55 +239,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* Hide the actual checkbox input */
-.multi-choice-question .item input[type="checkbox"] {
-    display: none;
-}
-
-/* Style the label to look like a custom checkbox */
-.multi-choice-question .item label {
-    position: relative;
-    padding-left: 25px;
-    cursor: pointer;
-    display: inline-block;
-    color: #444; /* Change as needed */
-    font-size: 16px; /* Change as needed */
-}
-
-/* Create a custom checkbox */
-.multi-choice-question .item label:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #888; /* Change as needed */
-    background-color: #fff; /* Change as needed */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Optional: Adds a subtle shadow for depth */
-}
-
-/* Style for when the checkbox input is checked */
-.multi-choice-question .item input[type="checkbox"]:checked + label:before {
-    content: '\2713'; /* Unicode character for a checkmark */
-    position: absolute;
-    color: #61D84E; /* Change as needed */
-    font-size: 16px;
-    line-height: 1;
-    text-align: center;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* Optional: change label styles when the checkbox input is checked */
-.multi-choice-question .item input[type="checkbox"]:checked + label {
-    color: #5b9bd5; /* Change as needed */
-    font-weight: bold; /* Change as needed */
-}
-
-
 
 /** Follow up Question */
 .followup-input-question .input-group {
@@ -224,12 +246,8 @@ body {
     flex-direction: column;
 }
 
-
-
-
 .question.select-question input {
     width: 100%;
-    /* Full width of the container */
     padding: 8px;
     margin-top: 5px;
     border: 1px solid #ddd;
@@ -264,8 +282,7 @@ datalist {
 }
 
 .custom-options-container {
-    display: none;
-    /* Hidden by default */
+    display: none;  /* Hidden by default */
     position: absolute;
     z-index: 1000;
     width: 100%;
@@ -446,7 +463,6 @@ footer {
 .complete-button {
     padding: 10px 20px;
     background-color: #61D84E;
-    /* Green background */
     color: white;
     border: none;
     border-radius: 4px;
@@ -455,8 +471,7 @@ footer {
 }
 
 .complete-button:hover {
-    background-color: #529c41;
-    /* Darker green on hover for visual feedback */
+    background-color: var (--button-hover-bg-color)
 }
 
 .thank-you-container {
