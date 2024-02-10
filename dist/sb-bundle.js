@@ -1,3 +1,10 @@
+// src/question-types/AnswerSelectedEvent.ts
+class AnswerSelectedEvent extends CustomEvent {
+  constructor(response) {
+    super("answerSelected", { detail: response });
+  }
+}
+
 // src/question-types/common.ts
 function createQuestionTitle(questionText) {
   const title = document.createElement("h3");
@@ -12,13 +19,14 @@ function createQuestionTitle(questionText) {
 class QuestionType {
   surveyBuilder;
   questionDiv;
-  question;
+  questionData;
   constructor(surveyBuilder, question, index) {
     this.surveyBuilder = surveyBuilder;
-    this.question = question;
+    this.questionData = question;
     this.questionDiv = document.createElement("div");
     this.questionDiv.className = `question ${question.type}-question`;
     this.questionDiv.dataset.index = index.toString();
+    this.questionDiv.dataset.questionName = question.name;
     this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
     const title = createQuestionTitle(question.title);
     this.questionDiv.appendChild(title);
@@ -37,36 +45,49 @@ class QuestionType {
   hide() {
     this.questionDiv.style.display = "none";
   }
-}
-
-// src/question-types/AnswerSelectedEvent.ts
-class AnswerSelectedEvent extends CustomEvent {
-  constructor(response) {
-    super("answerSelected", { detail: response });
+  updateTitle(newTitle) {
+    const titleElement = document.querySelector(`[data-question-name="${this.questionData.name}"] .question-title`);
+    if (titleElement) {
+      titleElement.textContent = newTitle;
+    }
   }
 }
 
-// src/question-types/select.ts
-class SelectQuestion extends QuestionType {
+// src/question-types/FollowUpDetailQuestion.ts
+class FollowUpDetailQuestion extends QuestionType {
+  detailQuestions;
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    const searchComponent = document.createElement("search-input");
-    this.questionDiv.appendChild(searchComponent);
-    const config = {
-      static_options: question.options || [],
-      dynamic_options_service: question.options_source
-    };
-    searchComponent.setConfig(config);
-    searchComponent.addEventListener("optionSelected", (event) => {
-      const customEvent = event;
-      const selectedOption = customEvent.detail.option;
-      console.log("In searchComponent optionSelected: ", selectedOption);
-      const response = {
-        questionName: question.name,
-        response: selectedOption
-      };
-      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    const dependentResponse = surveyBuilder.responses[question.dependentQuestionName];
+    if (dependentResponse) {
+      this.question.title = `Provide the following information about your ${question.title} ${dependentResponse}:`;
+    }
+    this.detailQuestions = question.detailQuestions || [];
+    this.renderDetailQuestions();
+  }
+  renderDetailQuestions() {
+    this.detailQuestions.forEach(({ label, placeholder }) => {
+      const inputWrapper = document.createElement("div");
+      inputWrapper.className = "input-group";
+      const labelElement = document.createElement("label");
+      labelElement.textContent = label;
+      inputWrapper.appendChild(labelElement);
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = placeholder;
+      input.addEventListener("input", this.handleInputChange.bind(this, label));
+      inputWrapper.appendChild(input);
+      this.questionDiv.appendChild(inputWrapper);
     });
+  }
+  handleInputChange(label, event) {
+    const target = event.target;
+    const response = {
+      questionName: this.question.name,
+      response: { [label]: target.value }
+    };
+    console.log("Input Change for:", label, ", Value:", target.value);
+    this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
   }
 }
 // src/question-types/multi-line.ts
@@ -197,6 +218,94 @@ class RankingQuestion extends QuestionType {
       rank: index + 1,
       item: item.querySelector(".item-text")?.textContent ?? "Unknown Item"
     }));
+  }
+}
+// src/question-types/AbstractChoice.ts
+class AbstractChoice extends QuestionType {
+  items = [];
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.items = question.items;
+    this.renderChoices();
+  }
+  createLabel(forId, text) {
+    const label = document.createElement("label");
+    label.htmlFor = forId;
+    label.textContent = text;
+    return label;
+  }
+}
+
+// src/question-types/OneChoice.ts
+class OneChoice extends AbstractChoice {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+  }
+  renderChoices() {
+    const choiceContainer = document.createElement("div");
+    choiceContainer.className = "items";
+    if (this.items) {
+      this.items.forEach((item, i) => {
+        const wrapperDiv = document.createElement("div");
+        wrapperDiv.className = "item";
+        const radioId = `${this.questionData.name}-${i}`;
+        const radio = this.createRadio(item, this.questionData.name, radioId);
+        const label = this.createLabel(radioId, item);
+        wrapperDiv.appendChild(radio);
+        wrapperDiv.appendChild(label);
+        choiceContainer.appendChild(wrapperDiv);
+      });
+    } else {
+      console.warn("Items are undefined for question:", this.questionData.name);
+    }
+    this.questionDiv.appendChild(choiceContainer);
+    choiceContainer.addEventListener("change", (event) => {
+      const target = event.target;
+      const response = {
+        questionName: this.questionData.name,
+        response: target.value
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
+  }
+}
+
+// src/question-types/YesNoQuestion.ts
+class YesNoQuestion2 extends OneChoice {
+  constructor(surveyBuilder, question, index) {
+    const modifiedQuestion = { ...question, items: ["Yes", "No"] };
+    super(surveyBuilder, modifiedQuestion, index);
+  }
+}
+// src/question-types/select.ts
+class SelectQuestion extends QuestionType {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    const searchComponent = document.createElement("search-input");
+    this.questionDiv.appendChild(searchComponent);
+    const config = {
+      static_options: question.options || [],
+      dynamic_options_service: question.options_source
+    };
+    searchComponent.setConfig(config);
+    searchComponent.addEventListener("optionSelected", (event) => {
+      const customEvent = event;
+      const selectedOption = customEvent.detail.option;
+      console.log("In searchComponent optionSelected: ", selectedOption);
+      const response = {
+        questionName: question.name,
+        response: selectedOption
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
   }
 }
 // src/question-types/single-line.ts
@@ -486,72 +595,6 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
-// src/question-types/AbstractChoice.ts
-class AbstractChoice extends QuestionType {
-  items = [];
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-    this.items = question.items;
-    this.renderChoices();
-  }
-  createLabel(forId, text) {
-    const label = document.createElement("label");
-    label.htmlFor = forId;
-    label.textContent = text;
-    return label;
-  }
-}
-
-// src/question-types/OneChoice.ts
-class OneChoice extends AbstractChoice {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-  }
-  renderChoices() {
-    const choiceContainer = document.createElement("div");
-    choiceContainer.className = "items";
-    if (this.items) {
-      this.items.forEach((item, i) => {
-        const wrapperDiv = document.createElement("div");
-        wrapperDiv.className = "item";
-        const radioId = `${this.question.name}-${i}`;
-        const radio = this.createRadio(item, this.question.name, radioId);
-        const label = this.createLabel(radioId, item);
-        wrapperDiv.appendChild(radio);
-        wrapperDiv.appendChild(label);
-        choiceContainer.appendChild(wrapperDiv);
-      });
-    } else {
-      console.warn("Items are undefined for question:", this.question.name);
-    }
-    this.questionDiv.appendChild(choiceContainer);
-    choiceContainer.addEventListener("change", (event) => {
-      const target = event.target;
-      const response = {
-        questionName: this.question.name,
-        response: target.value
-      };
-      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
-    });
-  }
-  createRadio(value, name, id) {
-    const radioInput = document.createElement("input");
-    radioInput.type = "radio";
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    return radioInput;
-  }
-}
-
-// src/question-types/YesNoQuestion.ts
-class YesNoQuestion2 extends OneChoice {
-  constructor(surveyBuilder, question, index) {
-    const modifiedQuestion = { ...question, items: ["Yes", "No"] };
-    super(surveyBuilder, modifiedQuestion, index);
-  }
-}
-
 // src/question-types/MultiChoice.ts
 class MultiChoice extends AbstractChoice {
   constructor(surveyBuilder, question, index) {
@@ -563,8 +606,8 @@ class MultiChoice extends AbstractChoice {
     this.items.forEach((item, i) => {
       const wrapperDiv = document.createElement("div");
       wrapperDiv.className = "item";
-      const checkboxId = `${this.question.name}-${i}`;
-      const checkbox = this.createCheckbox(item, this.question.name, checkboxId);
+      const checkboxId = `${this.questionData.name}-${i}`;
+      const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
       const label = this.createLabel(checkboxId, item);
       wrapperDiv.appendChild(checkbox);
       wrapperDiv.appendChild(label);
@@ -573,13 +616,15 @@ class MultiChoice extends AbstractChoice {
     this.questionDiv.appendChild(choiceContainer);
     choiceContainer.addEventListener("change", () => {
       const selectedOptions = this.items.filter((_, i) => {
-        const checkbox = document.getElementById(`${this.question.name}-${i}`);
+        const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
         return checkbox && checkbox.checked;
       }).map((item, i) => {
-        return { value: item, index: i };
+        return {
+          value: item
+        };
       });
       const response = {
-        questionName: this.question.name,
+        questionName: this.questionData.name,
         response: selectedOptions
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
@@ -597,12 +642,14 @@ class MultiChoice extends AbstractChoice {
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
+  static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
   surveyContainer;
   config;
   questionNumber;
-  questions;
+  questionComponents;
   responses;
   completeCallback;
+  questionDependencies = new Map;
   constructor(config, containerId) {
     this.config = config;
     const containerElement = document.getElementById(containerId);
@@ -612,37 +659,41 @@ class SurveyBuilder {
     this.surveyContainer = containerElement;
     this.questionNumber = 1;
     this.responses = {};
-    this.questions = [];
+    this.questionComponents = [];
     this.createSurvey();
   }
   createSurvey() {
     this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
     this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
     this.config.questions.forEach((question, index) => {
+      this.storeQuestionDependencies(question);
       switch (question.type) {
         case "ranking":
-          this.questions.push(new RankingQuestion(this, question, index));
+          this.questionComponents.push(new RankingQuestion(this, question, index));
           break;
         case "single-line-text":
-          this.questions.push(new SingleLineTextQuestion(this, question, index));
+          this.questionComponents.push(new SingleLineTextQuestion(this, question, index));
           break;
         case "multi-line-text":
-          this.questions.push(new MultiLineTextQuestion(this, question, index));
+          this.questionComponents.push(new MultiLineTextQuestion(this, question, index));
           break;
         case "yes-no":
-          this.questions.push(new YesNoQuestion2(this, question, index));
+          this.questionComponents.push(new YesNoQuestion2(this, question, index));
           break;
         case "YesNoQuestion2":
-          this.questions.push(new YesNoQuestion2(this, question, index));
+          this.questionComponents.push(new YesNoQuestion2(this, question, index));
           break;
         case "one-choice":
-          this.questions.push(new OneChoice(this, question, index));
+          this.questionComponents.push(new OneChoice(this, question, index));
           break;
         case "multi-choice":
-          this.questions.push(new MultiChoice(this, question, index));
+          this.questionComponents.push(new MultiChoice(this, question, index));
           break;
         case "select":
-          this.questions.push(new SelectQuestion(this, question, index));
+          this.questionComponents.push(new SelectQuestion(this, question, index));
+          break;
+        case "followup-input":
+          this.questionComponents.push(new FollowUpDetailQuestion(this, question, index));
           break;
         default:
           console.error("Unsupported question type: " + question.type);
@@ -650,14 +701,37 @@ class SurveyBuilder {
     });
     this.createCompleteButton(this.surveyContainer);
   }
+  storeQuestionDependencies(question) {
+    const dependencies = this.extractDependencies(question.title);
+    dependencies.forEach((dependency) => {
+      const currentDependencies = this.questionDependencies.get(dependency) || [];
+      currentDependencies.push(question.name);
+      this.questionDependencies.set(dependency, currentDependencies);
+    });
+  }
+  extractDependencies(title) {
+    const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
+    const dependencies = matches.map((match) => {
+      const dependency = match[1].trim();
+      console.log(`Dependency '${dependency}' found in title: ${title}`);
+      return dependency;
+    });
+    return dependencies;
+  }
+  constructNewTitle(template, response) {
+    return template.replace(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX, (_, placeholderName) => {
+      return response;
+    });
+  }
   setResponse(response) {
     this.responses[response.questionName] = response.response;
     this.evaluateVisibilityConditions(response);
+    this.updateDependentQuestionTitles(response.questionName, response.response);
   }
   evaluateVisibilityConditions(response) {
     console.log("evaluateVisibilityConditions for ", response.questionName);
-    this.questions.forEach((questionComponent) => {
-      const question = questionComponent.question;
+    this.questionComponents.forEach((questionComponent) => {
+      const question = questionComponent.questionData;
       if (question.visible_when) {
         const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s) => s.trim());
         if (conditionQuestionName === response.questionName) {
@@ -672,6 +746,23 @@ class SurveyBuilder {
         }
       }
     });
+  }
+  updateDependentQuestionTitles(questionName, response) {
+    console.log("updateDependentQuestionTitles dependent on question: " + questionName);
+    const dependentQuestions = this.questionDependencies.get(questionName);
+    if (dependentQuestions) {
+      dependentQuestions.forEach((dependentQuestionName) => {
+        console.log("questionDependencies contains dependentQuestionName = " + dependentQuestionName);
+        const dependentQuestionComponent = this.questionComponents.find((questionComponent) => questionComponent.questionData.name === dependentQuestionName);
+        console.log("this.questions contains: ", dependentQuestionComponent);
+        if (dependentQuestionComponent) {
+          const questionData = dependentQuestionComponent.questionData;
+          console.log("before constructNewTitle, questionData = ", questionData);
+          const newTitle = this.constructNewTitle(questionData.title, response);
+          dependentQuestionComponent.updateTitle(newTitle);
+        }
+      });
+    }
   }
   getQuestionElement(index) {
     let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");
