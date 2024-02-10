@@ -6,4 +6,5 @@ export interface ISurveyBuilder {
     surveyContainer: HTMLElement;
     setResponse: (response: IQuestionResponse) => void;
     evaluateVisibilityConditions(response: IQuestionResponse): void;
+    responses: { [key: string]: any };
 }
