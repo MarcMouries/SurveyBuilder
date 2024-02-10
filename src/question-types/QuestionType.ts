@@ -7,10 +7,10 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
 
 export abstract class QuestionType implements IQuestionComponent {
     protected questionDiv: HTMLDivElement;
-    public question: IQuestion;
+    public questionData: IQuestion;
 
     constructor(protected surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        this.question = question;
+        this.questionData = question;
         this.questionDiv = document.createElement('div');
         this.questionDiv.className = `question ${question.type}-question`;
         
@@ -42,7 +42,7 @@ export abstract class QuestionType implements IQuestionComponent {
     }
 
     updateTitle(newTitle: string) {
-        const titleElement = document.querySelector(`[data-question-name="${this.question.name}"] .question-title`);
+        const titleElement = document.querySelector(`[data-question-name="${this.questionData.name}"] .question-title`);
         if (titleElement) {
             titleElement.textContent = newTitle;
         }

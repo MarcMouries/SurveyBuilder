@@ -26,8 +26,8 @@ export class MultiChoice extends AbstractChoice {
             const wrapperDiv = document.createElement('div');
             wrapperDiv.className = 'item';
 
-            const checkboxId = `${this.question.name}-${i}`;
-            const checkbox = this.createCheckbox(item, this.question.name, checkboxId);
+            const checkboxId = `${this.questionData.name}-${i}`;
+            const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
             const label = this.createLabel(checkboxId, item);
 
             wrapperDiv.appendChild(checkbox);
@@ -40,14 +40,17 @@ export class MultiChoice extends AbstractChoice {
         // Event listener for response change
         choiceContainer.addEventListener('change', () => {
             const selectedOptions = this.items.filter((_, i) => {
-                const checkbox = document.getElementById(`${this.question.name}-${i}`) as HTMLInputElement;
+                const checkbox = document.getElementById(`${this.questionData.name}-${i}`) as HTMLInputElement;
                 return checkbox && checkbox.checked;
             }).map((item, i) => {
-                return { value: item, index: i };
+                return { 
+                    value: item, 
+                   /* index: i */
+                };
             });
 
             const response: IQuestionResponse = {
-                questionName: this.question.name,
+                questionName: this.questionData.name,
                 response: selectedOptions
             };
 

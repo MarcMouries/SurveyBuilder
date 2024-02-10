@@ -30,8 +30,8 @@ export class OneChoice extends AbstractChoice {
                 const wrapperDiv = document.createElement('div');
                 wrapperDiv.className = 'item';
 
-                const radioId = `${this.question.name}-${i}`;
-                const radio = this.createRadio(item, this.question.name, radioId);
+                const radioId = `${this.questionData.name}-${i}`;
+                const radio = this.createRadio(item, this.questionData.name, radioId);
                 const label = this.createLabel(radioId, item);
 
                 wrapperDiv.appendChild(radio);
@@ -39,7 +39,7 @@ export class OneChoice extends AbstractChoice {
                 choiceContainer.appendChild(wrapperDiv);
             });
         } else {
-            console.warn("Items are undefined for question:", this.question.name);
+            console.warn("Items are undefined for question:", this.questionData.name);
         }
 
         this.questionDiv.appendChild(choiceContainer);
@@ -48,7 +48,7 @@ export class OneChoice extends AbstractChoice {
         choiceContainer.addEventListener('change', (event) => {
             const target = event.target as HTMLInputElement;
             const response: IQuestionResponse = {
-                questionName: this.question.name,
+                questionName: this.questionData.name,
                 response: target.value
             };
             this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));

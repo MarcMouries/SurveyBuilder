@@ -1,7 +1,7 @@
 import type { IQuestion } from "../IQuestion";
 
 export interface IQuestionComponent {
-    question: IQuestion;
+    questionData: IQuestion;
     show() : void;
     hide() : void;
 }
