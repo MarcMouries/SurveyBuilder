@@ -12,15 +12,22 @@ import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { YesNoQuestion2 } from './question-types/YesNoQuestion.ts';
 import { OneChoice } from './question-types/OneChoice.ts';
 import { MultiChoice } from './question-types/MultiChoice.ts';
+import { FollowUpDetailQuestion } from './question-types/FollowUpDetailQuestion.ts';
 
 
 class SurveyBuilder implements ISurveyBuilder {
+
+    static readonly RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
+
     surveyContainer: HTMLElement;
     config: any;
     questionNumber: number;
-    questions: any[];
+    questionComponents: any[];
     responses: { [key: string]: any };
     completeCallback: any;
+    questionDependencies: Map<string, string[]> = new Map();
+
+
 
     constructor(config: any, containerId: string) {
         this.config = config;
@@ -31,7 +38,7 @@ class SurveyBuilder implements ISurveyBuilder {
         this.surveyContainer = containerElement;
         this.questionNumber = 1;
         this.responses = {};
-        this.questions = [];
+        this.questionComponents = [];
         this.createSurvey();
     }
 
@@ -41,31 +48,37 @@ class SurveyBuilder implements ISurveyBuilder {
 
         this.config.questions.forEach((question: IQuestion, index: number) => {
 
+            this.storeQuestionDependencies(question);
+
+
             switch (question.type) {
                 case "ranking":
-                    this.questions.push(new RankingQuestion(this, question, index));
+                    this.questionComponents.push(new RankingQuestion(this, question, index));
                     break;
                 case "single-line-text":
-                    this.questions.push(new SingleLineTextQuestion(this, question, index));
+                    this.questionComponents.push(new SingleLineTextQuestion(this, question, index));
                     break;
                 case "multi-line-text":
-                    this.questions.push(new MultiLineTextQuestion(this, question, index));
+                    this.questionComponents.push(new MultiLineTextQuestion(this, question, index));
                     break;
                 case "yes-no":
                     //this.questions.push(new YesNoQuestion(this, question, index));
-                    this.questions.push(new YesNoQuestion2(this, question, index));
+                    this.questionComponents.push(new YesNoQuestion2(this, question, index));
                     break;
                 case "YesNoQuestion2":
-                    this.questions.push(new YesNoQuestion2(this, question, index));
+                    this.questionComponents.push(new YesNoQuestion2(this, question, index));
                     break;
                 case "one-choice":
-                    this.questions.push(new OneChoice(this, question, index));
+                    this.questionComponents.push(new OneChoice(this, question, index));
                     break;
                 case "multi-choice":
-                        this.questions.push(new MultiChoice(this, question, index));
-                        break;
+                    this.questionComponents.push(new MultiChoice(this, question, index));
+                    break;
                 case "select":
-                    this.questions.push(new SelectQuestion(this, question, index));
+                    this.questionComponents.push(new SelectQuestion(this, question, index));
+                    break;
+                case "followup-input":
+                    this.questionComponents.push(new FollowUpDetailQuestion(this, question, index));
                     break;
                 default:
                     console.error("Unsupported question type: " + question.type);
@@ -75,17 +88,55 @@ class SurveyBuilder implements ISurveyBuilder {
         this.createCompleteButton(this.surveyContainer);
     }
 
+    private storeQuestionDependencies(question: IQuestion): void {
+        const dependencies = this.extractDependencies(question.title);
+        dependencies.forEach(dependency => {
+            const currentDependencies = this.questionDependencies.get(dependency) || [];
+            currentDependencies.push(question.name);
+            this.questionDependencies.set(dependency, currentDependencies);
+        });
+    }
+
+
+    /** 
+     * Extracts question names from placeholders within a string, indicating dependencies.
+     * Ex: "What activity do you like doing during the {{favorite-season}} season :"
+    */
+    private extractDependencies(title: string): string[] {
+        const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
+        const dependencies = matches.map(match => {
+            const dependency = match[1].trim();
+            console.log(`Dependency '${dependency}' found in title: ${title}`);
+            return dependency;
+        });
+        return dependencies;
+    }
+
+
+
+    /**
+     * Replace placeholders in the format {{placeholderName}} in the template with the actual response
+     */
+    private constructNewTitle(template: string, response: any): string {
+        return template.replace(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX, (_, placeholderName) => {
+            return response;
+        });
+    }
+
+
     setResponse(response: IQuestionResponse): void {
         this.responses[response.questionName] = response.response;
         this.evaluateVisibilityConditions(response);
+        this.updateDependentQuestionTitles(response.questionName, response.response);
+
     }
 
     // Go through each question and determine if it should be shown based on the visible_when condition
     evaluateVisibilityConditions(response: IQuestionResponse): void {
         console.log("evaluateVisibilityConditions for ", response.questionName);
 
-        this.questions.forEach((questionComponent:IQuestionComponent) => {
-            const question = questionComponent.question;
+        this.questionComponents.forEach((questionComponent: IQuestionComponent) => {
+            const question = questionComponent.questionData;
             if (question.visible_when) {
                 const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s: string) => s.trim());
                 // Check if the condition is related to the response question
@@ -103,6 +154,30 @@ class SurveyBuilder implements ISurveyBuilder {
             }
         });
     }
+
+    /**
+     * Update the question's title if it contains a placeholder with the answer of another question
+     */
+    private updateDependentQuestionTitles(questionName: string, response: any) {
+        console.log("updateDependentQuestionTitles dependent on question: " + questionName)
+
+        const dependentQuestions = this.questionDependencies.get(questionName);
+        if (dependentQuestions) {
+            dependentQuestions.forEach(dependentQuestionName => {
+                console.log("questionDependencies contains dependentQuestionName = " + dependentQuestionName)
+                const dependentQuestionComponent = this.questionComponents.find(questionComponent => questionComponent.questionData.name === dependentQuestionName);
+                console.log("this.questions contains: ", dependentQuestionComponent);
+                //console.log("this.questions", this.questions);
+                if (dependentQuestionComponent) {
+                    const questionData = dependentQuestionComponent.questionData;
+                    console.log("before constructNewTitle, questionData = ", questionData);
+                    const newTitle = this.constructNewTitle(questionData.title, response);
+                    dependentQuestionComponent.updateTitle(newTitle);
+                }
+            });
+        }
+    }
+
 
     getQuestionElement(index: number): any {
         let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");

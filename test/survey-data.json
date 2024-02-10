@@ -24,8 +24,28 @@
       ]
     },
     {
+      "type": "followup-input",
+      "name": "favorite-season-details",
+      "title": "What activity do you like doing during the {{favorite-season}} season :", 
+      "isRequired": true,
+      "detailQuestions": [
+        {
+          "label": "Activity Name",
+          "placeholder": "Enter the name of your favorite activity"
+        },
+        {
+          "label": "Location",
+          "placeholder": "Preferred location for this activity"
+        },
+        {
+          "label": "Preferred Time of Day",
+          "placeholder": "When do you prefer to do this activity? (Morning, Afternoon, Evening)"
+        }
+      ]
+    },
+    {
       "type": "multi-choice",
-      "name": "fruits",
+      "name": "fruits-liked",
       "title": "Which of the following fruits do you like? (Select all that apply)",
       "items": [
         "Apples",
@@ -92,7 +112,7 @@
     },
     {
       "type": "single-line-text",
-      "name": "Email",
+      "name": "email",
       "title": "Enter your email if you want to be contacted about this.",
       "isRequired": false
     }
