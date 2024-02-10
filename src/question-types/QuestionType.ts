@@ -13,7 +13,9 @@ export abstract class QuestionType implements IQuestionComponent {
         this.question = question;
         this.questionDiv = document.createElement('div');
         this.questionDiv.className = `question ${question.type}-question`;
+        
         this.questionDiv.dataset.index = index.toString();
+        this.questionDiv.dataset.questionName = question.name;
 
         this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
 
@@ -25,7 +27,6 @@ export abstract class QuestionType implements IQuestionComponent {
 
     protected setupResponseListener() {
         this.questionDiv.addEventListener("answerSelected", (event: Event) => {
-            // Use a type assertion to treat the event as a CustomEvent with detail of type IQuestionResponse
             const customEvent = event as CustomEvent<IQuestionResponse>;
             const response = customEvent.detail;
             this.surveyBuilder.setResponse(response);
@@ -39,5 +40,13 @@ export abstract class QuestionType implements IQuestionComponent {
     public hide () {
         this.questionDiv.style.display = 'none';
     }
+
+    updateTitle(newTitle: string) {
+        const titleElement = document.querySelector(`[data-question-name="${this.question.name}"] .question-title`);
+        if (titleElement) {
+            titleElement.textContent = newTitle;
+        }
+    }
+    
 
 }
