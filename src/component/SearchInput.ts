@@ -103,23 +103,21 @@ export class SearchInput extends HTMLElement {
                     height: 16px;
                     fill: currentColor;
                 }
-                
-
 
                 .main-options-container {
                     overflow-y: auto;
-                    flex-grow: 1;
-                    border: 1px solid #ccc;
-                    
+                    flex-grow: 1;                    
                     margin-left: 8px;
                     margin-right: 8px;
                 }
                 .main-options-container .option {
-                    padding: 8px; /* Add padding to each option */
-                    margin: 2px 0; /* Small margin between options */
+                    padding: 8px; 
+                    margin: 2px 0;
                     cursor: pointer;
+                    border: 1px solid lightgray;
                     border-radius: 4px;
-                    transition: background-color 0.3s; /* Smooth transition for hover effect */
+
+                    transition: background-color 0.3s;
                 }
                 .main-options-container .option:hover {
                     background-color: #f0f0f0;
