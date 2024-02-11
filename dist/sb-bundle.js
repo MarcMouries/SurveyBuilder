@@ -56,37 +56,35 @@ class QuestionType {
 // src/question-types/FollowUpDetailQuestion.ts
 class FollowUpDetailQuestion extends QuestionType {
   detailQuestions;
+  detailResponses = {};
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
-    const dependentResponse = surveyBuilder.responses[question.dependentQuestionName];
-    if (dependentResponse) {
-      this.question.title = `Provide the following information about your ${question.title} ${dependentResponse}:`;
-    }
     this.detailQuestions = question.detailQuestions || [];
     this.renderDetailQuestions();
   }
   renderDetailQuestions() {
-    this.detailQuestions.forEach(({ label, placeholder }) => {
+    this.detailQuestions.forEach(({ name, placeholder }) => {
       const inputWrapper = document.createElement("div");
       inputWrapper.className = "input-group";
       const labelElement = document.createElement("label");
-      labelElement.textContent = label;
+      labelElement.textContent = name;
       inputWrapper.appendChild(labelElement);
       const input = document.createElement("input");
       input.type = "text";
       input.placeholder = placeholder;
-      input.addEventListener("input", this.handleInputChange.bind(this, label));
+      input.addEventListener("input", this.handleInputChange.bind(this, name));
       inputWrapper.appendChild(input);
       this.questionDiv.appendChild(inputWrapper);
     });
   }
-  handleInputChange(label, event) {
+  handleInputChange(name, event) {
     const target = event.target;
+    this.detailResponses[name] = target.value;
     const response = {
-      questionName: this.question.name,
-      response: { [label]: target.value }
+      questionName: this.questionData.name,
+      response: this.detailResponses
     };
-    console.log("Input Change for:", label, ", Value:", target.value);
+    console.log("Aggregated Input Change:", this.detailResponses);
     this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
   }
 }
@@ -431,23 +429,21 @@ class SearchInput extends HTMLElement {
                     height: 16px;
                     fill: currentColor;
                 }
-                
-
 
                 .main-options-container {
                     overflow-y: auto;
-                    flex-grow: 1;
-                    border: 1px solid #ccc;
-                    
+                    flex-grow: 1;                    
                     margin-left: 8px;
                     margin-right: 8px;
                 }
                 .main-options-container .option {
-                    padding: 8px; /* Add padding to each option */
-                    margin: 2px 0; /* Small margin between options */
+                    padding: 8px; 
+                    margin: 2px 0;
                     cursor: pointer;
+                    border: 1px solid lightgray;
                     border-radius: 4px;
-                    transition: background-color 0.3s; /* Smooth transition for hover effect */
+
+                    transition: background-color 0.3s;
                 }
                 .main-options-container .option:hover {
                     background-color: #f0f0f0;
@@ -604,31 +600,68 @@ class MultiChoice extends AbstractChoice {
     const choiceContainer = document.createElement("div");
     choiceContainer.className = "items";
     this.items.forEach((item, i) => {
-      const wrapperDiv = document.createElement("div");
-      wrapperDiv.className = "item";
-      const checkboxId = `${this.questionData.name}-${i}`;
-      const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
-      const label = this.createLabel(checkboxId, item);
-      wrapperDiv.appendChild(checkbox);
-      wrapperDiv.appendChild(label);
-      choiceContainer.appendChild(wrapperDiv);
+      this.appendChoice(item, i, choiceContainer);
     });
+    if (this.questionData.includeOtherOption) {
+      this.appendOtherOption(choiceContainer);
+    }
     this.questionDiv.appendChild(choiceContainer);
-    choiceContainer.addEventListener("change", () => {
-      const selectedOptions = this.items.filter((_, i) => {
-        const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
-        return checkbox && checkbox.checked;
-      }).map((item, i) => {
-        return {
-          value: item
-        };
-      });
-      const response = {
-        questionName: this.questionData.name,
-        response: selectedOptions
-      };
-      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    choiceContainer.addEventListener("change", this.handleResponseChange.bind(this));
+  }
+  appendChoice(item, index, container) {
+    const wrapperDiv = document.createElement("div");
+    wrapperDiv.className = "item";
+    const checkboxId = `${this.questionData.name}-${index}`;
+    const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
+    const label = this.createLabel(checkboxId, item);
+    wrapperDiv.appendChild(checkbox);
+    wrapperDiv.appendChild(label);
+    container.appendChild(wrapperDiv);
+  }
+  appendOtherOption(container) {
+    const otherWrapperDiv = document.createElement("div");
+    otherWrapperDiv.className = "item other-item";
+    const checkboxId = `${this.questionData.name}-other`;
+    const checkbox = this.createCheckbox("Other", this.questionData.name, checkboxId);
+    checkbox.dataset.other = "true";
+    const label = this.createLabel(checkboxId, "Other");
+    label.htmlFor = checkboxId;
+    const otherInput = document.createElement("input");
+    otherInput.type = "text";
+    otherInput.id = `${checkboxId}-specify`;
+    otherInput.name = `${this.questionData.name}-other-specify`;
+    otherInput.placeholder = "Specify";
+    otherInput.className = "other-specify-input hidden";
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        otherInput.style.display = "block";
+        label.style.color = "transparent";
+        otherInput.focus();
+      } else {
+        otherInput.style.display = "none";
+        label.style.color = "";
+        otherInput.value = "";
+      }
     });
+    otherWrapperDiv.appendChild(checkbox);
+    otherWrapperDiv.appendChild(label);
+    otherWrapperDiv.appendChild(otherInput);
+    container.appendChild(otherWrapperDiv);
+  }
+  handleResponseChange() {
+    const selectedOptions = this.items.filter((_, i) => {
+      const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
+      return checkbox && checkbox.checked;
+    }).map((item, i) => ({ value: item }));
+    const otherInput = document.getElementById(`${this.questionData.name}-other-specify`);
+    if (otherInput && otherInput.style.display !== "none") {
+      selectedOptions.push({ value: otherInput.value });
+    }
+    const response = {
+      questionName: this.questionData.name,
+      response: selectedOptions
+    };
+    this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
   }
   createCheckbox(value, name, id) {
     const checkboxInput = document.createElement("input");
@@ -752,12 +785,9 @@ class SurveyBuilder {
     const dependentQuestions = this.questionDependencies.get(questionName);
     if (dependentQuestions) {
       dependentQuestions.forEach((dependentQuestionName) => {
-        console.log("questionDependencies contains dependentQuestionName = " + dependentQuestionName);
         const dependentQuestionComponent = this.questionComponents.find((questionComponent) => questionComponent.questionData.name === dependentQuestionName);
-        console.log("this.questions contains: ", dependentQuestionComponent);
         if (dependentQuestionComponent) {
           const questionData = dependentQuestionComponent.questionData;
-          console.log("before constructNewTitle, questionData = ", questionData);
           const newTitle = this.constructNewTitle(questionData.title, response);
           dependentQuestionComponent.updateTitle(newTitle);
         }

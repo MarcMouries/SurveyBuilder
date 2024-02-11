@@ -164,20 +164,15 @@ class SurveyBuilder implements ISurveyBuilder {
         const dependentQuestions = this.questionDependencies.get(questionName);
         if (dependentQuestions) {
             dependentQuestions.forEach(dependentQuestionName => {
-                console.log("questionDependencies contains dependentQuestionName = " + dependentQuestionName)
                 const dependentQuestionComponent = this.questionComponents.find(questionComponent => questionComponent.questionData.name === dependentQuestionName);
-                console.log("this.questions contains: ", dependentQuestionComponent);
-                //console.log("this.questions", this.questions);
                 if (dependentQuestionComponent) {
                     const questionData = dependentQuestionComponent.questionData;
-                    console.log("before constructNewTitle, questionData = ", questionData);
                     const newTitle = this.constructNewTitle(questionData.title, response);
                     dependentQuestionComponent.updateTitle(newTitle);
                 }
             });
         }
     }
-
 
     getQuestionElement(index: number): any {
         let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");

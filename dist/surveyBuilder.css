@@ -143,6 +143,45 @@ _font-size: 16px;
     background-color: #dc8686;
 }
 
+.multi-choice-question .item {
+    position: relative; 
+}
+
+
+
+.other-specify-input {
+    background-color: transparent; 
+    box-shadow: none; 
+    border: none; 
+    border-radius: var(--custom-control-border-radius);
+    color: inherit; 
+    display: none; 
+    font-family: inherit; 
+    font-size: 1.2em; 
+    font-weight: bold; 
+    position: absolute; 
+    left: var(--custom-control-left-position);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: auto; 
+    height: 100%; 
+    margin-left: var(--custom-control-size);
+    padding: 8px; 
+}
+
+.other-specify-input:active,
+.other-specify-input:focus {
+    outline: none; 
+    border-color: var(--primary-color); 
+    box-shadow: 0 0 0 2px rgba(97, 216, 78, 0.3); /* Adds a subtle glow */
+}
+.multi-choice-question .item input[type="checkbox"]:checked + label + .other-specify-input {
+    display: block; /* Show the input field when the checkbox is checked */
+}
+
+
+
 
 /** One Choice */
 .one-choice-question .items {
