@@ -6,7 +6,7 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
 /**
  * Represents a question that collects detailed information based on a previous question's answer.
  */
-export class FollowUpDetailQuestion extends QuestionType {
+export class FollowUpQuestion extends QuestionType {
     private detailQuestions: IQuestion[];
     private detailResponses: { [key: string]: string } = {};
 

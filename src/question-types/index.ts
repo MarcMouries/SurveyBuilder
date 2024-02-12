@@ -1,6 +1,6 @@
 export type { IQuestionComponent } from './IQuestionComponent.ts';
 
-export  { FollowUpDetailQuestion } from './FollowUpDetailQuestion.ts';
+export  { FollowUpQuestion } from './FollowUpQuestion.ts';
 export  { MultiLineTextQuestion } from './multi-line.ts';
 export  { RankingQuestion } from './ranking.ts';
 export  { YesNoQuestion } from './yes-no.ts';

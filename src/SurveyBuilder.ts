@@ -12,7 +12,7 @@ import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { YesNoQuestion2 } from './question-types/YesNoQuestion.ts';
 import { OneChoice } from './question-types/OneChoice.ts';
 import { MultiChoice } from './question-types/MultiChoice.ts';
-import { FollowUpDetailQuestion } from './question-types/FollowUpDetailQuestion.ts';
+import { FollowUpQuestion } from './question-types/FollowUpQuestion.ts';
 
 
 class SurveyBuilder implements ISurveyBuilder {
@@ -77,8 +77,8 @@ class SurveyBuilder implements ISurveyBuilder {
                 case "select":
                     this.questionComponents.push(new SelectQuestion(this, question, index));
                     break;
-                case "followup-input":
-                    this.questionComponents.push(new FollowUpDetailQuestion(this, question, index));
+                case "followup":
+                    this.questionComponents.push(new FollowUpQuestion(this, question, index));
                     break;
                 default:
                     console.error("Unsupported question type: " + question.type);
