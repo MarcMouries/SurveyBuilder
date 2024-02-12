@@ -7,48 +7,43 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
  * Represents a question that collects detailed information based on a previous question's answer.
  */
 export class FollowUpDetailQuestion extends QuestionType {
-    private detailQuestions: Array<{label: string, placeholder: string}>;
+    private detailQuestions: IQuestion[];
+    private detailResponses: { [key: string]: string } = {};
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
-
-        const dependentResponse = surveyBuilder.responses[question.dependentQuestionName];
-        if (dependentResponse) {
-            this.question.title = `Provide the following information about your ${question.title} ${dependentResponse}:`;
-        }
         this.detailQuestions = question.detailQuestions || [];
         this.renderDetailQuestions();
     }
 
     private renderDetailQuestions(): void {
-        this.detailQuestions.forEach(({ label, placeholder }): void => {
+        this.detailQuestions.forEach((detailQuestion): void => {
             const inputWrapper = document.createElement('div');
             inputWrapper.className = 'input-group';
 
             const labelElement = document.createElement('label');
-            labelElement.textContent = label;
+            labelElement.textContent = detailQuestion.title;
             inputWrapper.appendChild(labelElement);
 
             const input = document.createElement('input');
             input.type = 'text';
-            input.placeholder = placeholder;
-            input.addEventListener('input', this.handleInputChange.bind(this, label));
+            input.placeholder = detailQuestion.placeholder;
+            input.addEventListener('input', this.handleInputChange.bind(this, detailQuestion.name));
             inputWrapper.appendChild(input);
 
             this.questionDiv.appendChild(inputWrapper);
         });
     }
 
-    private handleInputChange(label: string, event: Event): void {
+    private handleInputChange(name: string, event: Event): void {
         const target = event.target as HTMLInputElement;
+        this.detailResponses[name] = target.value;
+
         const response: IQuestionResponse = {
-            questionName: this.question.name,
-            response: { [label]: target.value }
+            questionName: this.questionData.name,
+            response: this.detailResponses
         };
-        // Here you can aggregate responses or validate inputs as needed
-        console.log("Input Change for:", label, ", Value:", target.value);
-
+        console.log("Aggregated Input Change:", this.detailResponses);
         this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
-
     }
 }

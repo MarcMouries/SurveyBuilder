@@ -31,19 +31,17 @@
       "detailQuestions": [
         {
           "name": "activity-name",
-          "label": "Activity Name",
+          "title": "Activity Name",
           "placeholder": "Enter the name of your favorite activity"
         },
         {
           "name": "location",
-          "label": "Location",
-
+          "title": "Location",
           "placeholder": "Preferred location for this activity"
         },
         {
           "name": "preferred-time-of-day",
-          "label": "Preferred Time of Day",
-
+          "title": "Preferred Time of Day",
           "placeholder": "When do you prefer to do this activity? (Morning, Afternoon, Evening)"
         }
       ]
