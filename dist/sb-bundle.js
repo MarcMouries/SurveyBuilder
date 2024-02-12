@@ -63,16 +63,16 @@ class FollowUpDetailQuestion extends QuestionType {
     this.renderDetailQuestions();
   }
   renderDetailQuestions() {
-    this.detailQuestions.forEach(({ name, placeholder }) => {
+    this.detailQuestions.forEach((detailQuestion) => {
       const inputWrapper = document.createElement("div");
       inputWrapper.className = "input-group";
       const labelElement = document.createElement("label");
-      labelElement.textContent = name;
+      labelElement.textContent = detailQuestion.title;
       inputWrapper.appendChild(labelElement);
       const input = document.createElement("input");
       input.type = "text";
-      input.placeholder = placeholder;
-      input.addEventListener("input", this.handleInputChange.bind(this, name));
+      input.placeholder = detailQuestion.placeholder;
+      input.addEventListener("input", this.handleInputChange.bind(this, detailQuestion.name));
       inputWrapper.appendChild(input);
       this.questionDiv.appendChild(inputWrapper);
     });
