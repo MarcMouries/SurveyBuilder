@@ -8,6 +8,7 @@ export interface IQuestion {
     options : string[];
     options_source: string[];
     visible_when: string;
-    detailQuestions?: Array<{name: string, placeholder: string}>;
     includeOtherOption: any;
+    placeholder : string;
+    detailQuestions?: IQuestion[];
 }
