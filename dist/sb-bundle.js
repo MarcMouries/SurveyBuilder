@@ -53,8 +53,8 @@ class QuestionType {
   }
 }
 
-// src/question-types/FollowUpDetailQuestion.ts
-class FollowUpDetailQuestion extends QuestionType {
+// src/question-types/FollowUpQuestion.ts
+class FollowUpQuestion extends QuestionType {
   detailQuestions;
   detailResponses = {};
   constructor(surveyBuilder, question, index) {
@@ -105,6 +105,63 @@ class MultiLineTextQuestion extends QuestionType {
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
+  }
+}
+// src/question-types/AbstractChoice.ts
+class AbstractChoice extends QuestionType {
+  items = [];
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+    this.items = question.items;
+    this.renderChoices();
+  }
+  createLabel(forId, text) {
+    const label = document.createElement("label");
+    label.htmlFor = forId;
+    label.textContent = text;
+    return label;
+  }
+}
+
+// src/question-types/OneChoice.ts
+class OneChoice extends AbstractChoice {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+  }
+  renderChoices() {
+    const choiceContainer = document.createElement("div");
+    choiceContainer.className = "items";
+    if (this.items) {
+      this.items.forEach((item, i) => {
+        const wrapperDiv = document.createElement("div");
+        wrapperDiv.className = "item";
+        const radioId = `${this.questionData.name}-${i}`;
+        const radio = this.createRadio(item, this.questionData.name, radioId);
+        const label = this.createLabel(radioId, item);
+        wrapperDiv.appendChild(radio);
+        wrapperDiv.appendChild(label);
+        choiceContainer.appendChild(wrapperDiv);
+      });
+    } else {
+      console.warn("Items are undefined for question:", this.questionData.name);
+    }
+    this.questionDiv.appendChild(choiceContainer);
+    choiceContainer.addEventListener("change", (event) => {
+      const target = event.target;
+      const response = {
+        questionName: this.questionData.name,
+        response: target.value
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
   }
 }
 // src/question-types/ranking.ts
@@ -218,64 +275,6 @@ class RankingQuestion extends QuestionType {
     }));
   }
 }
-// src/question-types/AbstractChoice.ts
-class AbstractChoice extends QuestionType {
-  items = [];
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-    this.items = question.items;
-    this.renderChoices();
-  }
-  createLabel(forId, text) {
-    const label = document.createElement("label");
-    label.htmlFor = forId;
-    label.textContent = text;
-    return label;
-  }
-}
-
-// src/question-types/OneChoice.ts
-class OneChoice extends AbstractChoice {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-  }
-  renderChoices() {
-    const choiceContainer = document.createElement("div");
-    choiceContainer.className = "items";
-    if (this.items) {
-      this.items.forEach((item, i) => {
-        const wrapperDiv = document.createElement("div");
-        wrapperDiv.className = "item";
-        const radioId = `${this.questionData.name}-${i}`;
-        const radio = this.createRadio(item, this.questionData.name, radioId);
-        const label = this.createLabel(radioId, item);
-        wrapperDiv.appendChild(radio);
-        wrapperDiv.appendChild(label);
-        choiceContainer.appendChild(wrapperDiv);
-      });
-    } else {
-      console.warn("Items are undefined for question:", this.questionData.name);
-    }
-    this.questionDiv.appendChild(choiceContainer);
-    choiceContainer.addEventListener("change", (event) => {
-      const target = event.target;
-      const response = {
-        questionName: this.questionData.name,
-        response: target.value
-      };
-      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
-    });
-  }
-  createRadio(value, name, id) {
-    const radioInput = document.createElement("input");
-    radioInput.type = "radio";
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    return radioInput;
-  }
-}
-
 // src/question-types/YesNoQuestion.ts
 class YesNoQuestion2 extends OneChoice {
   constructor(surveyBuilder, question, index) {
@@ -673,6 +672,65 @@ class MultiChoice extends AbstractChoice {
   }
 }
 
+// src/ConditionParser.ts
+class ConditionParser {
+  responses;
+  constructor(responses) {
+    this.responses = responses;
+  }
+  static extractQuestionNamesFromCondition(conditionStr) {
+    console.log(`extractQuestionNamesFromCondition`);
+    console.log(`  - conditionStr : ${conditionStr}`);
+    const questionNames = [];
+    const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
+    let match;
+    while (match = regex.exec(conditionStr)) {
+      if (match[1] && !questionNames.includes(match[1])) {
+        questionNames.push(match[1]);
+      }
+    }
+    console.log(`  - references questions: ${questionNames.join(", ")}`);
+    return questionNames;
+  }
+  evaluateCondition(conditionStr) {
+    const orConditions = conditionStr.split("Or").map((s) => s.trim());
+    for (const orCondition of orConditions) {
+      const andConditions = orCondition.split("And").map((s) => s.trim());
+      if (andConditions.every((cond) => this.evaluateAndCondition(cond))) {
+        return true;
+      }
+    }
+    return false;
+  }
+  evaluateAndCondition(conditionStr) {
+    const conditions = this.parseConditions(conditionStr);
+    return conditions.every(({ questionName, operator, value }) => {
+      const answer = this.responses[questionName];
+      switch (operator) {
+        case "=":
+          return answer == value;
+        case "<":
+          return answer < value;
+        case ">":
+          return answer > value;
+        default:
+          throw new Error(`Unsupported operator ${operator}`);
+      }
+    });
+  }
+  parseConditions(conditionStr) {
+    return conditionStr.split("And").map((condStr) => {
+      const [questionName, operator, valueStr] = condStr.split(/\s*(=|<)\s*/).map((s) => s.trim());
+      const value = isNaN(Number(valueStr)) ? valueStr : Number(valueStr);
+      return {
+        questionName,
+        operator,
+        value
+      };
+    });
+  }
+}
+
 // src/SurveyBuilder.ts
 class SurveyBuilder {
   static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
@@ -725,8 +783,8 @@ class SurveyBuilder {
         case "select":
           this.questionComponents.push(new SelectQuestion(this, question, index));
           break;
-        case "followup-input":
-          this.questionComponents.push(new FollowUpDetailQuestion(this, question, index));
+        case "followup":
+          this.questionComponents.push(new FollowUpQuestion(this, question, index));
           break;
         default:
           console.error("Unsupported question type: " + question.type);
@@ -735,14 +793,23 @@ class SurveyBuilder {
     this.createCompleteButton(this.surveyContainer);
   }
   storeQuestionDependencies(question) {
-    const dependencies = this.extractDependencies(question.title);
+    const titleDependencies = this.extractTitleDependency(question.title);
+    this.updateQuestionDependencies(question.name, titleDependencies);
+    if (question.visible_when) {
+      const conditionDependencies = ConditionParser.extractQuestionNamesFromCondition(question.visible_when);
+      this.updateQuestionDependencies(question.name, conditionDependencies);
+    }
+  }
+  updateQuestionDependencies(questionName, dependencies) {
     dependencies.forEach((dependency) => {
       const currentDependencies = this.questionDependencies.get(dependency) || [];
-      currentDependencies.push(question.name);
+      if (!currentDependencies.includes(questionName)) {
+        currentDependencies.push(questionName);
+      }
       this.questionDependencies.set(dependency, currentDependencies);
     });
   }
-  extractDependencies(title) {
+  extractTitleDependency(title) {
     const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
     const dependencies = matches.map((match) => {
       const dependency = match[1].trim();
@@ -759,36 +826,41 @@ class SurveyBuilder {
   setResponse(response) {
     this.responses[response.questionName] = response.response;
     this.evaluateVisibilityConditions(response);
-    this.updateDependentQuestionTitles(response.questionName, response.response);
+    this.updateDependentQuestionTitles(response);
   }
   evaluateVisibilityConditions(response) {
-    console.log("evaluateVisibilityConditions for ", response.questionName);
-    this.questionComponents.forEach((questionComponent) => {
-      const question = questionComponent.questionData;
-      if (question.visible_when) {
-        const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s) => s.trim());
-        if (conditionQuestionName === response.questionName) {
-          console.log(" Evaluate Visibility for Question: ", question.name);
-          const actualAnswer = this.responses[conditionQuestionName];
-          console.log("condition  : " + conditionValue + " -  Answer : " + actualAnswer);
-          if (actualAnswer === conditionValue) {
-            questionComponent.show();
-          } else {
-            questionComponent.hide();
+    console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
+    const dependentQuestions = this.questionDependencies.get(response.questionName);
+    console.log("dependentQuestions: ", dependentQuestions);
+    if (dependentQuestions) {
+      const conditionParser = new ConditionParser(this.responses);
+      dependentQuestions.forEach((dependentQuestionName) => {
+        console.log(" - question: " + dependentQuestionName);
+        const questionComponent = this.questionComponents.find((qc) => qc.questionData.name === dependentQuestionName);
+        if (questionComponent) {
+          const visible_when = questionComponent.questionData.visible_when;
+          if (visible_when) {
+            const shouldShow = conditionParser.evaluateCondition(visible_when);
+            if (shouldShow) {
+              questionComponent.show();
+            } else {
+              questionComponent.hide();
+            }
           }
         }
-      }
-    });
+      });
+    }
   }
-  updateDependentQuestionTitles(questionName, response) {
-    console.log("updateDependentQuestionTitles dependent on question: " + questionName);
-    const dependentQuestions = this.questionDependencies.get(questionName);
+  updateDependentQuestionTitles(response) {
+    console.log("updateDependentQuestionTitles dependent on question: " + response.questionName);
+    const dependentQuestions = this.questionDependencies.get(response.questionName);
     if (dependentQuestions) {
       dependentQuestions.forEach((dependentQuestionName) => {
         const dependentQuestionComponent = this.questionComponents.find((questionComponent) => questionComponent.questionData.name === dependentQuestionName);
         if (dependentQuestionComponent) {
           const questionData = dependentQuestionComponent.questionData;
-          const newTitle = this.constructNewTitle(questionData.title, response);
+          console.log(" - question: " + response.questionName);
+          const newTitle = this.constructNewTitle(questionData.title, response.response);
           dependentQuestionComponent.updateTitle(newTitle);
         }
       });
