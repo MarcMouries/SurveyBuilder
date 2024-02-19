@@ -13,6 +13,43 @@
       "title": "Do you regularly fill in or approve federal forms?"
     },
     {
+      "type": "select",
+      "name": "agency_name_1",
+      "title": "Name of the federal agency you work for? (static)",
+      "isRequired": true,
+      "visible_when": "use-federal-forms = Yes",
+      "options": [
+        "CBP - Customs and Border Protection",
+        "CDC - Centers for Disease Control and Prevention",
+        "CMS - Centers for Medicare & Medicaid Services",
+        "DHS - Department of Homeland Security",
+        "DOE - Department of Energy",
+        "EIA - Energy Information Administration",
+        "FAA  - Federal Aviation Administration",
+        "FDA - Food and Drug Administration",
+        "FEMA - Federal Emergency Management Agency",
+        "HHS - Department of Health and Human Services",
+        "ICE - Immigration and Customs Enforcement",
+        "NASA - National Aeronautics and Space Administration",
+        "NIH - National Institutes of Health",
+        "NOAA - National Oceanic and Atmospheric Administration",
+        "NSF  - National Science Foundation",
+        "State Department",
+        "TSA - Transportation Security Administration",
+        "USCIS - U.S. Citizenship and Immigration Services",
+        "USMS - United States Marshals Service"
+      ]
+    },
+    {
+      "type": "select",
+      "name": "agency_name_2",
+      "title": "Name of the federal agency you work for? (dynamic)",
+      "isRequired": true,
+      "visible_when": "use-federal-forms = Yes",
+      "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text="
+    }
+,
+    {
       "type": "one-choice",
       "name": "favorite-season",
       "title": "What is your favorite season?",
@@ -58,43 +95,7 @@
       ],
       "includeOtherOption": true
     },
-    {
-      "type": "select",
-      "name": "agency_name",
-      "title": "Name of the federal agency you work for? (static)",
-      "isRequired": true,
-      "visible_when": "use-federal-forms = Yes",
-      "options": [
-        "CBP - Customs and Border Protection",
-        "CDC - Centers for Disease Control and Prevention",
-        "CMS - Centers for Medicare & Medicaid Services",
-        "DHS - Department of Homeland Security",
-        "DOE - Department of Energy",
-        "EIA - Energy Information Administration",
-        "FAA  - Federal Aviation Administration",
-        "FDA - Food and Drug Administration",
-        "FEMA - Federal Emergency Management Agency",
-        "HHS - Department of Health and Human Services",
-        "ICE - Immigration and Customs Enforcement",
-        "NASA - National Aeronautics and Space Administration",
-        "NIH - National Institutes of Health",
-        "NOAA - National Oceanic and Atmospheric Administration",
-        "NSF  - National Science Foundation",
-        "State Department",
-        "TSA - Transportation Security Administration",
-        "USCIS - U.S. Citizenship and Immigration Services",
-        "USMS - United States Marshals Service"
-      ]
-    },
-    {
-      "type": "select",
-      "name": "agency_name",
-      "title": "Name of the federal agency you work for? (dynamic)",
-      "isRequired": true,
-      "visible_when": "use-federal-forms = Yes",
-      "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text="
-    }
-,
+
     {
       "type": "ranking",
       "name": "fed_forms_ranking",
