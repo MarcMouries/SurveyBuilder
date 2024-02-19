@@ -2,17 +2,17 @@ import {
     RankingQuestion,
     SelectQuestion,
     SingleLineTextQuestion,
+    OneChoice,
     MultiLineTextQuestion,
-    YesNoQuestion
+    YesNoQuestion2
 } from './question-types/index.ts';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
-import { YesNoQuestion2 } from './question-types/YesNoQuestion.ts';
-import { OneChoice } from './question-types/OneChoice.ts';
 import { MultiChoice } from './question-types/MultiChoice.ts';
 import { FollowUpQuestion } from './question-types/FollowUpQuestion.ts';
+import { ConditionParser } from './ConditionParser.ts';
 
 
 class SurveyBuilder implements ISurveyBuilder {
@@ -89,20 +89,30 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     private storeQuestionDependencies(question: IQuestion): void {
-        const dependencies = this.extractDependencies(question.title);
+        const titleDependencies = this.extractTitleDependency(question.title);
+        this.updateQuestionDependencies(question.name, titleDependencies);
+
+        if (question.visible_when) {
+            const conditionDependencies = ConditionParser.extractQuestionNamesFromCondition(question.visible_when);
+            this.updateQuestionDependencies(question.name, conditionDependencies);
+        }
+
+    }
+    private updateQuestionDependencies(questionName: string, dependencies: string[]): void {
         dependencies.forEach(dependency => {
             const currentDependencies = this.questionDependencies.get(dependency) || [];
-            currentDependencies.push(question.name);
+            if (!currentDependencies.includes(questionName)) {
+                currentDependencies.push(questionName);
+            }
             this.questionDependencies.set(dependency, currentDependencies);
         });
     }
-
 
     /** 
      * Extracts question names from placeholders within a string, indicating dependencies.
      * Ex: "What activity do you like doing during the {{favorite-season}} season :"
     */
-    private extractDependencies(title: string): string[] {
+    private extractTitleDependency(title: string): string[] {
         const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
         const dependencies = matches.map(match => {
             const dependency = match[1].trim();
@@ -127,47 +137,61 @@ class SurveyBuilder implements ISurveyBuilder {
     setResponse(response: IQuestionResponse): void {
         this.responses[response.questionName] = response.response;
         this.evaluateVisibilityConditions(response);
-        this.updateDependentQuestionTitles(response.questionName, response.response);
+        this.updateDependentQuestionTitles(response);
 
     }
 
-    // Go through each question and determine if it should be shown based on the visible_when condition
-    evaluateVisibilityConditions(response: IQuestionResponse): void {
-        console.log("evaluateVisibilityConditions for ", response.questionName);
+/**
+ * Evaluate visibility conditions for dependent questions based on the given response.
+ */
+evaluateVisibilityConditions(response: IQuestionResponse): void {
+    console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
 
-        this.questionComponents.forEach((questionComponent: IQuestionComponent) => {
-            const question = questionComponent.questionData;
-            if (question.visible_when) {
-                const [conditionQuestionName, conditionValue] = question.visible_when.split(" = ").map((s: string) => s.trim());
-                // Check if the condition is related to the response question
-                if (conditionQuestionName === response.questionName) {
-                    console.log(" Evaluate Visibility for Question: ", question.name);
-                    const actualAnswer = this.responses[conditionQuestionName];
-                    console.log("condition  : " + conditionValue + " -  Answer : " + actualAnswer);
+    // Get the list of questions whose visibility depends on the question responded to
+    const dependentQuestions = this.questionDependencies.get(response.questionName);
+    console.log("dependentQuestions: ", dependentQuestions);
 
-                    if (actualAnswer === conditionValue) {
+    
+    if (dependentQuestions) {
+        const conditionParser = new ConditionParser(this.responses);
+
+        // Go through each dependent question and determine if it should be shown or hidden
+        dependentQuestions.forEach(dependentQuestionName => {
+            console.log(" - question: " +  dependentQuestionName);
+
+            const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
+            if (questionComponent) {
+                const visible_when = questionComponent.questionData.visible_when;
+                if (visible_when) {
+                    const shouldShow = conditionParser.evaluateCondition(visible_when);
+                    if (shouldShow) {
                         questionComponent.show();
                     } else {
                         questionComponent.hide();
+                        
                     }
                 }
             }
         });
     }
+}
+
 
     /**
      * Update the question's title if it contains a placeholder with the answer of another question
      */
-    private updateDependentQuestionTitles(questionName: string, response: any) {
-        console.log("updateDependentQuestionTitles dependent on question: " + questionName)
+    private updateDependentQuestionTitles(response: IQuestionResponse) {
+        console.log("updateDependentQuestionTitles dependent on question: " +  response.questionName);
 
-        const dependentQuestions = this.questionDependencies.get(questionName);
+        const dependentQuestions = this.questionDependencies.get(response.questionName);
         if (dependentQuestions) {
             dependentQuestions.forEach(dependentQuestionName => {
                 const dependentQuestionComponent = this.questionComponents.find(questionComponent => questionComponent.questionData.name === dependentQuestionName);
                 if (dependentQuestionComponent) {
                     const questionData = dependentQuestionComponent.questionData;
-                    const newTitle = this.constructNewTitle(questionData.title, response);
+                    console.log(" - question: " +  response.questionName);
+
+                    const newTitle = this.constructNewTitle(questionData.title, response.response);
                     dependentQuestionComponent.updateTitle(newTitle);
                 }
             });
@@ -277,89 +301,6 @@ class SurveyBuilder implements ISurveyBuilder {
         // Append the thank you container to the survey container
         this.surveyContainer.appendChild(thankYouContainer);
     }
-    /*
-    
-        addDragAndDrop() {
-            const lists = document.querySelectorAll('.ranking-list');
-    
-            lists.forEach(list => {
-                list.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const draggable = document.querySelector('.dragging');
-                    const afterElement = this.getDragAfterElement(list, e.clientY);
-                    if (afterElement) {
-                        list.insertBefore(draggable, afterElement);
-                    } else if (draggable) {
-                        list.appendChild(draggable);
-                    }
-                    this.updateDraggedItemIndex(draggable, list);
-                });
-    
-                list.addEventListener('dragstart', e => {
-                    e.target.classList.add('dragging');
-                });
-    
-                list.addEventListener('dragend', e => {
-                    e.target.classList.remove('dragging');
-                    this.updateAllIndexes(list);
-                });
-    
-                // If you have a 'drop' event, you can also update indexes there
-                list.addEventListener('drop', e => {
-                    e.preventDefault();
-                    this.updateAllIndexes(list);
-                });
-            });
-        }
-    
-    
-    
-        // MOVE DRAG and Drop with the  necessary methods such as getDragAfterElement, updateDraggedItemIndex, updateAllIndexes into a separate file...
-    
-        getDragAfterElement(list, y) {
-            const draggableElements = [...list.querySelectorAll('.ranking-item:not(.dragging)')];
-    
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-    
-    
-        updateDraggedItemIndex(draggedItem, list) {
-            let newIndex = 0;
-            Array.from(list.children).forEach((item, index) => {
-                if (item !== draggedItem && item.getBoundingClientRect().top < draggedItem.getBoundingClientRect().bottom) {
-                    newIndex = index + 1;
-                }
-            });
-    
-            const indexDiv = draggedItem.querySelector('.index');
-            if (indexDiv) {
-                indexDiv.textContent = newIndex + 1;
-            }
-        }
-    
-    
-        updateAllIndexes(list) {
-            const items = list.querySelectorAll('.ranking-item');
-            items.forEach((item, index) => {
-                const indexDiv = item.querySelector('.index');
-                if (indexDiv) {
-                    indexDiv.textContent = index + 1;
-                }
-            });
-        }
-    
-        */
-
-
-
 }
 
 //export default SurveyBuilder;
