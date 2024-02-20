@@ -39,18 +39,37 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionNumber = 1;
         this.responses = {};
         this.questionComponents = [];
-        this.createSurvey();
+        //this.createSurvey();
+        this.createInitialPage();
+
     }
 
-    createSurvey() {
+    createInitialPage() {
         this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
         this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
+        this.createStartButton(); // Method to create the start button
+    }
+    createStartButton() {
+        const startButtonWrapper = document.createElement('div');
+        startButtonWrapper.className = 'start-button-wrapper';
 
+        const startButton = document.createElement('button');
+        startButton.textContent = 'Start Survey';
+        startButton.className = 'start-survey-button';
+
+        startButton.addEventListener('click', () => {
+            this.surveyContainer.innerHTML = ''; // Clear the container
+            this.initializeQuestions();
+        });
+
+        startButtonWrapper.appendChild(startButton);
+        this.surveyContainer.appendChild(startButtonWrapper);
+    }
+
+
+    initializeQuestions() {
         this.config.questions.forEach((question: IQuestion, index: number) => {
-
             this.storeQuestionDependencies(question);
-
-
             switch (question.type) {
                 case "ranking":
                     this.questionComponents.push(new RankingQuestion(this, question, index));
@@ -88,6 +107,23 @@ class SurveyBuilder implements ISurveyBuilder {
         this.createCompleteButton(this.surveyContainer);
     }
 
+    createSurveyTitle(surveyTitle: string, container: HTMLElement) {
+        const title = document.createElement('h3');
+        title.className = 'survey-title';
+        title.textContent = surveyTitle;
+
+        container.appendChild(title);
+    }
+
+    createSurveyDescription(surveyDescription: string, container: HTMLElement) {
+        const description = document.createElement('p');
+        description.className = 'survey-description';
+        description.innerHTML = surveyDescription;
+
+        container.appendChild(description);
+    }
+
+
     private storeQuestionDependencies(question: IQuestion): void {
         const titleDependencies = this.extractTitleDependency(question.title);
         this.updateQuestionDependencies(question.name, titleDependencies);
@@ -108,7 +144,7 @@ class SurveyBuilder implements ISurveyBuilder {
         });
     }
 
-    /** 
+    /**
      * Extracts question names from placeholders within a string, indicating dependencies.
      * Ex: "What activity do you like doing during the {{favorite-season}} season :"
     */
@@ -206,21 +242,7 @@ evaluateVisibilityConditions(response: IQuestionResponse): void {
         return this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
     }
 
-    createSurveyTitle(surveyTitle: string, container: HTMLElement) {
-        const title = document.createElement('h3');
-        title.className = 'survey-title';
-        title.textContent = surveyTitle;
 
-        container.appendChild(title);
-    }
-
-    createSurveyDescription(surveyDescription: string, container: HTMLElement) {
-        const description = document.createElement('p');
-        description.className = 'survey-description';
-        description.innerHTML = surveyDescription;
-
-        container.appendChild(description);
-    }
 
     createCompleteButton(container: HTMLElement) {
         const footer = document.createElement('footer');
@@ -244,36 +266,6 @@ evaluateVisibilityConditions(response: IQuestionResponse): void {
         const surveyData = {
             responses: []
         };
-        /*
-                this.config.questions.forEach(element => {
-                    const questionData = {
-                        questionName: element.name,
-                        questionTitle: element.title,
-                        answer: null
-                    };
-        
-                    switch (element.type) {
-                        case 'single-line-text':
-                            const textInput = this.surveyContainer.querySelector(`input[name="${element.name}"]`);
-                            questionData.answer = textInput ? textInput.value : '';
-                            break;
-        
-                        case 'ranking':
-                            const rankingItems = Array.from(this.surveyContainer.querySelectorAll(`.${element.name} .ranking-item`));
-                            console.log(rankingItems);
-                            if (rankingItems.length) {
-                                questionData.answer = rankingItems.map((item, idx) => ({
-                                    rank: idx + 1,
-                                    text: item.querySelector('.choice-text').textContent.trim()
-                                }));
-                            }
-                            break;
-                    }
-        
-                    surveyData.responses.push(questionData);
-        
-                });
-                */
         return surveyData;
     }
 

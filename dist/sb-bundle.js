@@ -275,13 +275,6 @@ class RankingQuestion extends QuestionType {
     }));
   }
 }
-// src/question-types/YesNoQuestion.ts
-class YesNoQuestion2 extends OneChoice {
-  constructor(surveyBuilder, question, index) {
-    const modifiedQuestion = { ...question, items: ["Yes", "No"] };
-    super(surveyBuilder, modifiedQuestion, index);
-  }
-}
 // src/question-types/select.ts
 class SelectQuestion extends QuestionType {
   constructor(surveyBuilder, question, index) {
@@ -322,6 +315,13 @@ class SingleLineTextQuestion extends QuestionType {
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
+  }
+}
+// src/question-types/YesNoQuestion.ts
+class YesNoQuestion2 extends OneChoice {
+  constructor(surveyBuilder, question, index) {
+    const modifiedQuestion = { ...question, items: ["Yes", "No"] };
+    super(surveyBuilder, modifiedQuestion, index);
   }
 }
 // src/component/SearchInput.ts
@@ -751,11 +751,27 @@ class SurveyBuilder {
     this.questionNumber = 1;
     this.responses = {};
     this.questionComponents = [];
-    this.createSurvey();
+    this.createInitialPage();
   }
-  createSurvey() {
+  createInitialPage() {
     this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
     this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
+    this.createStartButton();
+  }
+  createStartButton() {
+    const startButtonWrapper = document.createElement("div");
+    startButtonWrapper.className = "start-button-wrapper";
+    const startButton = document.createElement("button");
+    startButton.textContent = "Start Survey";
+    startButton.className = "start-survey-button";
+    startButton.addEventListener("click", () => {
+      this.surveyContainer.innerHTML = "";
+      this.initializeQuestions();
+    });
+    startButtonWrapper.appendChild(startButton);
+    this.surveyContainer.appendChild(startButtonWrapper);
+  }
+  initializeQuestions() {
     this.config.questions.forEach((question, index) => {
       this.storeQuestionDependencies(question);
       switch (question.type) {
@@ -791,6 +807,18 @@ class SurveyBuilder {
       }
     });
     this.createCompleteButton(this.surveyContainer);
+  }
+  createSurveyTitle(surveyTitle, container) {
+    const title = document.createElement("h3");
+    title.className = "survey-title";
+    title.textContent = surveyTitle;
+    container.appendChild(title);
+  }
+  createSurveyDescription(surveyDescription, container) {
+    const description = document.createElement("p");
+    description.className = "survey-description";
+    description.innerHTML = surveyDescription;
+    container.appendChild(description);
   }
   storeQuestionDependencies(question) {
     const titleDependencies = this.extractTitleDependency(question.title);
@@ -871,18 +899,6 @@ class SurveyBuilder {
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
     return this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
-  }
-  createSurveyTitle(surveyTitle, container) {
-    const title = document.createElement("h3");
-    title.className = "survey-title";
-    title.textContent = surveyTitle;
-    container.appendChild(title);
-  }
-  createSurveyDescription(surveyDescription, container) {
-    const description = document.createElement("p");
-    description.className = "survey-description";
-    description.innerHTML = surveyDescription;
-    container.appendChild(description);
   }
   createCompleteButton(container) {
     const footer = document.createElement("footer");
