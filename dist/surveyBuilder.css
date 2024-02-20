@@ -31,7 +31,7 @@
 
 /* Basic Reset for HTML and Body */
 html, body {
-    height: 100%;
+    _height: 100%;
     width: 100%;
     font-family: 'Open Sans', sans-serif !important;
     font-size: 14px;

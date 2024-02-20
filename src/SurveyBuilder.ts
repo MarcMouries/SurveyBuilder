@@ -2,15 +2,14 @@ import {
     RankingQuestion,
     SelectQuestion,
     SingleLineTextQuestion,
-    OneChoice,
+    MultiChoice, OneChoice,
     MultiLineTextQuestion,
     YesNoQuestion2
-} from './question-types/index.ts';
+} from './question-types/index.js';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
-import { MultiChoice } from './question-types/MultiChoice.ts';
 import { FollowUpQuestion } from './question-types/FollowUpQuestion.ts';
 import { ConditionParser } from './ConditionParser.ts';
 
@@ -19,15 +18,14 @@ class SurveyBuilder implements ISurveyBuilder {
 
     static readonly RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
 
-    surveyContainer: HTMLElement;
-    config: any;
-    questionNumber: number;
-    questionComponents: any[];
-    responses: { [key: string]: any };
-    completeCallback: any;
-    questionDependencies: Map<string, string[]> = new Map();
-
-
+    private surveyContainer: HTMLElement;
+    private questionsContainer: HTMLElement;
+    private config: any;
+    private questionNumber: number;
+    private questionComponents: any[];
+    private responses: { [key: string]: any };
+    private completeCallback: any;
+    private questionDependencies: Map<string, string[]> = new Map();
 
     constructor(config: any, containerId: string) {
         this.config = config;
@@ -39,35 +37,51 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionNumber = 1;
         this.responses = {};
         this.questionComponents = [];
-        //this.createSurvey();
-        this.createInitialPage();
 
+        // FIRST PAGE
+        const initialPage = document.createElement('div');
+        initialPage.id = 'initial-page';
+        this.surveyContainer.appendChild(initialPage);
+        this.createInitialPage(initialPage);
+
+        // SURVEY DIV
+        this.questionsContainer = document.createElement('div');
+        this.questionsContainer.id = 'survey-questions';
+        this.questionsContainer.style.display = 'none'; // Hide until the survey starts
+        this.surveyContainer.appendChild(this.questionsContainer);
     }
 
-    createInitialPage() {
-        this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
-        this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
-        this.createStartButton(); // Method to create the start button
+    private createInitialPage(container: HTMLElement) {
+        this.createSurveyTitle(this.config.surveyTitle, container);
+        this.createSurveyDescription(this.config.surveyDescription, container);
+        this.createStartButton(container);
     }
-    createStartButton() {
+
+    private createStartButton(container: HTMLElement) {
         const startButtonWrapper = document.createElement('div');
         startButtonWrapper.className = 'start-button-wrapper';
 
         const startButton = document.createElement('button');
         startButton.textContent = 'Start Survey';
         startButton.className = 'start-survey-button';
-
         startButton.addEventListener('click', () => {
-            this.surveyContainer.innerHTML = ''; // Clear the container
-            this.initializeQuestions();
+            // Hide initial content and show questions
+            container.style.display = 'none';
+            this.questionsContainer.style.display = 'block';
+            this.startSurvey();
         });
 
         startButtonWrapper.appendChild(startButton);
-        this.surveyContainer.appendChild(startButtonWrapper);
+        container.appendChild(startButtonWrapper);
     }
 
 
-    initializeQuestions() {
+    private startSurvey() {
+        this.questionsContainer.style.display = 'block'; // Make it visible
+        this.initializeQuestions();
+    }
+
+    private initializeQuestions() {
         this.config.questions.forEach((question: IQuestion, index: number) => {
             this.storeQuestionDependencies(question);
             switch (question.type) {
@@ -107,7 +121,7 @@ class SurveyBuilder implements ISurveyBuilder {
         this.createCompleteButton(this.surveyContainer);
     }
 
-    createSurveyTitle(surveyTitle: string, container: HTMLElement) {
+    private createSurveyTitle(surveyTitle: string, container: HTMLElement) {
         const title = document.createElement('h3');
         title.className = 'survey-title';
         title.textContent = surveyTitle;
@@ -115,7 +129,7 @@ class SurveyBuilder implements ISurveyBuilder {
         container.appendChild(title);
     }
 
-    createSurveyDescription(surveyDescription: string, container: HTMLElement) {
+    private createSurveyDescription(surveyDescription: string, container: HTMLElement) {
         const description = document.createElement('p');
         description.className = 'survey-description';
         description.innerHTML = surveyDescription;
@@ -123,6 +137,9 @@ class SurveyBuilder implements ISurveyBuilder {
         container.appendChild(description);
     }
 
+    public addQuestionElement(questionDiv: HTMLDivElement) {
+        this.questionsContainer.appendChild(questionDiv);
+    }
 
     private storeQuestionDependencies(question: IQuestion): void {
         const titleDependencies = this.extractTitleDependency(question.title);
@@ -177,47 +194,47 @@ class SurveyBuilder implements ISurveyBuilder {
 
     }
 
-/**
- * Evaluate visibility conditions for dependent questions based on the given response.
- */
-evaluateVisibilityConditions(response: IQuestionResponse): void {
-    console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
+    /**
+     * Evaluate visibility conditions for dependent questions based on the given response.
+     */
+    evaluateVisibilityConditions(response: IQuestionResponse): void {
+        console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
 
-    // Get the list of questions whose visibility depends on the question responded to
-    const dependentQuestions = this.questionDependencies.get(response.questionName);
-    console.log("dependentQuestions: ", dependentQuestions);
+        // Get the list of questions whose visibility depends on the question responded to
+        const dependentQuestions = this.questionDependencies.get(response.questionName);
+        console.log("dependentQuestions: ", dependentQuestions);
 
-    
-    if (dependentQuestions) {
-        const conditionParser = new ConditionParser(this.responses);
 
-        // Go through each dependent question and determine if it should be shown or hidden
-        dependentQuestions.forEach(dependentQuestionName => {
-            console.log(" - question: " +  dependentQuestionName);
+        if (dependentQuestions) {
+            const conditionParser = new ConditionParser(this.responses);
 
-            const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
-            if (questionComponent) {
-                const visible_when = questionComponent.questionData.visible_when;
-                if (visible_when) {
-                    const shouldShow = conditionParser.evaluateCondition(visible_when);
-                    if (shouldShow) {
-                        questionComponent.show();
-                    } else {
-                        questionComponent.hide();
-                        
+            // Go through each dependent question and determine if it should be shown or hidden
+            dependentQuestions.forEach(dependentQuestionName => {
+                console.log(" - question: " + dependentQuestionName);
+
+                const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
+                if (questionComponent) {
+                    const visible_when = questionComponent.questionData.visible_when;
+                    if (visible_when) {
+                        const shouldShow = conditionParser.evaluateCondition(visible_when);
+                        if (shouldShow) {
+                            questionComponent.show();
+                        } else {
+                            questionComponent.hide();
+
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     }
-}
 
 
     /**
      * Update the question's title if it contains a placeholder with the answer of another question
      */
     private updateDependentQuestionTitles(response: IQuestionResponse) {
-        console.log("updateDependentQuestionTitles dependent on question: " +  response.questionName);
+        console.log("updateDependentQuestionTitles dependent on question: " + response.questionName);
 
         const dependentQuestions = this.questionDependencies.get(response.questionName);
         if (dependentQuestions) {
@@ -225,7 +242,7 @@ evaluateVisibilityConditions(response: IQuestionResponse): void {
                 const dependentQuestionComponent = this.questionComponents.find(questionComponent => questionComponent.questionData.name === dependentQuestionName);
                 if (dependentQuestionComponent) {
                     const questionData = dependentQuestionComponent.questionData;
-                    console.log(" - question: " +  response.questionName);
+                    console.log(" - question: " + response.questionName);
 
                     const newTitle = this.constructNewTitle(questionData.title, response.response);
                     dependentQuestionComponent.updateTitle(newTitle);
@@ -235,11 +252,11 @@ evaluateVisibilityConditions(response: IQuestionResponse): void {
     }
 
     getQuestionElement(index: number): any {
-        let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");
+        let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
         console.log("allQuestionElements", allQuestionElements);
         console.log(allQuestionElements.length);
 
-        return this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
+        return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
     }
 
 

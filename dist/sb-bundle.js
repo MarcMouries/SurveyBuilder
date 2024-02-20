@@ -27,7 +27,7 @@ class QuestionType {
     this.questionDiv.className = `question ${question.type}-question`;
     this.questionDiv.dataset.index = index.toString();
     this.questionDiv.dataset.questionName = question.name;
-    this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+    this.surveyBuilder.addQuestionElement(this.questionDiv);
     const title = createQuestionTitle(question.title);
     this.questionDiv.appendChild(title);
     this.setupResponseListener();
@@ -123,6 +123,87 @@ class AbstractChoice extends QuestionType {
   }
 }
 
+// src/question-types/MultiChoice.ts
+class MultiChoice extends AbstractChoice {
+  constructor(surveyBuilder, question, index) {
+    super(surveyBuilder, question, index);
+  }
+  renderChoices() {
+    const choiceContainer = document.createElement("div");
+    choiceContainer.className = "items";
+    this.items.forEach((item, i) => {
+      this.appendChoice(item, i, choiceContainer);
+    });
+    if (this.questionData.includeOtherOption) {
+      this.appendOtherOption(choiceContainer);
+    }
+    this.questionDiv.appendChild(choiceContainer);
+    choiceContainer.addEventListener("change", this.handleResponseChange.bind(this));
+  }
+  appendChoice(item, index, container) {
+    const wrapperDiv = document.createElement("div");
+    wrapperDiv.className = "item";
+    const checkboxId = `${this.questionData.name}-${index}`;
+    const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
+    const label = this.createLabel(checkboxId, item);
+    wrapperDiv.appendChild(checkbox);
+    wrapperDiv.appendChild(label);
+    container.appendChild(wrapperDiv);
+  }
+  appendOtherOption(container) {
+    const otherWrapperDiv = document.createElement("div");
+    otherWrapperDiv.className = "item other-item";
+    const checkboxId = `${this.questionData.name}-other`;
+    const checkbox = this.createCheckbox("Other", this.questionData.name, checkboxId);
+    checkbox.dataset.other = "true";
+    const label = this.createLabel(checkboxId, "Other");
+    label.htmlFor = checkboxId;
+    const otherInput = document.createElement("input");
+    otherInput.type = "text";
+    otherInput.id = `${checkboxId}-specify`;
+    otherInput.name = `${this.questionData.name}-other-specify`;
+    otherInput.placeholder = "Specify";
+    otherInput.className = "other-specify-input hidden";
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        otherInput.style.display = "block";
+        label.style.color = "transparent";
+        otherInput.focus();
+      } else {
+        otherInput.style.display = "none";
+        label.style.color = "";
+        otherInput.value = "";
+      }
+    });
+    otherWrapperDiv.appendChild(checkbox);
+    otherWrapperDiv.appendChild(label);
+    otherWrapperDiv.appendChild(otherInput);
+    container.appendChild(otherWrapperDiv);
+  }
+  handleResponseChange() {
+    const selectedOptions = this.items.filter((_, i) => {
+      const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
+      return checkbox && checkbox.checked;
+    }).map((item, i) => ({ value: item }));
+    const otherInput = document.getElementById(`${this.questionData.name}-other-specify`);
+    if (otherInput && otherInput.style.display !== "none") {
+      selectedOptions.push({ value: otherInput.value });
+    }
+    const response = {
+      questionName: this.questionData.name,
+      response: selectedOptions
+    };
+    this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+  }
+  createCheckbox(value, name, id) {
+    const checkboxInput = document.createElement("input");
+    checkboxInput.type = "checkbox";
+    checkboxInput.id = id;
+    checkboxInput.name = name;
+    checkboxInput.value = value;
+    return checkboxInput;
+  }
+}
 // src/question-types/OneChoice.ts
 class OneChoice extends AbstractChoice {
   constructor(surveyBuilder, question, index) {
@@ -590,88 +671,6 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
-// src/question-types/MultiChoice.ts
-class MultiChoice extends AbstractChoice {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
-  }
-  renderChoices() {
-    const choiceContainer = document.createElement("div");
-    choiceContainer.className = "items";
-    this.items.forEach((item, i) => {
-      this.appendChoice(item, i, choiceContainer);
-    });
-    if (this.questionData.includeOtherOption) {
-      this.appendOtherOption(choiceContainer);
-    }
-    this.questionDiv.appendChild(choiceContainer);
-    choiceContainer.addEventListener("change", this.handleResponseChange.bind(this));
-  }
-  appendChoice(item, index, container) {
-    const wrapperDiv = document.createElement("div");
-    wrapperDiv.className = "item";
-    const checkboxId = `${this.questionData.name}-${index}`;
-    const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
-    const label = this.createLabel(checkboxId, item);
-    wrapperDiv.appendChild(checkbox);
-    wrapperDiv.appendChild(label);
-    container.appendChild(wrapperDiv);
-  }
-  appendOtherOption(container) {
-    const otherWrapperDiv = document.createElement("div");
-    otherWrapperDiv.className = "item other-item";
-    const checkboxId = `${this.questionData.name}-other`;
-    const checkbox = this.createCheckbox("Other", this.questionData.name, checkboxId);
-    checkbox.dataset.other = "true";
-    const label = this.createLabel(checkboxId, "Other");
-    label.htmlFor = checkboxId;
-    const otherInput = document.createElement("input");
-    otherInput.type = "text";
-    otherInput.id = `${checkboxId}-specify`;
-    otherInput.name = `${this.questionData.name}-other-specify`;
-    otherInput.placeholder = "Specify";
-    otherInput.className = "other-specify-input hidden";
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        otherInput.style.display = "block";
-        label.style.color = "transparent";
-        otherInput.focus();
-      } else {
-        otherInput.style.display = "none";
-        label.style.color = "";
-        otherInput.value = "";
-      }
-    });
-    otherWrapperDiv.appendChild(checkbox);
-    otherWrapperDiv.appendChild(label);
-    otherWrapperDiv.appendChild(otherInput);
-    container.appendChild(otherWrapperDiv);
-  }
-  handleResponseChange() {
-    const selectedOptions = this.items.filter((_, i) => {
-      const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
-      return checkbox && checkbox.checked;
-    }).map((item, i) => ({ value: item }));
-    const otherInput = document.getElementById(`${this.questionData.name}-other-specify`);
-    if (otherInput && otherInput.style.display !== "none") {
-      selectedOptions.push({ value: otherInput.value });
-    }
-    const response = {
-      questionName: this.questionData.name,
-      response: selectedOptions
-    };
-    this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
-  }
-  createCheckbox(value, name, id) {
-    const checkboxInput = document.createElement("input");
-    checkboxInput.type = "checkbox";
-    checkboxInput.id = id;
-    checkboxInput.name = name;
-    checkboxInput.value = value;
-    return checkboxInput;
-  }
-}
-
 // src/ConditionParser.ts
 class ConditionParser {
   responses;
@@ -735,6 +734,7 @@ class ConditionParser {
 class SurveyBuilder {
   static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
   surveyContainer;
+  questionsContainer;
   config;
   questionNumber;
   questionComponents;
@@ -751,25 +751,37 @@ class SurveyBuilder {
     this.questionNumber = 1;
     this.responses = {};
     this.questionComponents = [];
-    this.createInitialPage();
+    const initialPage = document.createElement("div");
+    initialPage.id = "initial-page";
+    this.surveyContainer.appendChild(initialPage);
+    this.createInitialPage(initialPage);
+    this.questionsContainer = document.createElement("div");
+    this.questionsContainer.id = "survey-questions";
+    this.questionsContainer.style.display = "none";
+    this.surveyContainer.appendChild(this.questionsContainer);
   }
-  createInitialPage() {
-    this.createSurveyTitle(this.config.surveyTitle, this.surveyContainer);
-    this.createSurveyDescription(this.config.surveyDescription, this.surveyContainer);
-    this.createStartButton();
+  createInitialPage(container) {
+    this.createSurveyTitle(this.config.surveyTitle, container);
+    this.createSurveyDescription(this.config.surveyDescription, container);
+    this.createStartButton(container);
   }
-  createStartButton() {
+  createStartButton(container) {
     const startButtonWrapper = document.createElement("div");
     startButtonWrapper.className = "start-button-wrapper";
     const startButton = document.createElement("button");
     startButton.textContent = "Start Survey";
     startButton.className = "start-survey-button";
     startButton.addEventListener("click", () => {
-      this.surveyContainer.innerHTML = "";
-      this.initializeQuestions();
+      container.style.display = "none";
+      this.questionsContainer.style.display = "block";
+      this.startSurvey();
     });
     startButtonWrapper.appendChild(startButton);
-    this.surveyContainer.appendChild(startButtonWrapper);
+    container.appendChild(startButtonWrapper);
+  }
+  startSurvey() {
+    this.questionsContainer.style.display = "block";
+    this.initializeQuestions();
   }
   initializeQuestions() {
     this.config.questions.forEach((question, index) => {
@@ -819,6 +831,9 @@ class SurveyBuilder {
     description.className = "survey-description";
     description.innerHTML = surveyDescription;
     container.appendChild(description);
+  }
+  addQuestionElement(questionDiv) {
+    this.questionsContainer.appendChild(questionDiv);
   }
   storeQuestionDependencies(question) {
     const titleDependencies = this.extractTitleDependency(question.title);
@@ -895,10 +910,10 @@ class SurveyBuilder {
     }
   }
   getQuestionElement(index) {
-    let allQuestionElements = this.surveyContainer.getElementsByClassName(".question");
+    let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
-    return this.surveyContainer.querySelector(`.question[data-index="${index}"]`);
+    return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
   }
   createCompleteButton(container) {
     const footer = document.createElement("footer");

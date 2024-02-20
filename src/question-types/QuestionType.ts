@@ -1,4 +1,4 @@
-import { createQuestionTitle } from './common.ts';
+import { createQuestionTitle } from './common.js';
 import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionComponent } from "./IQuestionComponent.ts";
@@ -13,11 +13,11 @@ export abstract class QuestionType implements IQuestionComponent {
         this.questionData = question;
         this.questionDiv = document.createElement('div');
         this.questionDiv.className = `question ${question.type}-question`;
-        
+
         this.questionDiv.dataset.index = index.toString();
         this.questionDiv.dataset.questionName = question.name;
 
-        this.surveyBuilder.surveyContainer.appendChild(this.questionDiv);
+        this.surveyBuilder.addQuestionElement(this.questionDiv);
 
         const title = createQuestionTitle(question.title);
         this.questionDiv.appendChild(title);
@@ -32,7 +32,6 @@ export abstract class QuestionType implements IQuestionComponent {
             this.surveyBuilder.setResponse(response);
         });
     }
-    
 
     public show () {
         this.questionDiv.style.display = 'block';
@@ -47,6 +46,4 @@ export abstract class QuestionType implements IQuestionComponent {
             titleElement.textContent = newTitle;
         }
     }
-    
-
 }
