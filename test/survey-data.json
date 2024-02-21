@@ -5,12 +5,12 @@
     {
       "type": "yes-no",
       "name": "use-federal-forms",
-      "title": "Do you regularly fill in or approve federal forms?"
+      "title": "0 Do you regularly fill in or approve federal forms?"
     },
     {
       "type": "yes-no",
       "name": "use-federal-forms2",
-      "title": "Do you regularly fill in or approve federal forms?"
+      "title": "1 Do you regularly fill in or approve federal forms?"
     },
     {
       "type": "select",

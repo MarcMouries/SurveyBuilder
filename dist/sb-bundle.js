@@ -735,20 +735,25 @@ class SurveyBuilder {
   static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
   surveyContainer;
   questionsContainer;
-  config;
-  questionNumber;
+  nextButton;
+  prevButton;
   questionComponents;
   responses;
   completeCallback;
   questionDependencies = new Map;
+  currentQuestionIndex = -1;
+  questions;
+  surveyTitle;
+  surveyDescription;
   constructor(config, containerId) {
-    this.config = config;
+    this.surveyTitle = config.surveyTitle;
+    this.surveyDescription = config.surveyDescription;
+    this.questions = config.questions;
     const containerElement = document.getElementById(containerId);
     if (!containerElement) {
       throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
     }
     this.surveyContainer = containerElement;
-    this.questionNumber = 1;
     this.responses = {};
     this.questionComponents = [];
     const initialPage = document.createElement("div");
@@ -761,8 +766,8 @@ class SurveyBuilder {
     this.surveyContainer.appendChild(this.questionsContainer);
   }
   createInitialPage(container) {
-    this.createSurveyTitle(this.config.surveyTitle, container);
-    this.createSurveyDescription(this.config.surveyDescription, container);
+    this.createSurveyTitle(this.surveyTitle, container);
+    this.createSurveyDescription(this.surveyDescription, container);
     this.createStartButton(container);
   }
   createStartButton(container) {
@@ -770,7 +775,7 @@ class SurveyBuilder {
     startButtonWrapper.className = "start-button-wrapper";
     const startButton = document.createElement("button");
     startButton.textContent = "Start Survey";
-    startButton.className = "start-survey-button";
+    startButton.className = "survey-button";
     startButton.addEventListener("click", () => {
       container.style.display = "none";
       this.questionsContainer.style.display = "block";
@@ -779,12 +784,50 @@ class SurveyBuilder {
     startButtonWrapper.appendChild(startButton);
     container.appendChild(startButtonWrapper);
   }
+  shouldShowQuestion(question) {
+    if (!question.visible_when) {
+      return true;
+    }
+    return true;
+  }
+  getNextQuestion() {
+    for (let i = this.currentQuestionIndex + 1;i < this.questions.length; i++) {
+      if (this.shouldShowQuestion(this.questions[i])) {
+        this.currentQuestionIndex = i;
+        return this.questions[i];
+      }
+    }
+    return null;
+  }
+  getPreviousQuestion() {
+    for (let i = this.currentQuestionIndex - 1;i >= 0; i--) {
+      if (this.shouldShowQuestion(this.questions[i])) {
+        this.currentQuestionIndex = i;
+        return this.questions[i];
+      }
+    }
+    return null;
+  }
   startSurvey() {
     this.questionsContainer.style.display = "block";
     this.initializeQuestions();
+    this.showNextQuestion();
+  }
+  addNavigationControls() {
+    const nextButton = document.createElement("button");
+    nextButton.textContent = "Next";
+    nextButton.addEventListener("click", () => this.showNextQuestion());
+    const prevButton = document.createElement("button");
+    prevButton.textContent = "Previous";
+    prevButton.addEventListener("click", () => this.showPreviousQuestion());
+    prevButton.style.display = "none";
+    this.questionsContainer.appendChild(prevButton);
+    this.questionsContainer.appendChild(nextButton);
+    this.nextButton = nextButton;
+    this.prevButton = prevButton;
   }
   initializeQuestions() {
-    this.config.questions.forEach((question, index) => {
+    this.questions.forEach((question, index) => {
       this.storeQuestionDependencies(question);
       switch (question.type) {
         case "ranking":
@@ -818,7 +861,56 @@ class SurveyBuilder {
           console.error("Unsupported question type: " + question.type);
       }
     });
+    this.questionComponents.forEach((component) => component.hide());
+    this.addNavigationControls();
     this.createCompleteButton(this.surveyContainer);
+  }
+  showPreviousQuestion() {
+    let foundQuestion = false;
+    this.currentQuestionIndex--;
+    while (this.currentQuestionIndex >= 0) {
+      if (this.shouldShowQuestion(this.questions[this.currentQuestionIndex])) {
+        foundQuestion = true;
+        break;
+      }
+      this.currentQuestionIndex--;
+    }
+    if (foundQuestion) {
+      this.showQuestion(this.currentQuestionIndex);
+    } else {
+    }
+    this.updateNavigationButtons();
+  }
+  showNextQuestion() {
+    console.log("showNextQuestion");
+    console.log(`  - currentQuestionIndex: ${this.currentQuestionIndex}`);
+    let foundQuestion = false;
+    let nextIndex = this.currentQuestionIndex + 1;
+    while (nextIndex < this.questions.length) {
+      if (this.shouldShowQuestion(this.questions[nextIndex])) {
+        foundQuestion = true;
+        this.currentQuestionIndex = nextIndex;
+        break;
+      }
+      nextIndex++;
+    }
+    if (foundQuestion) {
+      this.showQuestion(this.currentQuestionIndex);
+    } else {
+      this.handleEndOfSurvey();
+    }
+    this.updateNavigationButtons();
+  }
+  showQuestion(index) {
+    console.log("showQuestion: " + index);
+    this.questionComponents.forEach((component) => component.hide());
+    this.questionComponents[index].show();
+    this.updateNavigationButtons();
+  }
+  updateNavigationButtons() {
+    console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
+    this.prevButton.style.display = this.currentQuestionIndex > 0 ? "block" : "none";
+    this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? "block" : "none";
   }
   createSurveyTitle(surveyTitle, container) {
     const title = document.createElement("h3");
@@ -842,6 +934,10 @@ class SurveyBuilder {
       const conditionDependencies = ConditionParser.extractQuestionNamesFromCondition(question.visible_when);
       this.updateQuestionDependencies(question.name, conditionDependencies);
     }
+  }
+  handleEndOfSurvey() {
+    console.log("handleEndOfSurvey");
+    this.nextButton.style.display = "none";
   }
   updateQuestionDependencies(questionName, dependencies) {
     dependencies.forEach((dependency) => {

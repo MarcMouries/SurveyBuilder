@@ -20,21 +20,32 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private surveyContainer: HTMLElement;
     private questionsContainer: HTMLElement;
-    private config: any;
-    private questionNumber: number;
+    private nextButton: HTMLElement;
+    private prevButton: HTMLElement;
     private questionComponents: any[];
     private responses: { [key: string]: any };
     private completeCallback: any;
     private questionDependencies: Map<string, string[]> = new Map();
 
+    private currentQuestionIndex: number = -1;
+
+    questions: any;
+    surveyTitle: any;
+    surveyDescription: any;
+
+
     constructor(config: any, containerId: string) {
-        this.config = config;
+
+        this.surveyTitle = config.surveyTitle;
+        this.surveyDescription = config.surveyDescription;
+        this.questions = config.questions;
+
+
         const containerElement = document.getElementById(containerId);
         if (!containerElement) {
             throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
         }
         this.surveyContainer = containerElement;
-        this.questionNumber = 1;
         this.responses = {};
         this.questionComponents = [];
 
@@ -52,8 +63,8 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     private createInitialPage(container: HTMLElement) {
-        this.createSurveyTitle(this.config.surveyTitle, container);
-        this.createSurveyDescription(this.config.surveyDescription, container);
+        this.createSurveyTitle(this.surveyTitle, container);
+        this.createSurveyDescription(this.surveyDescription, container);
         this.createStartButton(container);
     }
 
@@ -63,7 +74,7 @@ class SurveyBuilder implements ISurveyBuilder {
 
         const startButton = document.createElement('button');
         startButton.textContent = 'Start Survey';
-        startButton.className = 'start-survey-button';
+        startButton.className = 'survey-button';
         startButton.addEventListener('click', () => {
             // Hide initial content and show questions
             container.style.display = 'none';
@@ -75,14 +86,65 @@ class SurveyBuilder implements ISurveyBuilder {
         container.appendChild(startButtonWrapper);
     }
 
+    private shouldShowQuestion(question: IQuestion): boolean {
+        // Placeholder: Implement actual condition evaluation logic here
+        if (!question.visible_when) {
+            return true;
+        }
+        // Evaluate the condition based on the current responses
+        // Return true if the condition is met, false otherwise
+        return true;
+    }
+    private getNextQuestion() {
+        for (let i = this.currentQuestionIndex + 1; i < this.questions.length; i++) {
+            if (this.shouldShowQuestion(this.questions[i])) {
+                this.currentQuestionIndex = i;
+                return this.questions[i];
+            }
+        }
+        return null; // No more questions
+    }
+
+    private getPreviousQuestion() {
+        for (let i = this.currentQuestionIndex - 1; i >= 0; i--) {
+            if (this.shouldShowQuestion(this.questions[i])) {
+                this.currentQuestionIndex = i;
+                return this.questions[i];
+            }
+        }
+        return null; // This was the first question
+    }
+
 
     private startSurvey() {
         this.questionsContainer.style.display = 'block'; // Make it visible
         this.initializeQuestions();
+        this.showNextQuestion();
     }
 
+    private addNavigationControls() {
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Next';
+        nextButton.addEventListener('click', () => this.showNextQuestion());
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'Previous';
+        prevButton.addEventListener('click', () => this.showPreviousQuestion());
+
+        // Initially, hide the Previous button as you start from the first question
+        prevButton.style.display = 'none';
+
+        this.questionsContainer.appendChild(prevButton);
+        this.questionsContainer.appendChild(nextButton);
+
+        // Store references to buttons for later use
+        this.nextButton = nextButton;
+        this.prevButton = prevButton;
+    }
+
+
     private initializeQuestions() {
-        this.config.questions.forEach((question: IQuestion, index: number) => {
+        this.questions.forEach((question: IQuestion, index: number) => {
             this.storeQuestionDependencies(question);
             switch (question.type) {
                 case "ranking":
@@ -118,8 +180,80 @@ class SurveyBuilder implements ISurveyBuilder {
             }
         });
 
+        // Initially, hide all questions
+        this.questionComponents.forEach(component => component.hide());
+
+        this.addNavigationControls();
+
         this.createCompleteButton(this.surveyContainer);
     }
+
+    private showPreviousQuestion() {
+        let foundQuestion = false;
+        this.currentQuestionIndex--; // Start checking from the previous question
+        while (this.currentQuestionIndex >= 0) {
+            if (this.shouldShowQuestion(this.questions[this.currentQuestionIndex])) {
+                foundQuestion = true;
+                break;
+            }
+            this.currentQuestionIndex--;
+        }
+
+        if (foundQuestion) {
+            this.showQuestion(this.currentQuestionIndex);
+            // Adjust navigation buttons accordingly
+        } else {
+            // Handle case where we're at the beginning of the survey
+            // This could be resetting to the survey start or hiding the "Previous" button
+        }
+        this.updateNavigationButtons();
+    }
+
+
+    private showNextQuestion() {
+        console.log("showNextQuestion");
+        console.log(`  - currentQuestionIndex: ${this.currentQuestionIndex}`);
+
+        let foundQuestion = false;
+        let nextIndex = this.currentQuestionIndex + 1; // Start from the next question
+        while (nextIndex < this.questions.length) {
+            if (this.shouldShowQuestion(this.questions[nextIndex])) {
+                foundQuestion = true;
+                this.currentQuestionIndex = nextIndex; // Update the current index to the found question
+                break;
+            }
+            nextIndex++;
+        }
+
+        if (foundQuestion) {
+            this.showQuestion(this.currentQuestionIndex);
+        } else {
+            this.handleEndOfSurvey();
+        }
+        this.updateNavigationButtons();
+    }
+
+
+
+    private showQuestion(index: number) {
+        console.log("showQuestion: " + index);
+
+        // First, hide all questions to ensure only one is shown at a time
+        this.questionComponents.forEach(component => component.hide());
+
+        // Then, show the targeted question
+        this.questionComponents[index].show();
+
+        // Update navigation buttons based on the new index
+        this.updateNavigationButtons();
+    }
+
+    private updateNavigationButtons() {
+        console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
+        this.prevButton.style.display = this.currentQuestionIndex > 0 ? 'block' : 'none';
+        this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? 'block' : 'none';
+    }
+
 
     private createSurveyTitle(surveyTitle: string, container: HTMLElement) {
         const title = document.createElement('h3');
@@ -151,6 +285,15 @@ class SurveyBuilder implements ISurveyBuilder {
         }
 
     }
+
+    private handleEndOfSurvey(): void {
+        console.log("handleEndOfSurvey");
+        this.nextButton.style.display = 'none'; // Hide Next button
+        // Show a Complete or Submit button, or take any action to finalize the survey
+
+    }
+
+
     private updateQuestionDependencies(questionName: string, dependencies: string[]): void {
         dependencies.forEach(dependency => {
             const currentDependencies = this.questionDependencies.get(dependency) || [];
