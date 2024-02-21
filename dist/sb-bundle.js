@@ -746,6 +746,7 @@ class SurveyBuilder {
   surveyTitle;
   surveyDescription;
   constructor(config, containerId) {
+    this.validateConfig(config);
     this.surveyTitle = config.surveyTitle;
     this.surveyDescription = config.surveyDescription;
     this.questions = config.questions;
@@ -764,6 +765,23 @@ class SurveyBuilder {
     this.questionsContainer.id = "survey-questions";
     this.questionsContainer.style.display = "none";
     this.surveyContainer.appendChild(this.questionsContainer);
+  }
+  validateConfig(config) {
+    if (!config) {
+      throw new Error("Config object is required");
+    }
+    if (typeof config.surveyTitle !== "string") {
+      throw new Error("Invalid or missing surveyTitle");
+    }
+    if (typeof config.surveyDescription !== "string") {
+      throw new Error("Invalid or missing surveyDescription");
+    }
+    if (!Array.isArray(config.questions)) {
+      throw new Error("Invalid or missing questions array");
+    }
+    if (config.questions.some((question) => typeof question !== "object")) {
+      throw new Error("All items in questions array must be objects");
+    }
   }
   createInitialPage(container) {
     this.createSurveyTitle(this.surveyTitle, container);

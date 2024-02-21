@@ -35,6 +35,7 @@ class SurveyBuilder implements ISurveyBuilder {
 
 
     constructor(config: any, containerId: string) {
+        this.validateConfig(config);
 
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
@@ -60,6 +61,23 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.id = 'survey-questions';
         this.questionsContainer.style.display = 'none'; // Hide until the survey starts
         this.surveyContainer.appendChild(this.questionsContainer);
+    }
+    private validateConfig(config: any) {
+        if (!config) {
+            throw new Error('Config object is required');
+        }
+        if (typeof config.surveyTitle !== 'string') {
+            throw new Error('Invalid or missing surveyTitle');
+        }
+        if (typeof config.surveyDescription !== 'string') {
+            throw new Error('Invalid or missing surveyDescription');
+        }
+        if (!Array.isArray(config.questions)) {
+            throw new Error('Invalid or missing questions array');
+        }
+        if (config.questions.some((question: any) => typeof question !== 'object')) {
+            throw new Error('All items in questions array must be objects');
+        }
     }
 
     private createInitialPage(container: HTMLElement) {
