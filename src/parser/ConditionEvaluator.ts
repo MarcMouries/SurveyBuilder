@@ -1,5 +1,5 @@
 // Define the structure for a basic condition
-interface Condition {
+export interface Condition {
     type: 'CONDITION';
     left: string;
     operator: string;
@@ -7,7 +7,7 @@ interface Condition {
 }
 
 // Define the structure for compound expressions using AND/OR
-interface CompoundExpression {
+export interface CompoundExpression {
     type: 'AND' | 'OR';
     conditions: ExpressionNode[];
 }
