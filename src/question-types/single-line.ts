@@ -14,6 +14,8 @@ export class SingleLineTextQuestion extends QuestionType {
         inputField.name = question.name;
         inputField.required = question.isRequired;
         inputField.className = 'single-line-text-input';
+        inputField.placeholder = question.placeholder;
+
         this.questionDiv.appendChild(inputField);
 
         // Event listener for response change
