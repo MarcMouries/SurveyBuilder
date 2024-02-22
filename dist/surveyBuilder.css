@@ -441,7 +441,7 @@ textarea {
 }
 
 .question-title {
-    font-size: 1.2em;
+    font-size: 20px;
     color: #1d1d1d;
     margin-bottom: 10px;
 }
@@ -497,11 +497,12 @@ textarea {
 
 /* Complete Button Container and Button Styles */
 
-footer {
+#navigation-buttons {
     background-color: #f7f7f7;
     display: flex;
     justify-content: center;
     padding: 10px;
+    gap: 10px;
 }
 
 .button-container {

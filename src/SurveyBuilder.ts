@@ -1,4 +1,5 @@
 import {
+    FollowUpQuestion, 
     RankingQuestion,
     SelectQuestion,
     SingleLineTextQuestion,
@@ -10,9 +11,7 @@ import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts"
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
-import { FollowUpQuestion } from './question-types/FollowUpQuestion.ts';
 import { ConditionParser } from './ConditionParser.ts';
-
 
 class SurveyBuilder implements ISurveyBuilder {
 
@@ -20,8 +19,12 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private surveyContainer: HTMLElement;
     private questionsContainer: HTMLElement;
+    private navigationContainer: HTMLElement;
+
     private nextButton: HTMLElement;
     private prevButton: HTMLElement;
+    private completeButton: HTMLElement;
+
     private questionComponents: any[];
     private responses: { [key: string]: any };
     private completeCallback: any;
@@ -29,9 +32,9 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private currentQuestionIndex: number = -1;
 
-    questions: any;
-    surveyTitle: any;
-    surveyDescription: any;
+    private questions: any;
+    private surveyTitle: any;
+    private surveyDescription: any;
 
 
     constructor(config: any, containerId: string) {
@@ -61,23 +64,18 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.id = 'survey-questions';
         this.questionsContainer.style.display = 'none'; // Hide until the survey starts
         this.surveyContainer.appendChild(this.questionsContainer);
-    }
-    private validateConfig(config: any) {
-        if (!config) {
-            throw new Error('Config object is required');
-        }
-        if (typeof config.surveyTitle !== 'string') {
-            throw new Error('Invalid or missing surveyTitle');
-        }
-        if (typeof config.surveyDescription !== 'string') {
-            throw new Error('Invalid or missing surveyDescription');
-        }
-        if (!Array.isArray(config.questions)) {
-            throw new Error('Invalid or missing questions array');
-        }
-        if (config.questions.some((question: any) => typeof question !== 'object')) {
-            throw new Error('All items in questions array must be objects');
-        }
+
+        // NAV BUTTONS
+        this.navigationContainer = document.createElement('div');
+        this.navigationContainer.id = 'navigation-buttons';
+        this.navigationContainer.role = 'navigation';
+        this.nextButton = document.createElement('button');
+        this.prevButton = document.createElement('button');
+        this.completeButton = document.createElement('button');
+
+        this.navigationContainer.appendChild(this.prevButton);
+        this.navigationContainer.appendChild(this.nextButton);
+        this.surveyContainer.appendChild(this.navigationContainer);
     }
 
     private createInitialPage(container: HTMLElement) {
@@ -141,24 +139,31 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     private addNavigationControls() {
-        const nextButton = document.createElement('button');
-        nextButton.textContent = 'Next';
-        nextButton.addEventListener('click', () => this.showNextQuestion());
+       // this.nextButton = document.createElement('button');
+        this.nextButton.textContent = 'Next';
+        this.nextButton.className = 'survey-button';
 
-        const prevButton = document.createElement('button');
-        prevButton.textContent = 'Previous';
-        prevButton.addEventListener('click', () => this.showPreviousQuestion());
+        this.nextButton.addEventListener('click', () => this.showNextQuestion());
+
+        //this.prevButton = document.createElement('button');
+        this.prevButton.textContent = 'Previous';
+        this.prevButton.className = 'survey-button';
+
+        this.prevButton.addEventListener('click', () => this.showPreviousQuestion());
 
         // Initially, hide the Previous button as you start from the first question
-        prevButton.style.display = 'none';
+        this.prevButton.style.display = 'none';
 
-        this.questionsContainer.appendChild(prevButton);
-        this.questionsContainer.appendChild(nextButton);
-
-        // Store references to buttons for later use
-        this.nextButton = nextButton;
-        this.prevButton = prevButton;
+        // complete button
+        this.completeButton = document.createElement('button');
+        this.completeButton.className = 'survey-button';
+        this.completeButton.textContent = 'Complete';
+        this.completeButton.addEventListener('click', () => this.finishSurvey());
+        this.navigationContainer.appendChild(this.completeButton);
+        // Initially, hide the Complete button 
+        this.completeButton.style.display = 'none';
     }
+
 
 
     private initializeQuestions() {
@@ -202,8 +207,6 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionComponents.forEach(component => component.hide());
 
         this.addNavigationControls();
-
-        this.createCompleteButton(this.surveyContainer);
     }
 
     private showPreviousQuestion() {
@@ -270,6 +273,7 @@ class SurveyBuilder implements ISurveyBuilder {
         console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
         this.prevButton.style.display = this.currentQuestionIndex > 0 ? 'block' : 'none';
         this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? 'block' : 'none';
+        this.completeButton.style.display = this.currentQuestionIndex == this.questions.length - 1 ? 'block' : 'none';
     }
 
 
@@ -412,6 +416,24 @@ class SurveyBuilder implements ISurveyBuilder {
         }
     }
 
+    private validateConfig(config: any) {
+        if (!config) {
+            throw new Error('Config object is required');
+        }
+        if (typeof config.surveyTitle !== 'string') {
+            throw new Error('Invalid or missing surveyTitle');
+        }
+        if (typeof config.surveyDescription !== 'string') {
+            throw new Error('Invalid or missing surveyDescription');
+        }
+        if (!Array.isArray(config.questions)) {
+            throw new Error('Invalid or missing questions array');
+        }
+        if (config.questions.some((question: any) => typeof question !== 'object')) {
+            throw new Error('All items in questions array must be objects');
+        }
+    }
+
     getQuestionElement(index: number): any {
         let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
         console.log("allQuestionElements", allQuestionElements);
@@ -422,15 +444,7 @@ class SurveyBuilder implements ISurveyBuilder {
 
 
 
-    createCompleteButton(container: HTMLElement) {
-        const footer = document.createElement('footer');
-        const completeButton = document.createElement('button');
-        completeButton.className = 'complete-button';
-        completeButton.textContent = 'Complete';
-        completeButton.addEventListener('click', () => this.finishSurvey());
-        footer.appendChild(completeButton);
-        container.appendChild(footer);
-    }
+
 
     finishSurvey() {
         const responses = this.getResponses();

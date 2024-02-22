@@ -388,6 +388,7 @@ class SingleLineTextQuestion extends QuestionType {
     inputField.name = question.name;
     inputField.required = question.isRequired;
     inputField.className = "single-line-text-input";
+    inputField.placeholder = question.placeholder;
     this.questionDiv.appendChild(inputField);
     inputField.addEventListener("input", () => {
       const response = {
@@ -735,8 +736,10 @@ class SurveyBuilder {
   static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
   surveyContainer;
   questionsContainer;
+  navigationContainer;
   nextButton;
   prevButton;
+  completeButton;
   questionComponents;
   responses;
   completeCallback;
@@ -765,23 +768,15 @@ class SurveyBuilder {
     this.questionsContainer.id = "survey-questions";
     this.questionsContainer.style.display = "none";
     this.surveyContainer.appendChild(this.questionsContainer);
-  }
-  validateConfig(config) {
-    if (!config) {
-      throw new Error("Config object is required");
-    }
-    if (typeof config.surveyTitle !== "string") {
-      throw new Error("Invalid or missing surveyTitle");
-    }
-    if (typeof config.surveyDescription !== "string") {
-      throw new Error("Invalid or missing surveyDescription");
-    }
-    if (!Array.isArray(config.questions)) {
-      throw new Error("Invalid or missing questions array");
-    }
-    if (config.questions.some((question) => typeof question !== "object")) {
-      throw new Error("All items in questions array must be objects");
-    }
+    this.navigationContainer = document.createElement("div");
+    this.navigationContainer.id = "navigation-buttons";
+    this.navigationContainer.role = "navigation";
+    this.nextButton = document.createElement("button");
+    this.prevButton = document.createElement("button");
+    this.completeButton = document.createElement("button");
+    this.navigationContainer.appendChild(this.prevButton);
+    this.navigationContainer.appendChild(this.nextButton);
+    this.surveyContainer.appendChild(this.navigationContainer);
   }
   createInitialPage(container) {
     this.createSurveyTitle(this.surveyTitle, container);
@@ -832,17 +827,19 @@ class SurveyBuilder {
     this.showNextQuestion();
   }
   addNavigationControls() {
-    const nextButton = document.createElement("button");
-    nextButton.textContent = "Next";
-    nextButton.addEventListener("click", () => this.showNextQuestion());
-    const prevButton = document.createElement("button");
-    prevButton.textContent = "Previous";
-    prevButton.addEventListener("click", () => this.showPreviousQuestion());
-    prevButton.style.display = "none";
-    this.questionsContainer.appendChild(prevButton);
-    this.questionsContainer.appendChild(nextButton);
-    this.nextButton = nextButton;
-    this.prevButton = prevButton;
+    this.nextButton.textContent = "Next";
+    this.nextButton.className = "survey-button";
+    this.nextButton.addEventListener("click", () => this.showNextQuestion());
+    this.prevButton.textContent = "Previous";
+    this.prevButton.className = "survey-button";
+    this.prevButton.addEventListener("click", () => this.showPreviousQuestion());
+    this.prevButton.style.display = "none";
+    this.completeButton = document.createElement("button");
+    this.completeButton.className = "survey-button";
+    this.completeButton.textContent = "Complete";
+    this.completeButton.addEventListener("click", () => this.finishSurvey());
+    this.navigationContainer.appendChild(this.completeButton);
+    this.completeButton.style.display = "none";
   }
   initializeQuestions() {
     this.questions.forEach((question, index) => {
@@ -881,7 +878,6 @@ class SurveyBuilder {
     });
     this.questionComponents.forEach((component) => component.hide());
     this.addNavigationControls();
-    this.createCompleteButton(this.surveyContainer);
   }
   showPreviousQuestion() {
     let foundQuestion = false;
@@ -929,6 +925,7 @@ class SurveyBuilder {
     console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
     this.prevButton.style.display = this.currentQuestionIndex > 0 ? "block" : "none";
     this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? "block" : "none";
+    this.completeButton.style.display = this.currentQuestionIndex == this.questions.length - 1 ? "block" : "none";
   }
   createSurveyTitle(surveyTitle, container) {
     const title = document.createElement("h3");
@@ -1023,20 +1020,28 @@ class SurveyBuilder {
       });
     }
   }
+  validateConfig(config) {
+    if (!config) {
+      throw new Error("Config object is required");
+    }
+    if (typeof config.surveyTitle !== "string") {
+      throw new Error("Invalid or missing surveyTitle");
+    }
+    if (typeof config.surveyDescription !== "string") {
+      throw new Error("Invalid or missing surveyDescription");
+    }
+    if (!Array.isArray(config.questions)) {
+      throw new Error("Invalid or missing questions array");
+    }
+    if (config.questions.some((question) => typeof question !== "object")) {
+      throw new Error("All items in questions array must be objects");
+    }
+  }
   getQuestionElement(index) {
     let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
     return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
-  }
-  createCompleteButton(container) {
-    const footer = document.createElement("footer");
-    const completeButton = document.createElement("button");
-    completeButton.className = "complete-button";
-    completeButton.textContent = "Complete";
-    completeButton.addEventListener("click", () => this.finishSurvey());
-    footer.appendChild(completeButton);
-    container.appendChild(footer);
   }
   finishSurvey() {
     const responses = this.getResponses();
