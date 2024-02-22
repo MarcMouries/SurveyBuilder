@@ -296,7 +296,7 @@ _font-size: 16px;
 
 
 /** Follow up Question */
-.followup-input-question .input-group {
+.followup-question .input-group {
     display: flex;
     flex-direction: column;
 }
