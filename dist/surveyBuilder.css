@@ -494,6 +494,19 @@ textarea {
     font-style: italic;
 }
 
+.one-choice-question .item label:hover, .multi-choice-question .item label:hover {
+    background-color: #f0f0f0b0; 
+    color: #333; 
+    cursor: pointer; 
+}
+
+/* transition for smooth color change */
+.one-choice-question .item {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+
+
 
 /* Complete Button Container and Button Styles */
 
