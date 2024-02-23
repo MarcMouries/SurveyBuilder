@@ -1,64 +1,79 @@
-// Define the structure for a basic condition
-export interface Condition {
-    type: 'CONDITION';
-    left: string;
-    operator: string;
-    right: string | number | boolean;
-}
-
-// Define the structure for compound expressions using AND/OR
-export interface CompoundExpression {
-    type: 'AND' | 'OR';
-    conditions: ExpressionNode[];
-}
-
-type ExpressionNode = Condition | CompoundExpression;
-
-export interface ConditionData {
-    [key: string]: any;
-}
-
-export type ConditionTree = ExpressionNode;
-
+import type { BinaryExpressionNode, CompoundExpression, Condition, Data } from "./ConditionInterfaces";
+import type { IdentifierNode, LiteralNode, Node } from "./ConditionInterfaces";
+import { NodeType } from "./ConditionInterfaces";
 
 export class ConditionEvaluator {
-    static evaluate(conditionTree: ConditionTree, data: ConditionData): boolean {
-        // Explicitly handle SimpleCondition and LogicalCondition types
-        if (conditionTree.type === 'CONDITION') {
-            // Handle simple condition evaluation
-            const { left, operator, right } = conditionTree;
-            const value = this.resolveDataValue(left, data);
-            switch (operator) {
-                case "=": return value === right;
-                case "!=": return value !== right;
-                case "<": return value < right;
-                case "<=": return value <= right;
-                case ">": return value > right;
-                case ">=": return value >= right;
-                case "contains": return Array.isArray(value) && value.includes(right);
-                default: throw new Error(`Unsupported operator: ${operator}`);
-            }
-        } else if (conditionTree.type === 'AND' || conditionTree.type === 'OR') {
-            // Handle logical conditions (AND/OR)
-            const evaluationMethod = conditionTree.type === 'AND' ? 'every' : 'some';
-            return conditionTree.conditions[evaluationMethod](cond => this.evaluate(cond, data));
-        }
-        // Fallback for unrecognized structure
-        console.error("Unrecognized condition structure:", conditionTree);
+  static evaluate(node: Node, data: Data): boolean {
+    switch (node.type) {
+      case NodeType.IDENTIFIER:
+        return this.resolveIdentifierValue(node as IdentifierNode, data);
+
+      case NodeType.LITERAL:
+        return this.evaluateLiteral(node as LiteralNode);
+
+      case NodeType.BINARY_EXP:
+        const binaryNode = node as BinaryExpressionNode;
+        const leftValue = this.evaluate(binaryNode.left, data);
+        const rightValue = this.evaluate(binaryNode.right, data);
+        return this.applyOperator(binaryNode.operator, leftValue, rightValue);
+
+      case NodeType.COMPOUND:
+        return this.evaluateCompoundExpression(node as CompoundExpression, data);
+
+      case NodeType.CONDITION:
+        const conditionNode = node as Condition;
+        const leftEval = this.evaluate(conditionNode.left, data);
+        const rightEval = this.evaluate(conditionNode.right, data);
+        return this.applyOperator(conditionNode.operator, leftEval, rightEval);
+
+      default:
+        console.error("Unrecognized node type:", node.type);
         return false;
     }
+  }
 
-    private static resolveDataValue(path: string, data: ConditionData): any {
-        const parts = path.split('.');
-        let currentValue = data;
-        for (let part of parts) {
-            if (!(part in currentValue)) {
-                console.error(`Path not found in data: ${path}`);
-                return undefined; // Ensure a clear failure path
-            }
-            currentValue = currentValue[part];
-        }
-        return currentValue;
+  private static resolveIdentifierValue(node: IdentifierNode, data: Data): any {
+    const path = node.name.split('.');
+    let currentValue = data;
+    for (const part of path) {
+      if (currentValue && part in currentValue) {
+        currentValue = currentValue[part];
+      } else {
+        // If the path is not found, it could either mean the value is false or undefined
+        console.error(`Path not found in data: ${node.name}`);
+        return false; // or `undefined` depending on how you wish to handle non-existent paths
+      }
     }
+    return currentValue;
+  }
 
+
+  private static evaluateLiteral(node: LiteralNode): any {
+    return node.value;
+  }
+
+  private static applyOperator(operator: string, left: any, right: any): boolean {
+    switch (operator) {
+      case "=": return left === right;
+      case "!=": return left !== right;
+      case "<": return left < right;
+      case "<=": return left <= right;
+      case ">": return left > right;
+      case ">=": return left >= right;
+      case "contains": return Array.isArray(left) && left.includes(right);
+      default:
+        throw new Error(`Unsupported operator: ${operator}`);
+    }
+  }
+
+
+  private static evaluateCompoundExpression(node: CompoundExpression, data: Data): boolean {
+    if (node.operator === 'AND') {
+      return node.conditions.every(cond => this.evaluate(cond, data));
+    } else if (node.operator === 'OR') {
+      return node.conditions.some(cond => this.evaluate(cond, data));
+    } else {
+      throw new Error(`Unsupported compound operator: ${node.operator}`);
+    }
+  }
 }
