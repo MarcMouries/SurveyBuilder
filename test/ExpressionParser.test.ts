@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { ConditionParser } from "../src/parser/ConditionParser";
-import { NodeType, Condition, CompoundExpression, Node, IdentifierNode, LiteralNode } from "../src/parser/ConditionInterfaces";
+import { ExpressionParser } from "../src/parser/ExpressionParser";
+import { NodeType, Condition, CompoundExpression, Node, IdentifierNode, LiteralNode } from "../src/parser/Expressions";
 
 // Helper functions for creating test expectations
 const identifier = (name: string): IdentifierNode => ({ type: NodeType.IDENTIFIER, name });
@@ -8,7 +8,7 @@ const literal = (value: string | number | boolean): LiteralNode => ({ type: Node
 
 
 test("parses simple equality condition", () => {
-  const result = ConditionParser.parse("question_1.answer = 'Yes'");
+  const result = ExpressionParser.parse("question_1.answer = 'Yes'");
   const expected: Condition = {
     type: NodeType.CONDITION,
     left: identifier("question_1.answer"),
@@ -19,7 +19,7 @@ test("parses simple equality condition", () => {
 });
 
 test("parses complex AND condition", () => {
-  const result = ConditionParser.parse("question_1.answer = 'Yes' AND question_2.answer = 'No'");
+  const result = ExpressionParser.parse("question_1.answer = 'Yes' AND question_2.answer = 'No'");
   
   const expected = {
     type: NodeType.COMPOUND,
@@ -43,7 +43,7 @@ test("parses complex AND condition", () => {
   expect(result).toEqual(expected);
 });
 test("parses complex OR condition", () => {
-  const result = ConditionParser.parse("question_1.answer = 'Yes' OR question_2.answer = 'No'");
+  const result = ExpressionParser.parse("question_1.answer = 'Yes' OR question_2.answer = 'No'");
 
   const expected = {
     type: NodeType.COMPOUND,
@@ -68,7 +68,7 @@ test("parses complex OR condition", () => {
 });
 
 test("parses boolean condition", () => {
-  const result = ConditionParser.parse("Attending_Status.isVisible = true");
+  const result = ExpressionParser.parse("Attending_Status.isVisible = true");
   const expected: Condition = {
     type: NodeType.CONDITION,
     left: identifier("Attending_Status.isVisible"),
@@ -78,7 +78,7 @@ test("parses boolean condition", () => {
   expect(result).toEqual(expected);
 });
 test("evaluates property truthiness", () => {
-  const result = ConditionParser.parse("Attending_Status.isVisible");
+  const result = ExpressionParser.parse("Attending_Status.isVisible");
   const expected: IdentifierNode = {
     type: NodeType.IDENTIFIER,
     name: "Attending_Status.isVisible"

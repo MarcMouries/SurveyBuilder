@@ -1,13 +1,12 @@
-import type { ConditionalExpression } from "typescript";
 import {
-  type Node, type IdentifierNode, type LiteralNode, type BinaryExpressionNode,
-  type CompoundExpression, type Condition, NodeType, type ConditionTree
-} from "./ConditionInterfaces";
+  type BinaryExpressionNode,  type Condition, type Expression,
+  type Node, NodeType, type IdentifierNode, type LiteralNode, type CompoundExpression
+} from "./Expressions";
 
-export class ConditionParser {
-  static parse(condition: string): ConditionTree {
+export class ExpressionParser {
+  static parse(expression: string): Expression {
     // Normalize condition to identify logical operators
-    const normalizedCondition = condition.replace(/\band\b/gi, 'AND').replace(/\bor\b/gi, 'OR');
+    const normalizedCondition = expression.replace(/\band\b/gi, 'AND').replace(/\bor\b/gi, 'OR');
 
     // Entry point for recursive parsing
     return this.parseLogicalOrSimpleCondition(normalizedCondition);

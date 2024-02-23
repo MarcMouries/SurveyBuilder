@@ -82,7 +82,7 @@ export interface Condition extends Node {
 }
 
 // The root of a condition tree can be any Node
-export type ConditionTree = Node;
+export type Expression = Node;
 
 // Data
  export interface Data {

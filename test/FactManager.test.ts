@@ -36,7 +36,6 @@ const facts_questions_event = {
   },
   "Activity_Desired": {
     "title": "What activity do you like doing during the {{Favorite_Season.answer}} season?",
-    "answer": ""
   },
   "Participant_Age": {
     "title": "What is your age?",
@@ -47,6 +46,7 @@ const facts_questions_event = {
     "visible_when": "Participant_Age.answer > 22"
   }
 };
+
 
 test("Evaluate initial Attending_Status", () => {
    const factsManager = new FactsManager( {
@@ -71,106 +71,110 @@ test("Update Attending_Status and re-evaluate", () => {
 });
 
 
-// test("Update Attending_Status and re-evaluate", () => {
-//   const factsManager = new FactsManager(facts_questions_event);
-//   factsManager.update("Attending_Status", { answer: "In-Person" });
-//   expect(factsManager.evaluate("Attending_Status.answer = 'In-Person'")).toBe(true);
-// });
+test("Update Attending_Status and re-evaluate", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  factsManager.update("Attending_Status", { answer: "In-Person" });
+  expect(factsManager.evaluate("Attending_Status.answer = 'In-Person'")).toBe(true);
+});
 
-// test("Evaluate Has_Dietary_Restrictions with updated Attending_Status", () => {
-//   const factsManager = new FactsManager(facts_questions_event);
-//   factsManager.update("Attending_Status", { answer: "In-Person" }); 
-//   console.log("IN TESTS");
-//   console.log(facts_questions_event);
-//   console.log("IN TESTS");
-//   expect(factsManager.evaluate("Has_Dietary_Restrictions.answer = 'Yes'")).toBe(true);
-// });
-/*
+test("Evaluate Has_Dietary_Restrictions with updated Attending_Status", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  factsManager.update("Attending_Status", { answer: "In-Person" }); 
+  expect(factsManager.evaluate("Has_Dietary_Restrictions.answer = 'Yes'")).toBe(true);
+});
+
 test("Complex condition evaluation with updated facts", () => {
   const factsManager = new FactsManager(facts_questions_event);
   factsManager.update("Attending_Status", { answer: "In-Person" }); 
   expect(factsManager.evaluate("Attending_Status.answer = 'In-Person' and Has_Dietary_Restrictions.answer = 'Yes'")).toBe(true);
 });
-*/
-/*
-const evaluator = new ConditionEvaluator(facts_questions_event);
-evaluator.evaluate('Attending_Status = Virtually') => false;
-evaluator.update({Attending_Status: "In-Person"}) => "Attending_Status = In-Person"
-evaluator.evaluate('Attending_Status = In-Person') => true;
-evaluator.evaluate('Has_Dietary_Restrictions = Yes') => true;
-evaluator.evaluate('Attending_Status = In-Person and Has_Dietary_Restrictions = Yes') => true;
 
-
-
-const evaluator = new ConditionEvaluator( facts_questions);
-evaluator.evaluate('favorite_color is blue') => true;
-evaluator.update({favorite_color: "green"}) => the favorite_color is "green"
-evaluator.evaluate('favorite_color is blue') => false;
-const facts_questions = {
-  question_1: "Yes",
-  question_2: 4,
-  question_3: 5,
-  question_4: ["Spring", "Summer", "Autumn", "Winter"],
-  favorite_color: "blue",
-  favorite_season: "blue",
-  question_A: {
-    title: "What do you like doing during the {{favorite-season}} season",
-    answer: ""
-  }
-
-};
-have you ever been Married?
-if yes, show name_of_current_spouse
-
-facts_questions_event
-
-const evaluator = new ConditionEvaluator( facts_questions);
-evaluator.evaluate('favorite_color is blue') => true;
-evaluator.update({favorite_color: "green"}) => the favorite_color is "green"
-evaluator.evaluate('favorite_color is blue') => false;
-
-
-evaluator.evaluate('favorite_color is blue') => false;
-
-
-evaluator.if('favorite_color changes').then() 
-
-
-test("favorite_color is blue", () => {
-  expect(evaluator.evaluateCondition('favorite_color is blue', facts)).toBe(true);
+test("Update Title reference", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  factsManager.update("Favorite_Season", { answer: "Winter" });
+  expect(factsManager.evaluate("Activity_Desired.title = 'What activity do you like doing during the Summer season?'")).toBe(true);
 });
 
-test("question_2 is greater or equal to 4", () => {
-  expect(evaluator.evaluateCondition("question_2 is greater or equal to 4", facts)).toBe(true);
+test("Test equality > 18", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  expect(factsManager.evaluate("Participant_Age.answer > 18 ")).toBe(true);
 });
 
-test("question_4 contains Winter", () => {
-  expect(evaluator.evaluateCondition('question_4 contains "Winter"', facts)).toBe(true);
+test("Test equality > 18 and < 30", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  expect(factsManager.evaluate("Participant_Age.answer > 18 and Participant_Age.answer < 30 ")).toBe(true);
 });
-
-test("question_3 is greater than 6", () => {
-  expect(evaluator.evaluateCondition("question_3 is greater than 6", facts)).toBe(false);
+test("Test equality is between 18 and 30", () => {
+  const factsManager = new FactsManager(facts_questions_event);
+  expect(factsManager.evaluate("Participant_Age.answer is between 18 and 30 ")).toBe(true);
 });
-test("question_3 = 5", () => {
-  expect(evaluator.evaluateCondition("question_3 = 5", facts)).toBe(true);
-});
+// const evaluator = new ConditionEvaluator( facts_questions);
+// evaluator.evaluate('favorite_color is blue') => true;
+// evaluator.update({favorite_color: "green"}) => the favorite_color is "green"
+// evaluator.evaluate('favorite_color is blue') => false;
+// const facts_questions = {
+//   question_1: "Yes",
+//   question_2: 4,
+//   question_3: 5,
+//   question_4: ["Spring", "Summer", "Autumn", "Winter"],
+//   favorite_color: "blue",
+//   favorite_season: "blue",
+//   question_A: {
+//     title: "What do you like doing during the {{favorite-season}} season",
+//     answer: ""
+//   }
 
-test("question_3 > 4 and question_3 < 6", () => {
-  expect(evaluator.evaluateCondition("question_3 > 4 and question_3 < 6", facts)).toBe(true);
-});
-
-test("question_3 > 4 and question_3 < 6", () => {
-  expect(evaluator.evaluateCondition("question_3 > 4 and question_3 < 6", facts)).toBe(true);
-});
+// };
+// have you ever been Married?
+// if yes, show name_of_current_spouse
 
 
+// const evaluator = new ConditionEvaluator( facts_questions);
+// evaluator.evaluate('favorite_color is blue') => true;
+// evaluator.update({favorite_color: "green"}) => the favorite_color is "green"
+// evaluator.evaluate('favorite_color is blue') => false;
 
 
- test("4 > question_3 < 6", () => {
-   expect(evaluator.evaluateCondition("4 > question_3 < 6", facts)).toBe(true);
- });
+// evaluator.evaluate('favorite_color is blue') => false;
 
- test("question_3 is greater than question_2", () => {
-   expect(evaluator.evaluateCondition("question_3 is greater than question_2", facts)).toBe(true);
- });
-*/
+
+// evaluator.if('favorite_color changes').then() 
+
+
+// test("favorite_color is blue", () => {
+//   expect(evaluator.evaluateCondition('favorite_color is blue', facts)).toBe(true);
+// });
+
+// test("question_2 is greater or equal to 4", () => {
+//   expect(evaluator.evaluateCondition("question_2 is greater or equal to 4", facts)).toBe(true);
+// });
+
+// test("question_4 contains Winter", () => {
+//   expect(evaluator.evaluateCondition('question_4 contains "Winter"', facts)).toBe(true);
+// });
+
+// test("question_3 is greater than 6", () => {
+//   expect(evaluator.evaluateCondition("question_3 is greater than 6", facts)).toBe(false);
+// });
+// test("question_3 = 5", () => {
+//   expect(evaluator.evaluateCondition("question_3 = 5", facts)).toBe(true);
+// });
+
+// test("question_3 > 4 and question_3 < 6", () => {
+//   expect(evaluator.evaluateCondition("question_3 > 4 and question_3 < 6", facts)).toBe(true);
+// });
+
+// test("question_3 > 4 and question_3 < 6", () => {
+//   expect(evaluator.evaluateCondition("question_3 > 4 and question_3 < 6", facts)).toBe(true);
+// });
+
+
+
+
+//  test("4 > question_3 < 6", () => {
+//    expect(evaluator.evaluateCondition("4 > question_3 < 6", facts)).toBe(true);
+//  });
+
+//  test("question_3 is greater than question_2", () => {
+//    expect(evaluator.evaluateCondition("question_3 is greater than question_2", facts)).toBe(true);
+//  });

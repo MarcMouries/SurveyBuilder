@@ -1,6 +1,6 @@
-import { ConditionParser } from "./ConditionParser";
-import { ConditionEvaluator } from "./ConditionEvaluator";
-import type { Condition, CompoundExpression,  Data, ConditionTree } from "./ConditionInterfaces";
+import { ExpressionParser } from "./ExpressionParser";
+import { ExpressionEvaluator } from "./ExpressionEvaluator";
+import type { Condition, CompoundExpression,  Data, Expression } from "./Expressions";
 
 export class FactsManager {
   facts: Data;
@@ -14,11 +14,11 @@ export class FactsManager {
 }
 
 
-  evaluate(condition: string): boolean {
+  evaluate(expressionStr: string): boolean {
     // Parse the condition string into a structured condition tree
-    const conditionTree: ConditionTree = ConditionParser.parse(condition);
+    const expressionNode: Expression = ExpressionParser.parse(expressionStr);
     // Evaluate the structured condition tree against the stored facts
-    return ConditionEvaluator.evaluate(conditionTree, this.facts);
+    return ExpressionEvaluator.evaluate(expressionNode, this.facts);
   }
 
   update(factKey: string, keyPairValue: any): any {
@@ -82,8 +82,8 @@ export class FactsManager {
 
       // Update visibility based on `visible_when` conditions if present
       if (fact.visible_when) {
-        const visibleConditionParts = ConditionParser.parse(fact.visible_when);
-        const isVisible = ConditionEvaluator.evaluate(visibleConditionParts, this.facts);
+        const visibleConditionParts = ExpressionParser.parse(fact.visible_when);
+        const isVisible = ExpressionEvaluator.evaluate(visibleConditionParts, this.facts);
         this.facts[key].isVisible = isVisible;
       }
     });

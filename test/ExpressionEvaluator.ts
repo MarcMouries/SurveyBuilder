@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { ConditionEvaluator } from "../src/parser/ConditionEvaluator";
-import { Condition, CompoundExpression, IdentifierNode, LiteralNode, NodeType, Data } from "../src/parser/ConditionInterfaces";
+import { ExpressionEvaluator } from "../src/parser/ExpressionEvaluator";
+import { Condition, CompoundExpression, IdentifierNode, LiteralNode, NodeType, Data } from "../src/parser/Expressions";
 
 // helper function to create literal nodes
 function literal(value: string | number | boolean): LiteralNode {
@@ -32,7 +32,7 @@ test("evaluates a literal comparison", () => {
     operator: "<",
     right: literal(20)
   };
-  expect(ConditionEvaluator.evaluate(literalCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(literalCondition, sampleData)).toBe(true);
 });
 
 
@@ -45,7 +45,7 @@ const simpleCondition: Condition = {
 };
 
 test("evaluates a simple condition", () => {
-  expect(ConditionEvaluator.evaluate(simpleCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(simpleCondition, sampleData)).toBe(true);
 });
 
 test("evaluates nested property access", () => {
@@ -55,7 +55,7 @@ test("evaluates nested property access", () => {
     operator: "=",
     right: literal(true)
   };
-  expect(ConditionEvaluator.evaluate(nestedCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(nestedCondition, sampleData)).toBe(true);
 });
 
 test("evaluates compound conditions with AND", () => {
@@ -77,7 +77,7 @@ test("evaluates compound conditions with AND", () => {
       }
     ] as Condition[]
   };
-  expect(ConditionEvaluator.evaluate(compoundAndCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(compoundAndCondition, sampleData)).toBe(true);
 });
 test("evaluates 'contains' operator", () => {
   const containsCondition: Condition = {
@@ -86,7 +86,7 @@ test("evaluates 'contains' operator", () => {
     operator: "contains",
     right: literal("dark")
   };
-  expect(ConditionEvaluator.evaluate(containsCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(containsCondition, sampleData)).toBe(true);
 });
 
 test("evaluates compound conditions with OR", () => {
@@ -108,11 +108,11 @@ test("evaluates compound conditions with OR", () => {
       }
     ] as Condition[]
   };
-  expect(ConditionEvaluator.evaluate(compoundOrCondition, sampleData)).toBe(true);
+  expect(ExpressionEvaluator.evaluate(compoundOrCondition, sampleData)).toBe(true);
 });
 
 test("evaluates a boolean expression", () => {
   const booleanCondition: IdentifierNode = identifier("user.isMarried");
   const expectedResult = true;
-  expect(ConditionEvaluator.evaluate(booleanCondition, sampleData)).toBe(expectedResult);
+  expect(ExpressionEvaluator.evaluate(booleanCondition, sampleData)).toBe(expectedResult);
 });

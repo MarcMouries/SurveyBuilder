@@ -1,8 +1,8 @@
-import type { BinaryExpressionNode, CompoundExpression, Condition, Data } from "./ConditionInterfaces";
-import type { IdentifierNode, LiteralNode, Node } from "./ConditionInterfaces";
-import { NodeType } from "./ConditionInterfaces";
+import type { BinaryExpressionNode, CompoundExpression, Condition, Data } from "./Expressions";
+import type { IdentifierNode, LiteralNode, Node } from "./Expressions";
+import { NodeType } from "./Expressions";
 
-export class ConditionEvaluator {
+export class ExpressionEvaluator {
   static evaluate(node: Node, data: Data): boolean {
     switch (node.type) {
       case NodeType.IDENTIFIER:
