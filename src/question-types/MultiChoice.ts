@@ -66,7 +66,7 @@ export class MultiChoice extends AbstractChoice {
         otherInput.id = `${checkboxId}-specify`;
         otherInput.name = `${this.questionData.name}-other-specify`;
         otherInput.placeholder = "Specify";
-        otherInput.className = 'other-specify-input hidden'; // Initially hidden
+        otherInput.className = 'other-specify-input';
 
         // Toggle visibility based on checkbox
         checkbox.addEventListener('change', () => {
