@@ -174,7 +174,7 @@ _font-size: 16px;
     display: none; 
     font-family: inherit; 
     font-size: 1.2em; 
-    font-weight: bold; 
+    font-weight: lighter; 
     position: absolute; 
     left: var(--custom-control-left-position);
     top: 0;
