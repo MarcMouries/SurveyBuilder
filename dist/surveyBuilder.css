@@ -322,6 +322,10 @@ datalist {
     overflow-y: auto;
 }
 
+.choice-label {
+    margin-bottom: 0 !important;
+    font-weight: normal !important;
+}
 
 .custom-select-container {
     position: relative;
