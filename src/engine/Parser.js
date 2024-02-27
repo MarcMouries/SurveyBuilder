@@ -16,10 +16,21 @@ export class Parser {
     this.length = tokens.length;
     let debug = false;
 
-    const isOperator = (tokenType) => {
-      const operators = ["+", "-", "*", "/", ">", "<", "EQUALS", "AND", "OR", "NOT", "IS BETWEEN"];
-      return operators.includes(tokenType);
+    const operatorsPrecedence = {
+      OR: 1,
+      AND: 2,
+      EQUALS: 3,   "!=": 3,
+      "<": 4,      ">": 4,
+      "<=": 4,     ">=": 4,
+      "+": 5,      "-": 5,
+      "*": 6,      "/": 6,
+      "^": 7,
+      // Add any additional operators or special cases as needed
     };
+
+    const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
+    const precedence = (operator) => operatorsPrecedence[operator] || -1;
+
 
 
     const isAtEnd = () => current >= tokens.length || peek().type === "EOF";
@@ -49,20 +60,6 @@ export class Parser {
     const error = (token, message) => {
         throw new Error(` error: :  token '${token.value}' of type ${token.type} ${message}`);
     };
-
-    const getPrecedence = ((operator) => {
-      const precedence = {
-        OR: 1,
-        AND: 2,
-        EQUALS: 3,   "!=": 3,
-        "<": 4,      ">": 4,
-        "<=": 4,     ">=": 4,
-        "+": 5,      "-": 5,
-        "*": 6,      "/": 6,
-        "^": 7,
-      };
-      return precedence[operator] || -1;
-    });
 
     // Example of NUD functions for numbers, strings, and variables
     function parseNumber() {
