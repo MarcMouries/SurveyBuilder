@@ -21,15 +21,35 @@ export class Variable extends Operand {
     return { type: "Variable", name: this.value };
   }
 }
+
 export class Constant extends Operand {
   constructor(value) {
     super(value);
   }
 
   toJSON() {
-    return { type: "Constant", value: this.value };
+    return { type: "Number", value: this.value };
   }
 }
+export class NumberNode extends Constant {
+  constructor(value) {
+    super(value);
+  }
+
+  toJSON() {
+    return { type: "Number", value: this.value };
+  }
+}
+export class StringNode extends Constant {
+  constructor(value) {
+    super(value);
+  }
+
+  toJSON() {
+    return { type: "String", value: this.value };
+  }
+}
+
 
 export class Addition extends Operator {
   constructor(left, right) {
