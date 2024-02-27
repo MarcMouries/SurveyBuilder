@@ -60,9 +60,3 @@ export class Tokenizer {
     return tokens;
   }
 }
-
-// Usage
-const tokenizer = new Tokenizer();
-const input = "a = 'xyz'";
-const tokens = tokenizer.parseTokens(input);
-console.log(tokens);
