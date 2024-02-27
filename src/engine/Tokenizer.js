@@ -1,75 +1,68 @@
-const tokens = [
-  [/^\s+/, null], // Whitespace, no token type
-  [/^-?\d+(?:\.\d+)?/, "NUMBER"], // Decimal numbers
-  [/^[a-zA-Z_][a-zA-Z0-9_]*/, "IDENT"], // Identifiers, allowing underscore
-  [/^"[^"]*"/, "STRING"], // String literals, allowing empty strings
-  [/^\+/, "+"], // Plus operator
-  [/^-/, "-"], // Minus operator
-  [/^\*/, "*"], // Multiplication operator
-  [/^\//, "/"], // Division operator
-  [/^\^/, "^"], // Power operator
-  [/^\(/, "("], // Open parenthesis
-  [/^\)/, ")"], // Close parenthesis
-  [/^,/, ","], // Comma
-  [/^>/, ">"], // Greater than
-  [/^</, "<"], // Less than
-  [/^>=/, ">="], // Greater than or equal to
-  [/^<=/, "<="], // Less than or equal to
-  [/^==/, "=="], // Equality
-  [/^!=/, "!="], // Inequality
-  [/^\bis between\b/, "IS BETWEEN"], // IS BETWEEN as a single token
-  [/^\band\b/, "AND"], // Logical AND
-  [/^\bor\b/, "OR"], // Logical OR
-  [/^\bnot\b/, "NOT"], // Logical NOT
-  [/^=/, "="], // Assignment or equality (context-dependent)
-];
 
 export class Tokenizer {
-  // List of tokens recognized by the tokenizer
-  #tokens;
-
-  // Position in the input string from which it will read to get the next token
-  #cursor;
-
-  // String to turn into tokens
-  #string;
-
-  constructor(tokens) {
-    this.#tokens = tokens;
+  constructor() {
+    this.tokenPatterns = [
+      [/^\s+/, null], // Whitespace, no token type
+      [/^\bis between\b/, "IS BETWEEN"], // IS BETWEEN
+      [/^is/, "EQUALS"], // Equality
+      [/^==/, "EQUALS"], // Equality
+      [/^=/, "EQUALS"], // Equality
+      [/^\band\b/, "AND"], // Logical AND
+      [/^\bor\b/, "OR"], // Logical OR
+      [/^\bnot\b/, "NOT"], // Logical NOT
+      [/^-?\d+(?:\.\d+)?/, "NUMBER"], // Decimal numbers
+      [/^[a-zA-Z_][a-zA-Z0-9_]*/, "VAR"], // Variable Identifiers, allowing underscore
+      [/^'([^']*)'/, "STRING"], // String literals enclosed in single quotes
+      [/^"([^"]*)"/, "STRING"], // String literals enclosed in double quotes
+      [/^\+/, "+"], // Plus operator
+      [/^-/, "-"], // Minus operator
+      [/^\*/, "*"], // Multiplication operator
+      [/^\//, "/"], // Division operator
+      [/^\^/, "^"], // Power operator
+      [/^\(/, "("], // Open parenthesis
+      [/^\)/, ")"], // Close parenthesis
+      [/^,/, ","], // Comma
+      [/^>/, ">"], // Greater than
+      [/^</, "<"], // Less than
+      [/^>=/, ">="], // Greater than or equal to
+      [/^<=/, "<="], // Less than or equal to
+      [/^!=/, "!="], // Inequality
+    ];
   }
 
-  read(string) {
-    this.#cursor = 0;
-    this.#string = string;
-  }
+  parseTokens(input) {
+    let tokens = [];
+    let position = 0;
 
-  next() {
-    // If at end of input, not more tokens to generate
-    if (this.#cursor === this.#string.length) {
-      return undefined;
-    }
+    while (position < input.length) {
+      let matched = false;
 
-    // Find substring beginning at position of cursor
-    const str = this.#string.slice(this.#cursor);
-
-    for (const [pattern, type] of this.#tokens) {
-      const [match] = pattern.exec(str) || [];
-
-      if (!match) {
-        continue;
+      for (const [regex, type] of this.tokenPatterns) {
+        const match = input.substring(position).match(regex);
+        if (match) {
+          const tokenValue = match[0];
+          position += tokenValue.length;
+          if (type !== null) {
+            // Only add non-whitespace tokens
+            tokens.push({ type, value: tokenValue.trim() });
+          }
+          matched = true;
+          break; // Break after the first match
+        }
       }
 
-      this.#cursor += match.length;
-
-      // Skip tokens with null types
-      if (type === null) {
-        return this.next();
+      if (!matched) {
+        throw new Error(`Syntax error at position ${position} of input '${input}'`);
       }
-
-      return { token: match, type };
     }
 
-    // Could not extract any tokens, so throw error
-    throw new Error(`Unrecognized input: ${str[0]}`);
+    tokens.push({ type: "EOF", value: "" }); // Add an EOF token at the end
+    return tokens;
   }
 }
+
+// Usage
+const tokenizer = new Tokenizer();
+const input = "a = 'xyz'";
+const tokens = tokenizer.parseTokens(input);
+console.log(tokens);

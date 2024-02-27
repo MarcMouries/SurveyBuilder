@@ -1,154 +1,129 @@
 import { NumberNode, StringNode, Constant, Variable, Between, Addition, Multiplication, Equality, GreaterThan, LogicalAnd, LessThan } from "./Node";
+import { Tokenizer} from "./Tokenizer";
+
 
 export class Parser {
   constructor() {
-
     const precedence = {
-      "OR": 1,
-      "AND": 2,
-      "EQUALS": 3,
-      "!=": 3,
-      "<": 4, ">": 4,
-      "<=": 4, ">=": 4,
-      "+": 5, "-": 5,
-      "*": 6, "/": 6,
+      OR: 1,
+      AND: 2,
+      EQUALS: 3,   "!=": 3,
+      "<": 4,      ">": 4,
+      "<=": 4,     ">=": 4,
+      "+": 5,      "-": 5,
+      "*": 6,      "/": 6,
       "^": 7,
     };
-
-    this.tokens = [
-      [/^\s+/, null], // Whitespace, no token type
-      [/^\bis between\b/, "IS BETWEEN"], // IS BETWEEN
-      [/^is/, "EQUALS"], // Equality
-      [/^==/, "EQUALS"], // Equality
-      [/^=/, "EQUALS"], // Equality
-      [/^\band\b/, "AND"], // Logical AND
-      [/^\bor\b/, "OR"], // Logical OR
-      [/^\bnot\b/, "NOT"], // Logical NOT
-      [/^-?\d+(?:\.\d+)?/, "NUMBER"], // Decimal numbers
-      [/^[a-zA-Z_][a-zA-Z0-9_]*/, "VAR"], // Variable Identifiers, allowing underscore
-      [/^'([^']*)'/, "STRING"], // String literals enclosed in single quotes
-      [/^"([^"]*)"/, "STRING"], // String literals enclosed in double quotes
-      [/^\+/, "+"], // Plus operator
-      [/^-/, "-"], // Minus operator
-      [/^\*/, "*"], // Multiplication operator
-      [/^\//, "/"], // Division operator
-      [/^\^/, "^"], // Power operator
-      [/^\(/, "("], // Open parenthesis
-      [/^\)/, ")"], // Close parenthesis
-      [/^,/, ","], // Comma
-      [/^>/, ">"], // Greater than
-      [/^</, "<"], // Less than
-      [/^>=/, ">="], // Greater than or equal to
-      [/^<=/, "<="], // Less than or equal to
-      [/^!=/, "!="], // Inequality
-    ];
   }
-
   parse(input) {
-    //input = input.toLowerCase();
+    const tokenizer = new Tokenizer();
+    const tokens = tokenizer.parseTokens(input);
+    //let tokens = new Tokenizer((input);
+    //console.log("TOKENS: ", tokens);
+    let current = 0;
     let position = 0;
-    let length = input.length;
+    this.length = tokens.length;
     let debug = false;
 
-    const getNextToken = () => {
-      if (position >= length) return { type: "EOF", value: "" };
-      for (const [regex, type] of this.tokens) {
-        const match = input.substring(position).match(regex);
-        if (match) {
-          const tokenValue = match[0];
-          position += tokenValue.length;
-          if (type === null) continue; // Skip whitespace
-          if (debug) console.log(` =>Token Matched: ${tokenValue.trim()}, Type=${type}`);
-          return { type, value: tokenValue.trim() };
-        }
+
+    const isAtEnd = () => current >= tokens.length || peek().type === "EOF";
+
+    const peek = () => tokens[current];
+
+    const previous = () => tokens[current - 1];
+
+    const advance = () => {
+      if (!isAtEnd()) {
+          current++;
       }
-      throw new Error("Syntax error at position " + position);
+      return previous();
+  };
+
+    const check = (type) => {
+      if (debug) console.log(` => CHECK: compares type = '${type}' with peek().type = '${peek().type}'`);
+      return !isAtEnd() && peek().type === type;
+    }
+
+    const eat = (tokenType, message) => {
+        if (debug) console.log(` => Eating : peek.type=${peek().type} , Expected tokenType=${tokenType}`);
+        if (check(tokenType)) return advance();
+        throw error(peek(), message);
     };
 
-    function eat(tokenType) {
-      if (lookahead.type === tokenType) {
-        const token = lookahead;
-        lookahead = getNextToken(); // Advance to next token
-        //console.log(` => EatingToken : lookahead.type=${lookahead.type} , Expected tokenType=${tokenType}`);
-        return token;
-      } else {
-        throw new Error(`Expected token type ${tokenType}, but found ${lookahead.type}`);
-      }
+    const error = (token, message) => {
+        throw new Error(` error: :  token '${token.value}' of type ${token.type} ${message}`);
+    };
+
+    // Example of NUD functions for numbers, strings, and variables
+    function parseNumber() {
+      const token = eat("NUMBER", 'expect a number.')
+      return new NumberNode(token.value);
     }
 
-    function parseTerm() {
-      // Parses multiplication/division
-      let left = parseFactor();
-      while (lookahead.type === "*" || lookahead.type === "/") {
-        const op = lookahead.type;
-        eat(op);
-        let right = parseFactor();
-        left = op === "*" ? new Multiplication(left, right) : new Division(left, right); // Assume Division is implemented
-      }
-      return left;
+    function parseString() {
+      const token = eat("STRING", 'expect a string.')
+      return new StringNode(token.value.slice(1, -1)); // Remove quotes
     }
 
-    function parseArithmeticExpression() {
-      // Parses addition/subtraction
-      let left = parseTerm();
-      while (lookahead.type === "+" || lookahead.type === "-") {
-        const op = lookahead.type;
-        eat(op);
-        let right = parseTerm();
-        left = op === "+" ? new Addition(left, right) : new Subtraction(left, right); // Assume Subtraction is implemented
-      }
-      return left;
+
+    function parseVariable() {
+      if (debug) console.log(` => parseVariable : `);
+
+      const token = eat("VAR", 'expect a variable.')
+      return new Variable(token.value);
     }
 
-    function parseExpression() {
-      if (lookahead.type === "EOF") {
-        throw new Error("Unexpected end of input");
-      }
+    // Handling parentheses as a special case for NUD
+    function parseGroup() {
+      this.eat("(");
+      let expr = parseExpression();
+      this.eat(")");
+      return expr;
+    }
 
-      switch (lookahead.type) {
+    function parsePrimary(precedence = 0) {
+      let token = peek();
+     // if (debug) console.log(` => parsePrimary:  token '${token.value}' of type ${token.type}`);
+
+      switch (token.type) {
         case "NUMBER":
-          const numberToken = eat("NUMBER");
-          return new NumberNode(numberToken.value);
+          return parseNumber();
         case "STRING":
-          const stringToken = eat("STRING");
-          return new StringNode(stringToken.value.slice(1, -1)); // Remove quotes
+          return parseString();
         case "VAR":
-          const identToken = eat("VAR");
-          return new Variable(identToken.value);
+          return parseVariable();
+        case "(":
+          return parseGroup();
         default:
           throw new Error(`Unexpected token: ${JSON.stringify(lookahead)}`);
       }
     }
 
     function parseBinaryExpression() {
-      let left = parseExpression();
+      let left = parsePrimary();
 
-      while (lookahead.type !== "EOF" && ["+", "-", "*", "/", ">", "<", "EQUALS", "AND", "IS BETWEEN"].includes(lookahead.type)) {
-        const op = lookahead.type;
+      while (peek().type !== "EOF" && ["+", "-", "*", "/", ">", "<", "EQUALS", "AND", "IS BETWEEN"].includes(peek().type)) {
+        const op = peek().type;
 
         if (op === "IS BETWEEN") {
           // Direct handling for "IS BETWEEN" as one token
           eat("IS BETWEEN");
-          let middle = parseExpression();
-          if (lookahead.type !== "AND") {
+          let middle = parsePrimary();
+          if (peek().type !== "AND") {
             throw new Error("Expected 'AND' after 'IS BETWEEN'");
           }
           eat("AND"); // Consume the 'AND'
-          let right = parseExpression();
+          let right = parsePrimary();
           left = new Between(left, middle, right);
         } else {
           // Consume the operator
           eat(op);
           let right;
-
-          // For handling "=" and "is" as equality, depending on your language's semantics
           if (op === "EQUALS") {
-            right = parseExpression();
+            right = parsePrimary();
             left = new Equality(left, right);
           } else if (["+", "-", "*", "/"].includes(op)) {
-            // Assuming other binary operations follow immediately
-            right = parseExpression();
-            // Map the operator to the correct class
+            right = parsePrimary();
             switch (op) {
               case "+":
                 left = new Addition(left, right);
@@ -168,8 +143,7 @@ export class Parser {
             right = parseBinaryExpression(); // This allows for chaining AND operations
             left = new LogicalAnd(left, right);
           } else {
-            // Handle other comparisons like ">", "<"
-            right = parseExpression();
+            right = parsePrimary();
             switch (op) {
               case ">":
                 left = new GreaterThan(left, right);
@@ -177,7 +151,7 @@ export class Parser {
               case "<":
                 left = new LessThan(left, right);
                 break;
-              // Include cases for ">=", "<=", and potentially "==" if used for equality
+              // Include cases for ">=", "<="
             }
           }
         }
@@ -186,28 +160,30 @@ export class Parser {
       return left;
     }
 
-    let lookahead = getNextToken();
-    return parseBinaryExpression().toJSON();;
+    //let lookahead = peek();
+    return parseBinaryExpression().toJSON();
   }
 }
 
 //Testing the improved parser with the expression list
 const expression_list = [
-    "age",
-    "18",
-    "MAJORITY_AGE",
-  //  "'toto'",
-  //  "age > 18",
-  // "age = MAJORITY_AGE",
-  // "age is MAJORITY_AGE",
-  //  "age > BABY_AGE and age < TODDLER_AGE",
-  //  "age is between TODDLER_AGE and MAJORITY_AGE",
- // "a + b * c = 200",
-  // //"a + b * c ="
+   "2",
+   "age",
+   "'toto'",
+   "age > 18",
+   "2 + 2 * 4",
+   "MAJORITY_AGE",
+    "age = MAJORITY_AGE",
+  //  "age is MAJORITY_AGE",
+  // "age > BABY_AGE and age < TODDLER_AGE",
+  // "(age > BABY_AGE) and (age < TODDLER_AGE)",
+  // "age is between TODDLER_AGE and MAJORITY_AGE",
+  // "a + b * c = 200",
+  //"a = ",
+  //"a + b * c ="
 ];
 
 expression_list.forEach((expression) => {
-
   console.log(`Parsing of expression: '${expression}'`);
   const parser = new Parser();
   const result = parser.parse(expression);
