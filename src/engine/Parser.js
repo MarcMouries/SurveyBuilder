@@ -4,16 +4,7 @@ import { Tokenizer} from "./Tokenizer";
 
 export class Parser {
   constructor() {
-    const precedence = {
-      OR: 1,
-      AND: 2,
-      EQUALS: 3,   "!=": 3,
-      "<": 4,      ">": 4,
-      "<=": 4,     ">=": 4,
-      "+": 5,      "-": 5,
-      "*": 6,      "/": 6,
-      "^": 7,
-    };
+    
   }
   parse(input) {
     const tokenizer = new Tokenizer();
@@ -58,6 +49,20 @@ export class Parser {
     const error = (token, message) => {
         throw new Error(` error: :  token '${token.value}' of type ${token.type} ${message}`);
     };
+
+    const getPrecedence = ((operator) => {
+      const precedence = {
+        OR: 1,
+        AND: 2,
+        EQUALS: 3,   "!=": 3,
+        "<": 4,      ">": 4,
+        "<=": 4,     ">=": 4,
+        "+": 5,      "-": 5,
+        "*": 6,      "/": 6,
+        "^": 7,
+      };
+      return precedence[operator] || -1;
+    });
 
     // Example of NUD functions for numbers, strings, and variables
     function parseNumber() {
