@@ -25,6 +25,11 @@ export class Parser {
     this.length = tokens.length;
     let debug = false;
 
+    const isOperator = (tokenType) => {
+      const operators = ["+", "-", "*", "/", ">", "<", "EQUALS", "AND", "OR", "NOT", "IS BETWEEN"];
+      return operators.includes(tokenType);
+    };
+
 
     const isAtEnd = () => current >= tokens.length || peek().type === "EOF";
 
@@ -102,7 +107,7 @@ export class Parser {
     function parseBinaryExpression() {
       let left = parsePrimary();
 
-      while (peek().type !== "EOF" && ["+", "-", "*", "/", ">", "<", "EQUALS", "AND", "IS BETWEEN"].includes(peek().type)) {
+      while (peek().type !== "EOF" && isOperator(peek().type)) {
         const op = peek().type;
 
         if (op === "IS BETWEEN") {
