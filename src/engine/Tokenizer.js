@@ -1,4 +1,3 @@
-
 export class Tokenizer {
   constructor() {
     this.tokenPatterns = [
@@ -11,6 +10,7 @@ export class Tokenizer {
       [/^\bor\b/, "OR"], // Logical OR
       [/^\bnot\b/, "NOT"], // Logical NOT
       [/^-?\d+(?:\.\d+)?/, "NUMBER"], // Decimal numbers
+      [/^\btrue\b|\bfalse\b/, "BOOLEAN"],
       [/^[a-zA-Z_][a-zA-Z0-9_]*/, "VAR"], // Variable Identifiers, allowing underscore
       [/^'([^']*)'/, "STRING"], // String literals enclosed in single quotes
       [/^"([^"]*)"/, "STRING"], // String literals enclosed in double quotes
@@ -33,21 +33,33 @@ export class Tokenizer {
   parseTokens(input) {
     let tokens = [];
     let position = 0;
-
+  
     while (position < input.length) {
       let matched = false;
 
       for (const [regex, type] of this.tokenPatterns) {
         const match = input.substring(position).match(regex);
         if (match) {
-          const tokenValue = match[0];
-          position += tokenValue.length;
-          if (type !== null) {
-            // Only add non-whitespace tokens
-            tokens.push({ type, value: tokenValue.trim() });
+          const tokenValueMatched = match[0]; // Store the matched string before any conversion
+          let tokenValue;
+
+          switch (type) {
+            case "NUMBER":
+              tokenValue = Number(tokenValueMatched);
+              break;
+            case "BOOLEAN":
+              tokenValue = tokenValueMatched === "true";
+              break;
+            default:
+              tokenValue = tokenValueMatched;
           }
+
+          if (type !== null) {
+            tokens.push({ type, value: tokenValue });
+          }
+          position += tokenValueMatched.length;
           matched = true;
-          break; // Break after the first match
+          break; // Break the for-loop since we've found a match
         }
       }
 
@@ -55,8 +67,6 @@ export class Tokenizer {
         throw new Error(`Syntax error at position ${position} of input '${input}'`);
       }
     }
-
-    tokens.push({ type: "EOF", value: "" }); // Add an EOF token at the end
     return tokens;
   }
 }
