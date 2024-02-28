@@ -382,7 +382,7 @@ const expression_list = [
   // "false",
   // "age",
   // "'toto'",
-  "age = 19",
+  "age is 18",
   "1 + 2",
   //"a > b",
    //"a > 18",
@@ -402,6 +402,7 @@ const expression_list = [
 expression_list.forEach((expression) => {
   console.log(`Parsing of expression: '${expression}'`);
   const parser = new Parser();
-  const result = parser.parse(expression);
-  console.log(`The AST for the expression: '${expression}' =  '${JSON.stringify(result, null, 2)}'`);
+  const expressionNode = parser.parse(expression);
+  console.log(`The AST for the expression: '${expression}' =  '${JSON.stringify(expressionNode, null, 2)}'`);
+  console.log(`Type of expressionNode: ${expressionNode.constructor.name}`);
 });
