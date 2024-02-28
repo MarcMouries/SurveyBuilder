@@ -83,14 +83,14 @@ export class BinaryOperator extends ASTNode {
 
 
 
-export class isBetweenNode extends Operator {
-  constructor(value, lower, upper) {
-    super();
-    this.lowerComparison = new Operator(value, ">=", lower);
-    this.upperComparison = new Operator(value, "<=", upper);
-    super(lowerComparison, upperComparison);
-  }
-}
+// export class isBetweenNode extends Operator {
+//   constructor(value, lower, upper) {
+//     super();
+//     this.lowerComparison = new Operator(value, ">=", lower);
+//     this.upperComparison = new Operator(value, "<=", upper);
+//     super(lowerComparison, upperComparison);
+//   }
+// }
 
 export class Logical extends ASTNode {
   constructor(left, right) {
