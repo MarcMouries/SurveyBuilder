@@ -52,6 +52,9 @@ export class Tokenizer {
             case "BOOLEAN":
               tokenValue = tokenValueMatched === "true";
               break;
+              case "EQUALS":
+                tokenValue = "=";
+                break;
             default:
               tokenValue = tokenValueMatched;
           }
