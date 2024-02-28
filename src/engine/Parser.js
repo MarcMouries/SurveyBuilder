@@ -7,8 +7,7 @@ export class Parser {
   parse(input) {
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
-    //let tokens = new Tokenizer((input);
-    console.log("TOKENS: ", tokens);
+    console.log("Tokens = ", tokens)
     let current = 0;
     let position = 0;
     this.length = tokens.length;
@@ -182,7 +181,7 @@ const match = (...types) => {
       var expr = parseFactor();
       while (match( "+", "-")) {
         log(`│  ├─ Matched + or -: ${previous().type}`);
-        const operator = previous()
+        const operator = previous().value;
         const right = parseFactor()
         expr = new BinaryOperator(expr, operator, right);
       }
@@ -199,7 +198,7 @@ const match = (...types) => {
 
       while (match("/", "*")) {
         log(`│  ├─ Matched * or /:  ${previous().type}`);
-        const operator = previous()
+        const operator = previous().value;
         const right = parsePrimary();
         expr = new BinaryOperator(expr, operator, right);
       }
@@ -234,7 +233,8 @@ const match = (...types) => {
     const parseGreaterThan = (left) => {
       eat(">");
       let right = parsePrimary();
-      return new GreaterThan(left, right);
+      //return new GreaterThan(left, right);
+      return new BinaryOperator(expr, '>', right)
     };
 
     const parseOperator = (left, operator) => {
@@ -256,9 +256,9 @@ const match = (...types) => {
       log(`┌ START parseEquality`);
       depth++;
       var expr = parseComparison();
-      while (match("=", "!=")) {
-        const operator = previous()
-        const right = comparison()
+      while (match("EQUALS", "NOT_EQUAL")) {
+        const operator = previous().value;
+        const right = parseComparison()
         expr = new BinaryOperator(expr, operator, right)
       }
       depth--;
@@ -273,7 +273,7 @@ const match = (...types) => {
 
       var expr = parseTerm();
       while (match(">", ">=", "<", "<=")) {
-        const operator = previous()
+        const operator = previous().value;
         const right = parseTerm()
         expr = new BinaryOperator(expr, operator, right)
       }
@@ -376,16 +376,17 @@ return parseEquality();
 
 //Testing the improved parser with the expression list
 const expression_list = [
-  // "1",
-  // "a",
+ // "18",
+ //  "a",
   // "true",
   // "false",
   // "age",
   // "'toto'",
-  //"1 + 2",
+  "age = 19",
+  "1 + 2",
   //"a > b",
    //"a > 18",
-  "10 + 2 * 5",
+ // "10 + 2 * 5",
   // "10 - 2 + 5",
   //  "MAJORITY_AGE",
   //  "age = MAJORITY_AGE",
@@ -402,5 +403,5 @@ expression_list.forEach((expression) => {
   console.log(`Parsing of expression: '${expression}'`);
   const parser = new Parser();
   const result = parser.parse(expression);
-  console.log(`results in the AST: '${JSON.stringify(result, null, 2)}'`);
+  console.log(`The AST for the expression: '${expression}' =  '${JSON.stringify(result, null, 2)}'`);
 });

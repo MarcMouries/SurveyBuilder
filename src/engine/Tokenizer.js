@@ -6,6 +6,9 @@ export class Tokenizer {
       [/^is/, "EQUALS"], // Equality
       [/^==/, "EQUALS"], // Equality
       [/^=/, "EQUALS"], // Equality
+      [/^!=/, "NOT_EQUAL"], // Inequality
+      [/^is not/, "NOT_EQUAL"], // Inequality
+
       [/^\band\b/, "AND"], // Logical AND
       [/^\bor\b/, "OR"], // Logical OR
       [/^\bnot\b/, "NOT"], // Logical NOT
@@ -26,7 +29,6 @@ export class Tokenizer {
       [/^</, "<"], // Less than
       [/^>=/, ">="], // Greater than or equal to
       [/^<=/, "<="], // Less than or equal to
-      [/^!=/, "!="], // Inequality
     ];
   }
 

@@ -10,7 +10,7 @@ export class Variable extends Operand {
   constructor(name) {
     super(name);
   }
-  _summarize() {
+  summarize() {
     return `Variable(${this.value})`;
   }
   toJSON() {
@@ -63,6 +63,7 @@ export class BooleanNode extends Constant {
 export class BinaryOperator extends ASTNode {
   constructor(left, operator, right) {
     super();
+    this.type = "BinaryExpression",
     this.left = left;
     this.operator = operator;
     this.right = right;
@@ -72,81 +73,14 @@ export class BinaryOperator extends ASTNode {
   }
   toJSON() {
     return {
+      "type": this.type,
       operator: this.operator,
       left: this.left.toJSON(),
       right: this.right.toJSON(),
     };
   }
 }
-/*
-export class Addition extends Operator {
-  constructor(left, right) {
-    super("+", left, right);
-  }
 
-
-}
-
-export class Multiplication extends Operator {
-  constructor(left, right) {
-    super("*", left, right);
-  }
-
-  toJSON() {
-    return {
-      type: "Multiplication",
-      operator: "*",
-      left: this.left.toJSON(),
-      right: this.right.toJSON(),
-    };
-  }
-}
-
-export class Equality extends Operator {
-  constructor(left, right) {
-    super("=", left, right);
-  }
-
-  toJSON() {
-    return {
-      type: "Equality",
-      operator: "=",
-      left: this.left.toJSON(),
-      right: this.right.toJSON(),
-    };
-  }
-}
-export class GreaterThan extends Operator {
-  constructor(left, right) {
-    super(">", left, right);
-  }
-
-  toJSON() {
-    return {
-      type: "GreaterThan",
-      operator: ">",
-      left: this.left.toJSON(),
-      right: this.right.toJSON(),
-    };
-  }
-}
-
-
-
-export class LessThan extends Operator {
-  constructor(left, right) {
-    super("<", left, right);
-  }
-
-  toJSON() {
-    return {
-      type: "LessThan",
-      operator: "<",
-      left: this.left.toJSON(),
-      right: this.right.toJSON(),
-    };
-  }
-}
 
 
 export class isBetweenNode extends Operator {
@@ -157,7 +91,7 @@ export class isBetweenNode extends Operator {
     super(lowerComparison, upperComparison);
   }
 }
-*/
+
 export class Logical extends ASTNode {
   constructor(left, right) {
     super("and", left, right);
