@@ -119,6 +119,7 @@ class AbstractChoice extends QuestionType {
     const label = document.createElement("label");
     label.htmlFor = forId;
     label.textContent = text;
+    label.classList.add("choice-label");
     return label;
   }
 }
