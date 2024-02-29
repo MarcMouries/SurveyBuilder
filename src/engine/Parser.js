@@ -1,4 +1,4 @@
-import { BooleanNode, NumberNode, StringNode, Variable, BinaryOperator, Logical } from "./Node";
+import { BooleanNode, NumberNode, StringNode, VariableNode, BinaryExpression, Logical } from "./Node";
 import { Tokenizer } from "./Tokenizer";
 import { Tokenizer2, TokenType } from "./Tokenizer2";
 import { Logger } from "./Logger";
@@ -132,7 +132,7 @@ export class Parser {
     const parseVariable = () => {
       Logger.log(`Parsing VARIABLE token at position: ${current}`);
       const token = eat("VAR", "expect a variable.");
-      return new Variable(token.value);
+      return new VariableNode(token.value);
     };
 
     function parseGroup() {
@@ -167,7 +167,7 @@ export class Parser {
         Logger.log(`Matched + or -: ${previous().type}`);
         const operator = previous().value;
         const right = parseFactor();
-        expr = new BinaryOperator(expr, operator, right);
+        expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`parseTerm (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
       return expr;
@@ -182,7 +182,7 @@ export class Parser {
         Logger.log(`Matched * or /:  ${previous().type}`);
         const operator = previous().value;
         const right = parsePrimary();
-        expr = new BinaryOperator(expr, operator, right);
+        expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`ParseFactor (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
       return expr;
@@ -193,7 +193,7 @@ export class Parser {
       const token = eat("VAR", "expect a variable.");
 
       let right = parsePrimary();
-      return new BinaryOperator(expr, "+", right);
+      return new BinaryExpression(expr, "+", right);
     };
 
     const parseMultiplication = (left) => {
@@ -212,7 +212,7 @@ export class Parser {
     const parseGreaterThan = (left) => {
       eat(">");
       let right = parsePrimary();
-      return new BinaryOperator(expr, ">", right);
+      return new BinaryExpression(expr, ">", right);
     };
 
     const parseOperator = (left, operator) => {
@@ -236,7 +236,7 @@ export class Parser {
       while (match("=", "!=")) {
         const operator = previous().value;
         const right = parseComparison();
-        expr = new BinaryOperator(expr, operator, right);
+        expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`parseEquality`);
 
@@ -249,7 +249,7 @@ export class Parser {
       while (match(">", ">=", "<", "<=")) {
         const operator = previous().value;
         const right = parseTerm();
-        expr = new BinaryOperator(expr, operator, right);
+        expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`parseComparison`);
       return expr;
