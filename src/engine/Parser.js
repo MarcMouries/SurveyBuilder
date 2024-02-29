@@ -1,16 +1,17 @@
 import { BooleanNode, NumberNode, StringNode, Variable, BinaryOperator, Logical } from "./Node";
-import { Tokenizer, TokenType } from "./Tokenizer";
+import { Tokenizer } from "./Tokenizer";
+import { Tokenizer2, TokenType } from "./Tokenizer2";
 import { Logger } from "./Logger";
 
 export class Parser {
   constructor() {}
 
   parse(input) {
-    const tokenizer = new Tokenizer();
+    const tokenizer = new Tokenizer2();
     const tokens = tokenizer.parseTokens(input);
     //console.log("Tokens = ", tokens);
     let current = 0;
-    Logger.disableLogging();
+    //Logger.disableLogging();
 
     const operatorsPrecedence = {
       OR: 1,
@@ -28,6 +29,47 @@ export class Parser {
       "^": 7,
     };
 
+    function formatToken(token) {
+      if (token === null) {
+        return "end of input";
+      }
+      const type = token.type;
+      const value = token.value;
+      return `${type}(${value})`;
+    }
+
+    const advance = () => {
+      if (!isAtEnd()) {
+        const fromToken = current > 0 ? previous() : null; // Use null to represent the start of input
+        const fromDisplay = formatToken(fromToken);
+
+        current++;
+
+        const toToken = isAtEnd() ? null : peek(); // Use null to represent the end of input
+        const toDisplay = formatToken(toToken);
+
+        Logger.log(`Advance: Moving from token '${fromDisplay}' to next token '${toDisplay}'`);
+      }
+      return previous();
+    };
+
+    const check = (...expected) => {
+      if (isAtEnd()) return false;
+      const nextToken = peek();
+      const tokenDisplay = formatToken(nextToken);
+      let matchFound = false;
+
+      for (const exp of expected) {
+        if ((nextToken.type === TokenType.OPERATOR && nextToken.value === exp) || exp === nextToken.type) {
+          matchFound = true;
+          break;
+        }
+      }
+
+      Logger.log(`Check if next token ${tokenDisplay} is among expected: [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
+      return matchFound;
+    };
+
     const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
 
     const precedence = (operator) => operatorsPrecedence[operator] || -1;
@@ -40,28 +82,6 @@ export class Parser {
     };
 
     const previous = () => tokens[current - 1];
-
-    const advance = () => {
-      if (!isAtEnd()) {
-        const fromType = current > 0 ? previous().type : "start of input";
-        current++;
-        const toType = isAtEnd() ? "end of input" : peek().type;
-        Logger.log(`Advance: Moving from token '${fromType}' to next token '${toType}'`);
-      }
-      return previous();
-    };
-
-    const check = (...types) => {
-      if (isAtEnd()) return false;
-      for (const type of types) {
-        if (peek().type === type) {
-          Logger.log(`Check: Verifying if next token type '${peek().type}' is among expected types: [${types.join(", ")}]`);
-          return true;
-        }
-      }
-      Logger.log(`Check: Next token type '${peek().type}' does not match any of the specified types: ${types.join(", ")}`);
-      return false;
-    };
 
     const match = (...types) => {
       if (check(...types)) {
@@ -84,7 +104,8 @@ export class Parser {
     };
 
     const error = (token, message) => {
-      throw new Error(` error: :  token '${token.value}' of type ${token.type} ${message}`);
+      const tokenDisplay = formatToken(token);
+      throw new Error(`Error at token ${tokenDisplay}: ${message}`);
     };
 
     const parseNumber = () => {
@@ -212,7 +233,7 @@ export class Parser {
     const parseEquality = () => {
       Logger.logStart(`Parsing equality/non-equality operators between expressions`);
       var expr = parseComparison();
-      while (match("EQUALS", "NOT_EQUAL")) {
+      while (match("=", "!=")) {
         const operator = previous().value;
         const right = parseComparison();
         expr = new BinaryOperator(expr, operator, right);
@@ -265,7 +286,7 @@ const expression_list = [
   // "false",
   // "age",
   // "'toto'",
- // "age is 18",
+  // "age is 18",
   "1 + 2",
   //"a > b",
   //"a > 18",
