@@ -162,6 +162,7 @@ const testCases = [
 testCases.forEach(({ expression, expected }) => {
   test(`Testing '${expression}'`, () => {
     const parser = new Parser();
+    console.log(`\n Parsing: : '${expression}'`);
     const result = parser.parse(expression);
     expect(result.toJSON()).toEqual(expected);
   });
