@@ -1,3 +1,12 @@
+export const TokenType = {
+  NUMBER: "NUMBER",
+  STRING: "STRING",
+  BOOLEAN: "BOOLEAN",
+  VAR: "VAR",
+  EQUALS: "EQUALS",
+  LPAREN: "(",
+};
+
 export class Tokenizer {
   constructor() {
     this.tokenPatterns = [
@@ -35,7 +44,7 @@ export class Tokenizer {
   parseTokens(input) {
     let tokens = [];
     let position = 0;
-  
+
     while (position < input.length) {
       let matched = false;
 
@@ -46,15 +55,15 @@ export class Tokenizer {
           let tokenValue;
 
           switch (type) {
-            case "NUMBER":
+            case TokenType.NUMBER:
               tokenValue = Number(tokenValueMatched);
               break;
-            case "BOOLEAN":
+            case TokenType.BOOLEAN:
               tokenValue = tokenValueMatched === "true";
               break;
-              case "EQUALS":
-                tokenValue = "=";
-                break;
+            case TokenType.EQUALS:
+              tokenValue = "=";
+              break;
             default:
               tokenValue = tokenValueMatched;
           }

@@ -1,5 +1,6 @@
-import { BooleanNode, NumberNode, StringNode, Variable,BinaryOperator, Logical } from "./Node";
-import { Tokenizer } from "./Tokenizer";
+import { BooleanNode, NumberNode, StringNode, Variable, BinaryOperator, Logical } from "./Node";
+import { Tokenizer, TokenType } from "./Tokenizer";
+import { Logger } from "./Logger";
 
 export class Parser {
   constructor() {}
@@ -7,89 +8,76 @@ export class Parser {
   parse(input) {
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
-    console.log("Tokens = ", tokens)
+    //console.log("Tokens = ", tokens);
     let current = 0;
-    let position = 0;
-    this.length = tokens.length;
-    let debug = true;
-    let depth = 0; // Depth of recursive calls
+    Logger.disableLogging();
 
     const operatorsPrecedence = {
       OR: 1,
       AND: 2,
-      EQUALS: 3,      "!=": 3,
-      "<": 4,      ">": 4,
-      "<=": 4,      ">=": 4,
-      "+": 5,      "-": 5,
-      "*": 6,      "/": 6,
+      EQUALS: 3,
+      "!=": 3,
+      "<": 4,
+      ">": 4,
+      "<=": 4,
+      ">=": 4,
+      "+": 5,
+      "-": 5,
+      "*": 6,
+      "/": 6,
       "^": 7,
     };
 
     const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
+
     const precedence = (operator) => operatorsPrecedence[operator] || -1;
 
-    const isAtEnd_OLD = () => current >= tokens.length || peek().type === "EOF";
     const isAtEnd = () => current >= tokens.length;
 
-    const peek_OLD = () => tokens[current];
     const peek = () => {
       if (isAtEnd()) return null; // or return a dummy token indicating the end
       return tokens[current];
     };
-    
+
     const previous = () => tokens[current - 1];
 
     const advance = () => {
       if (!isAtEnd()) {
-        const fromType = current > 0 ? previous().type : "start of input"; // Adjust here
+        const fromType = current > 0 ? previous().type : "start of input";
         current++;
         const toType = isAtEnd() ? "end of input" : peek().type;
-        log(`\\__ Advance: from '${fromType}' to '${toType}'`);
+        Logger.log(`Advance: Moving from token '${fromType}' to next token '${toType}'`);
       }
       return previous();
     };
-    
-    
 
-    const log = (message) => {
-      if (debug) {
-        console.log(" ".repeat(depth * 3) + message);
+    const check = (...types) => {
+      if (isAtEnd()) return false;
+      for (const type of types) {
+        if (peek().type === type) {
+          Logger.log(`Check: Verifying if next token type '${peek().type}' is among expected types: [${types.join(", ")}]`);
+          return true;
+        }
       }
+      Logger.log(`Check: Next token type '${peek().type}' does not match any of the specified types: ${types.join(", ")}`);
+      return false;
     };
 
-    const check_OLD = (type) => {
-      log(`\\__ Check: compares type = '${type}' with peek().type = '${peek().type}'`);
-      return !isAtEnd() && peek().type === type;
-    };
-    const check = (type) => {
-      if (isAtEnd()) {
-        return false;
+    const match = (...types) => {
+      if (check(...types)) {
+        advance();
+        Logger.log(`Match: Searching for and consuming next token if it matches expected types: [${types.join(", ")}]`);
+        return true;
       }
-      log(`│ ├ Check: compares type = '${type}' with peek().type = '${peek().type}'`);
-      return peek().type === type;
+      Logger.log(`No match found for types: ${types.join(", ")}`);
+      return false;
     };
-    
-
-const match = (...types) => {
-  for (const type of types) {
-    if (check(type)) {
-      advance();
-      log(`\\__ Matched type: '${type}'`);
-      return true;
-    }
-  }
-  log(`\\__ No match found for types: ${types.join(', ')}`);
-  return false;
-};
-
-
 
     const eat = (tokenType, message) => {
-      log(`\\__ Eating tokenType='${tokenType}' peek.type='${peek().type}' message='${message}'`);
+      Logger.log(`Eating tokenType='${tokenType}' peek.type='${peek()?.type}' message='${message}'`);
       if (check(tokenType)) {
         const token = advance();
-        log(`   └ Consume token: '${token.type}' with value '${token.value}'`);
-
+        Logger.log(`Consume: Expecting '${tokenType}', found '${peek()?.type}', and consuming it if matched.`);
         return token;
       }
       throw error(peek(), message);
@@ -100,120 +88,91 @@ const match = (...types) => {
     };
 
     const parseNumber = () => {
-      log(`Parsing NUMBER at position: ${current}`);
-      //log(`└─ Consume token: 'NUMBER' with value ${token.value}`);
-
-      depth++;
+      Logger.logStart(`Parsing NUMBER token at position: ${current}`);
       const token = eat("NUMBER", "expect a number.");
-      depth--;
+      Logger.logEnd(`Parsing NUMBER at position: ${current}`);
       return new NumberNode(token.value);
     };
+
     const parseBoolean = () => {
-      log(`Parsing BOOLEAN at position: ${current}`);
-      depth++;
+      Logger.logStart(`Parsing BOOLEAN token at position: ${current}`);
       const token = eat("BOOLEAN", "expect a number.");
-      depth--;
+      Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
       return new BooleanNode(token.value);
-    }
+    };
+
     const parseString = () => {
-      log(`Parsing STRING at position: ${current}`);
-      depth++;
+      Logger.logStart(`Parsing STRING token at position: ${current}`);
       const token = eat("STRING", "expect a string.");
-      depth--;
+      Logger.logEnd(`Parsing STRING token at position: ${current}`);
       return new StringNode(token.value.slice(1, -1)); // Remove quotes
-    }
+    };
 
     const parseVariable = () => {
-      log(`Parsing VARIABLE at position: ${current}`);
+      Logger.log(`Parsing VARIABLE token at position: ${current}`);
       const token = eat("VAR", "expect a variable.");
       return new Variable(token.value);
-    }
+    };
 
     function parseGroup() {
-      log(`Parsing GRROUP at position: ${current}`);
-
+      Logger.logStart(`Parsing GRROUP at position: ${current}`);
       this.eat("(");
       let expr = parseExpression();
       this.eat(")");
-      depth--;
-
+      Logger.logEnd(`Parsing GRROUP at position: ${current}`);
       return expr;
     }
 
-    function parsePrimary(precedence = 0) {
-      depth++;
+    const parsePrimary = () => {
       let token = peek();
       let result;
-      log(`=> START parsePrimary:  token '${token.value}' of type ${token.type}`);
 
-      try {
-        switch (token.type) {
-          case "NUMBER":
-            result = parseNumber();
-            break; 
-          case "STRING":
-            result = parseString();
-            break;
-            case "BOOLEAN":
-              result = parseBoolean();
-              break;
-            
-          case "VAR":
-            result = parseVariable();
-            break;
-          case "(":
-            result = parseGroup();
-            break;
-          default:
-            throw new Error(`Unexpected token: ${JSON.stringify(lookahead)}`);
-        }
-      } finally {
-        log(`=> END parsePrimary`);
-        depth--;
-      }
+      Logger.logStart(`parsePrimary: token '${token.value}' of type ${token.type}`);
+
+      if (token.type === TokenType.NUMBER) result = parseNumber();
+      else if (token.type === TokenType.STRING) result = parseString();
+      else if (token.type === TokenType.BOOLEAN) result = parseBoolean();
+      else if (token.type === TokenType.VAR) result = parseVariable();
+      else if (token.type === TokenType.LPAREN) result = parseGroup();
+
+      Logger.logEnd(`parsePrimary`);
       return result;
-    }
+    };
 
     const parseTerm = (left) => {
-      log(`┌─ START parseTerm`);
-      depth++;
-
+      Logger.logStart(`Parsing term for potential addition/subtraction operations`);
       var expr = parseFactor();
-      while (match( "+", "-")) {
-        log(`│  ├─ Matched + or -: ${previous().type}`);
+      while (match("+", "-")) {
+        Logger.log(`Matched + or -: ${previous().type}`);
         const operator = previous().value;
-        const right = parseFactor()
+        const right = parseFactor();
         expr = new BinaryOperator(expr, operator, right);
       }
-      log(`└─ END parseTerm (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
-      depth--;
-      return expr
-    }
+      Logger.logEnd(`parseTerm (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
+      return expr;
+    };
+
     const parseFactor = (left) => {
-      log(`┌─ START parseFactor`);
-      depth++;
+      Logger.logStart(`Parsing factor for potential multiplication/division operations`);
 
       let expr = parsePrimary();
-      log(`|- Check for '/', '*': ${peek() && (peek().type === '/' || peek().type === '*') ? `Found '${peek().type}'` : 'None found next'}`);
-
+      Logger.log(`Check for '/', '*': ${peek() && (peek().type === "/" || peek().type === "*") ? `Found '${peek().type}'` : "None found next"}`);
       while (match("/", "*")) {
-        log(`│  ├─ Matched * or /:  ${previous().type}`);
+        Logger.log(`Matched * or /:  ${previous().type}`);
         const operator = previous().value;
         const right = parsePrimary();
         expr = new BinaryOperator(expr, operator, right);
       }
-      log(`└─ END parseFactor (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
-
-      depth--;
-      return expr
-    }
+      Logger.logEnd(`ParseFactor (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
+      return expr;
+    };
 
     const parseAddition = (left) => {
       eat("+");
       const token = eat("VAR", "expect a variable.");
 
       let right = parsePrimary();
-      return new BinaryOperator(expr, '+', right)
+      return new BinaryOperator(expr, "+", right);
     };
 
     const parseMultiplication = (left) => {
@@ -227,18 +186,16 @@ const match = (...types) => {
       eat("AND");
       let right = parsePrimary();
       return new isBetweenNode(left, middle, right);
-    }
-
+    };
 
     const parseGreaterThan = (left) => {
       eat(">");
       let right = parsePrimary();
-      //return new GreaterThan(left, right);
-      return new BinaryOperator(expr, '>', right)
+      return new BinaryOperator(expr, ">", right);
     };
 
     const parseOperator = (left, operator) => {
-      log(`=> START parseOperator: '${operator}' `);
+      Logger.logStart(`Parsing operator: '${operator}' for operation between expressions`);
 
       switch (operator) {
         case "+":
@@ -251,43 +208,35 @@ const match = (...types) => {
         default:
           throw new Error(`Unhandled operator: ${operator}`);
       }
-    }
-    const parseEquality  = () => {
-      log(`┌ START parseEquality`);
-      depth++;
+    };
+    const parseEquality = () => {
+      Logger.logStart(`Parsing equality/non-equality operators between expressions`);
       var expr = parseComparison();
       while (match("EQUALS", "NOT_EQUAL")) {
         const operator = previous().value;
-        const right = parseComparison()
-        expr = new BinaryOperator(expr, operator, right)
+        const right = parseComparison();
+        expr = new BinaryOperator(expr, operator, right);
       }
-      depth--;
-      log(`│ └ END parseEquality`);
+      Logger.logEnd(`parseEquality`);
 
-      return expr
-    }
+      return expr;
+    };
 
     const parseComparison = () => {
-      log(`│ ┌ START parseComparison`);
-      depth++;
-
+      Logger.logStart(`Parsing comparison operators between expressions`);
       var expr = parseTerm();
       while (match(">", ">=", "<", "<=")) {
         const operator = previous().value;
-        const right = parseTerm()
-        expr = new BinaryOperator(expr, operator, right)
+        const right = parseTerm();
+        expr = new BinaryOperator(expr, operator, right);
       }
-      depth--;
-      log(`│ │ └ END parseComparison`);
-      return expr
-    }
+      Logger.logEnd(`parseComparison`);
+      return expr;
+    };
 
     function parseBinaryExpression() {
-      depth++;
-      log(`=> START BINARY Expression:  `); //token '${token.value}' of type ${token.type}`);
-
+      Logger.logStart(`BINARY Expression:  `); //token '${token.value}' of type ${token.type}`);
       let left = parsePrimary();
-
       while (peek().type !== "EOF" && isOperator(peek().type)) {
         const op = peek().type;
 
@@ -298,86 +247,19 @@ const match = (...types) => {
           left = parseOperator(left, op);
         }
       }
-      depth--;
-      log(`END parseBinaryExpression`);
+      Logger.logEnd(`BinaryExpression`);
       return left;
     }
 
-
-    function parseBinaryExpression_OLD() {
-      depth++;
-      log(`=> START BINARY Expression:  `); //token '${token.value}' of type ${token.type}`);
-
-      let left = parsePrimary();
-
-      while (peek().type !== "EOF" && isOperator(peek().type)) {
-        const op = peek().type;
-
-        if (op === "IS BETWEEN") {
-          eat("IS BETWEEN");
-          let middle = parsePrimary();
-          if (peek().type !== "AND") {
-            throw new Error("Expected 'AND' after 'IS BETWEEN'");
-          }
-          eat("AND"); // Consume the 'AND'
-          let right = parsePrimary();
-          left = new Between(left, middle, right);
-        } else {
-          eat(op);
-          let right;
-          if (op === "EQUALS") {
-            right = parsePrimary();
-            left = new Equality(left, right);
-          } else if (["+", "-", "*", "/"].includes(op)) {
-            right = parsePrimary();
-            switch (op) {
-              case "+":
-                left = new Addition(left, right);
-                break;
-              case "-":
-                // Implement Subtraction class if exists
-                break;
-              case "*":
-                left = new Multiplication(left, right);
-                break;
-              case "/":
-                // Implement Division class if exists
-                break;
-            }
-          } else if (op === "AND") {
-            // Handle logical AND operation
-            right = parseBinaryExpression(); // This allows for chaining AND operations
-            left = new Logical(left, right);
-          } else {
-            right = parsePrimary();
-            switch (op) {
-              case ">":
-                left = new GreaterThan(left, right);
-                break;
-              case "<":
-                left = new LessThan(left, right);
-                break;
-              // Include cases for ">=", "<="
-            }
-          }
-        }
-      }
-      depth--;
-      log(`END parseBinaryExpression`);
-
-      return left;
-    }
-return parseEquality();
+    return parseEquality();
     //return parseBinaryExpression().toJSON();
   }
 }
 
-
-
 //Testing the improved parser with the expression list
 const expression_list = [
- // "18",
- //  "a",
+  // "18",
+  //  "a",
   // "true",
   // "false",
   // "age",
@@ -385,24 +267,24 @@ const expression_list = [
   "age is 18",
   "1 + 2",
   //"a > b",
-   //"a > 18",
- // "10 + 2 * 5",
+  //"a > 18",
+  // "10 + 2 * 5",
   // "10 - 2 + 5",
   //  "MAJORITY_AGE",
   //  "age = MAJORITY_AGE",
   //   "age is MAJORITY_AGE",
   //'age is between TODDLER_AGE and MAJORITY_AGE',
   // "(age > BABY_AGE) and (age < TODDLER_AGE)",
-//   "age is between TODDLER_AGE and MAJORITY_AGE",
- // "a + b * c = 200",
+  //   "age is between TODDLER_AGE and MAJORITY_AGE",
+  // "a + b * c = 200",
   //"a = ",
-//  "a + b * c ="
+  //  "a + b * c ="
 ];
 
 expression_list.forEach((expression) => {
   console.log(`Parsing of expression: '${expression}'`);
   const parser = new Parser();
   const expressionNode = parser.parse(expression);
-  console.log(`The AST for the expression: '${expression}' =  '${JSON.stringify(expressionNode, null, 2)}'`);
+  console.log(`The AST for the expression: '${expression}' is '${JSON.stringify(expressionNode, null, 2)}'`);
   console.log(`Type of expressionNode: ${expressionNode.constructor.name}`);
 });
