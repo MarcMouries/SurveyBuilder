@@ -1,12 +1,16 @@
-export class ASTNode {
+export class Expression {
   constructor(value) {
     this.value = value;
   }
+  evaluate(context) {
+    throw new Error('Must implement evaluate method in subclass');
+  }
 }
 
-export class Operand extends ASTNode {}
 
-export class Variable extends Operand {
+export class Operand extends Expression {}
+
+export class VariableNode extends Operand {
   constructor(name) {
     super(name);
   }
@@ -60,7 +64,7 @@ export class BooleanNode extends Constant {
   }
 }
 
-export class BinaryOperator extends ASTNode {
+export class BinaryExpression extends Expression {
   constructor(left, operator, right) {
     super();
     this.type = "BinaryExpression",
@@ -92,7 +96,7 @@ export class BinaryOperator extends ASTNode {
 //   }
 // }
 
-export class Logical extends ASTNode {
+export class Logical extends Expression {
   constructor(left, right) {
     super("and", left, right);
   }
