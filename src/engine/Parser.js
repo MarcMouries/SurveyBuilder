@@ -258,13 +258,14 @@ export class Parser {
 
 //Testing the improved parser with the expression list
 const expression_list = [
+  //"Attending_Status.isVisible = true",
   // "18",
   //  "a",
   // "true",
   // "false",
   // "age",
   // "'toto'",
-  "age is 18",
+ // "age is 18",
   "1 + 2",
   //"a > b",
   //"a > 18",
