@@ -30,45 +30,9 @@ export class Parser {
     };
 
     function formatToken(token) {
-      if (token === null) {
-        return "end of input";
-      }
-      const type = token.type;
-      const value = token.value;
-      return `${type}(${value})`;
+      if (!token) return "end of input";
+      return `${token.type}(${token.value})`;
     }
-
-    const advance = () => {
-      if (!isAtEnd()) {
-        const fromToken = current > 0 ? previous() : null; // Use null to represent the start of input
-        const fromDisplay = formatToken(fromToken);
-
-        current++;
-
-        const toToken = isAtEnd() ? null : peek(); // Use null to represent the end of input
-        const toDisplay = formatToken(toToken);
-
-        Logger.log(`Advance: Moving from token '${fromDisplay}' to next token '${toDisplay}'`);
-      }
-      return previous();
-    };
-
-    const check = (...expected) => {
-      if (isAtEnd()) return false;
-      const nextToken = peek();
-      const tokenDisplay = formatToken(nextToken);
-      let matchFound = false;
-
-      for (const exp of expected) {
-        if ((nextToken.type === TokenType.OPERATOR && nextToken.value === exp) || exp === nextToken.type) {
-          matchFound = true;
-          break;
-        }
-      }
-
-      Logger.log(`Check if next token ${tokenDisplay} is among expected: [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
-      return matchFound;
-    };
 
     const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
 
@@ -77,30 +41,64 @@ export class Parser {
     const isAtEnd = () => current >= tokens.length;
 
     const peek = () => {
-      if (isAtEnd()) return null; // or return a dummy token indicating the end
+      if (isAtEnd()) return null;
       return tokens[current];
     };
 
     const previous = () => tokens[current - 1];
 
+    const advance = () => {
+      if (!isAtEnd()) {
+        const fromToken = current > 0 ? previous() : { type: "START", value: "start of input" };
+        const toToken = peek();
+        Logger.log(`Advance: Next token to process is '${formatToken(toToken)}', moving from '${formatToken(fromToken)}'`);
+        current++;
+      } else {
+        Logger.log(`Advance: At 'end of input', no more tokens to process.`);
+      }
+      return previous();
+    };
+
+    const check = (...expected) => {
+      if (isAtEnd()) {
+        Logger.log(`Check: Reached 'end of input', cannot match any more tokens.`);
+        return false;
+      }
+      const nextToken = peek();
+      const tokenDisplay = formatToken(nextToken);
+      let matchFound = false;
+      for (const exp of expected) {
+        if ((nextToken.type === TokenType.OPERATOR && nextToken.value === exp) || exp === nextToken.type) {
+          matchFound = true;
+          break;
+        }
+      }
+      Logger.log(`Check completed: Next token ${formatToken(nextToken)} matches expected [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
+      return matchFound;
+    };
+
     const match = (...types) => {
       if (check(...types)) {
         advance();
-        Logger.log(`Match: Searching for and consuming next token if it matches expected types: [${types.join(", ")}]`);
+        Logger.log(`Match: Searching for and consuming next token if it matches any expected: [${types.join(", ")}]`);
         return true;
       }
-      Logger.log(`No match found for types: ${types.join(", ")}`);
+      Logger.log(`No match found for tokens: ${types.join(", ")}`);
       return false;
     };
 
     const eat = (tokenType, message) => {
-      Logger.log(`Eating tokenType='${tokenType}' peek.type='${peek()?.type}' message='${message}'`);
+      Logger.log(`Attempting to consume a '${tokenType}' token.`);
       if (check(tokenType)) {
         const token = advance();
-        Logger.log(`Consume: Expecting '${tokenType}', found '${peek()?.type}', and consuming it if matched.`);
+        Logger.log(`Success: Consumed '${tokenType}' token with value: '${token.value}'.`);
         return token;
+      } else {
+        const actualToken = peek(); // Peek at the next token (if any) to report what was actually found
+        // Log the failure to consume the expected token, including what was found instead
+        Logger.log(`Failure: Expected '${tokenType}', but found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
+        throw new Error(`Error: Expected '${tokenType}', found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
       }
-      throw error(peek(), message);
     };
 
     const error = (token, message) => {
@@ -109,28 +107,28 @@ export class Parser {
     };
 
     const parseNumber = () => {
-      Logger.logStart(`Parsing NUMBER token at position: ${current}`);
+      Logger.logStart(` Parsing token #${current+1} of type NUMBER`);
       const token = eat("NUMBER", "expect a number.");
-      Logger.logEnd(`Parsing NUMBER at position: ${current}`);
+      Logger.logEnd(`Completed parsing token #${current} as NUMBER with value: ${token.value}`);
       return new NumberNode(token.value);
     };
 
     const parseBoolean = () => {
-      Logger.logStart(`Parsing BOOLEAN token at position: ${current}`);
+      Logger.logStart(`Parsing token #${current+1} of type BOOLEAN`);
       const token = eat("BOOLEAN", "expect a number.");
       Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
       return new BooleanNode(token.value);
     };
 
     const parseString = () => {
-      Logger.logStart(`Parsing STRING token at position: ${current}`);
+      Logger.logStart(`Parsing token #${current+1} of type STRING`);
       const token = eat("STRING", "expect a string.");
       Logger.logEnd(`Parsing STRING token at position: ${current}`);
       return new StringNode(token.value.slice(1, -1)); // Remove quotes
     };
 
     const parseVariable = () => {
-      Logger.log(`Parsing VARIABLE token at position: ${current}`);
+      Logger.log(`Parsing token #${current+1} of type VARIABLE`);
       const token = eat("VAR", "expect a variable.");
       return new VariableNode(token.value);
     };
@@ -165,11 +163,12 @@ export class Parser {
       var expr = parseFactor();
       while (match("+", "-")) {
         Logger.log(`Matched + or -: ${previous().type}`);
-        const operator = previous().value;
+        const operator = previous().value; // Operator matched by match()
         const right = parseFactor();
         expr = new BinaryExpression(expr, operator, right);
+        Logger.log(`Constructed BinaryExpression: ${expr.summarize()}`);
       }
-      Logger.logEnd(`parseTerm (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
+      Logger.logEnd(`Completed parsing term: ${expr.summarize()}`);
       return expr;
     };
 
@@ -288,6 +287,7 @@ const expression_list = [
   // "'toto'",
   // "age is 18",
   "1 + 2",
+  //"2^2"
   //"a > b",
   //"a > 18",
   // "10 + 2 * 5",
