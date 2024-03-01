@@ -11,20 +11,36 @@ export class Expression {
 export class Operand extends Expression {}
 
 export class VariableNode extends Operand {
-  constructor(name) {
-    super(name);
+  constructor(value) {
+    super(value);
+  }
+  evaluate(context) {
+    console.log(`Evaluating VariableNode with value: ${this.value}`);
+    const parts = this.value.split(".");
+        let currentValue = context;
+    for (const part of parts) {
+      if (part in currentValue) {
+        currentValue = currentValue[part];
+      } else {
+        throw new Error(`Variable or property ${part} not found in context`);
+      }
+    }
+    return currentValue;
   }
   summarize() {
     return `Variable(${this.value})`;
   }
   toJSON() {
-    return { type: "Variable", name: this.value };
+    return { type: "Variable", value: this.value };
   }
 }
 
 export class Constant extends Operand {
   constructor(value) {
     super(value);
+  }
+  evaluate(context) {
+    return this.value;
   }
   toJSON() {
     return { type: "Number", value: this.value };
@@ -34,6 +50,7 @@ export class NumberNode extends Constant {
   constructor(value) {
     super(value);
   }
+
   summarize() {
     return `Number(${this.value})`;
   }
@@ -72,8 +89,23 @@ export class BinaryExpression extends Expression {
     this.operator = operator;
     this.right = right;
   }
+  evaluate(context) {
+    const leftVal = this.left.evaluate(context);
+    const rightVal = this.right.evaluate(context);
+    switch (this.operator) {
+      case '+': return leftVal + rightVal;
+      case '-': return leftVal - rightVal;
+      case '*': return leftVal * rightVal;
+      case '/': return leftVal / rightVal;
+      case '>': return leftVal > rightVal;
+      case '<': return leftVal < rightVal;
+      case '=': return leftVal == rightVal;
+      case '^': return Math.pow(leftVal, rightVal);
+      default: throw new Error(`Unsupported operator ${this.operator}`);
+    }
+  }
   summarize() {
-    return ` (${this.left.value} ${this.operator.value} ${this.right.value})`;
+    return ` (${this.left.value} ${this.operator} ${this.right.value})`;
   }
   toJSON() {
     return {
