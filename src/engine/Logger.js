@@ -12,7 +12,7 @@ export class Logger {
 
     static logStart(message) {
         if (!Logger.isEnabled) return;
-        console.log(Logger.generatePrefix() + "┌─ " + message);
+        console.log(Logger.generatePrefix() + "┌─ START " + message);
         Logger.depth++;
     }
 
@@ -24,7 +24,7 @@ export class Logger {
     static logEnd(message) {
         if (!Logger.isEnabled) return;
         Logger.depth--;
-        console.log(Logger.generatePrefix() + "└─ " + message);
+        console.log(Logger.generatePrefix() + "└─ END " + message);
     }
 
     static generatePrefix() {
