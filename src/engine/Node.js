@@ -11,8 +11,9 @@ export class Expression {
 export class Operand extends Expression {}
 
 export class VariableNode extends Operand {
-  constructor(value) {
-    super(value);
+  constructor(name) {
+    super(name);
+    this.name = name;
   }
   evaluate(context) {
     console.log(`Evaluating VariableNode with value: ${this.value}`);
@@ -28,10 +29,10 @@ export class VariableNode extends Operand {
     return currentValue;
   }
   summarize() {
-    return `Variable(${this.value})`;
+    return `Variable(${this.name})`;
   }
   toJSON() {
-    return { type: "Variable", value: this.value };
+    return { type: "Variable", name: this.name };
   }
 }
 
