@@ -1,4 +1,4 @@
-import { Parser } from '../src/engine/Parser';
+import { Parser } from '../../src/engine/Parser';
 
 const testCases = [
   {

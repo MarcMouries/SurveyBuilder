@@ -1,4 +1,4 @@
-import { Tokenizer2, TokenType } from "../src/engine/Tokenizer2";
+import { Tokenizer2, TokenType } from "../../src/engine/Tokenizer2";
 
 describe("Tokenizer2 Tests", () => {
   // Test for numeric values
