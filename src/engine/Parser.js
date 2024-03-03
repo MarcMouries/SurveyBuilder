@@ -11,7 +11,7 @@ export class Parser {
     const tokens = tokenizer.parseTokens(input);
     //console.log("Tokens = ", tokens);
     let current = 0;
-    //Logger.disableLogging();
+    Logger.disableLogging();
 
     const operatorsPrecedence = {
       OR: 1,
@@ -278,16 +278,18 @@ export class Parser {
 
 //Testing the improved parser with the expression list
 const expression_list = [
-  //"Attending_Status.isVisible = true",
   // "18",
-  //  "a",
+  // "a",
   // "true",
   // "false",
   // "age",
   // "'toto'",
   // "age is 18",
-  "1 + 2",
+  // "1 + 2",
+  // "a = 1 + 2",
+  //"eligible = age > 18",
   //"2^2"
+  //const expressionString = "BMI = weight / height ^ 2";
   //"a > b",
   //"a > 18",
   // "10 + 2 * 5",
