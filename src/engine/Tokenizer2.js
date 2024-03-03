@@ -134,7 +134,6 @@ export class Tokenizer2 {
 
       position++; // Move to the next character if no token is matched
     }
-    console.log("tokens are: ", this.tokens);
     return this.tokens;
   }
 }
