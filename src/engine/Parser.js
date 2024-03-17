@@ -1,4 +1,5 @@
-import { BooleanNode, NumberNode, StringNode, VariableNode, UnaryExpression, BinaryExpression, Logical } from "./Node";
+import { BooleanNode, NumberNode, StringNode, VariableNode } from "./Node";
+import { UnaryExpression, BinaryExpression, GroupingExpression, Logical } from "./Node";
 import { Tokenizer, TokenType } from "./Tokenizer";
 import { Logger } from "./Logger";
 
@@ -8,7 +9,7 @@ export class Parser {
   parse(input) {
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
-    //console.log("Tokens = ", tokens);
+   // console.log("Tokens = ", tokens);
     let current = 0;
     Logger.disableLogging();
 
@@ -66,29 +67,24 @@ export class Parser {
         return false;
       }
       const nextToken = peek();
-      const tokenDisplay = formatToken(nextToken);
-      let matchFound = false;
-      for (const exp of expected) {
-        if ((nextToken.type === TokenType.OPERATOR && nextToken.value === exp) || exp === nextToken.type) {
-          matchFound = true;
-          break;
-        }
-      }
-      Logger.log(`Check completed: Next token ${formatToken(nextToken)} matches expected [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
+      let matchFound = expected.includes(nextToken.type) || expected.includes(nextToken.value);
+
+     //Logger.log(`Does Next token ${formatToken(nextToken)} match [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
+      
       return matchFound;
     };
 
     const match = (...types) => {
       if (check(...types)) {
+        Logger.log(`Match(): Matched  [${types.join(", ")}] -  and advanced to the next token`);
         advance();
-        Logger.log(`Match: Searching for and consuming next token if it matches any expected: [${types.join(", ")}]`);
         return true;
       }
-      Logger.log(`No match found for tokens: ${types.join(", ")}`);
+      Logger.log(`Match(): No match found for tokens: '${types.join(", ")}'`);
       return false;
     };
 
-    const eat = (tokenType, message) => {
+    const consume = (tokenType, message) => {
       Logger.log(`Attempting to consume a '${tokenType}' token.`);
       if (check(tokenType)) {
         const token = advance();
@@ -107,54 +103,54 @@ export class Parser {
       throw new Error(`Error at token ${tokenDisplay}: ${message}`);
     };
 
-    const parseNumber = () => {
-      Logger.logStart(` Parsing token #${current + 1} of type NUMBER`);
-      const token = eat("NUMBER", "expect a number.");
+    const parseNumber = (token) => {
+      Logger.logStart(`parseNumber: token #${current} of type NUMBER with value: ${token.value}`);
+      // const token = consume("NUMBER", "expect a number.");
+      //const token = previous(); // We've already matched and consumed the NUMBER token
       Logger.logEnd(`Completed parsing token #${current} as NUMBER with value: ${token.value}`);
       return new NumberNode(token.value);
     };
 
-    const parseBoolean = () => {
-      Logger.logStart(`Parsing token #${current + 1} of type BOOLEAN`);
-      const token = eat("BOOLEAN", "expect a number.");
+    const parseBoolean = (token) => {
+      Logger.logStart(`Parsing : token #${current} of type BOOLEAN with value: ${token.value}`);
+      //const token = consume("BOOLEAN", "expect a number.");
       Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
       return new BooleanNode(token.value);
     };
 
-    const parseString = () => {
-      Logger.logStart(`Parsing token #${current + 1} of type STRING`);
-      const token = eat("STRING", "expect a string.");
+    const parseString = (token) => {
+      Logger.logStart(`parseString: token #${current} of type STRING with value: ${token.value}`);
+      //const token = consume("STRING", "expect a string.");
       Logger.logEnd(`Parsing STRING token at position: ${current}`);
-      return new StringNode(token.value.slice(1, -1)); // Remove quotes
+      return new StringNode(token.value);
     };
 
-    const parseVariable = () => {
-      Logger.log(`Parsing token #${current + 1} of type VARIABLE`);
-      const token = eat("VAR", "expect a variable.");
+    const parseVariable = (token) => {
+      Logger.logStart(`parseVariable: token #${current} of type VAR with value: ${token.value}`);
+      //const token = consume("VAR", "expect a variable.");
+      Logger.logEnd(`Parsing VAR token at position: ${current}`);
       return new VariableNode(token.value);
     };
 
     function parseGroup() {
-      Logger.logStart(`Parsing GRROUP at position: ${current}`);
-      this.eat("(");
+      Logger.logStart(`Parsing GROUP at position: ${current}`);
+      //consume("LPAREN", "Expect '(' to start group.");
       let expr = parseExpression();
-      this.eat(")");
-      Logger.logEnd(`Parsing GRROUP at position: ${current}`);
-      return expr;
+      consume("RPAREN", "Expect ')' after expression.");
+      Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
+      Logger.logEnd(`Parsing GROUP at position: ${current}`);
+
+      return expr; //new GroupingExpression(expr)
     }
 
     const parsePrimary = () => {
-      let token = peek();
+      Logger.logStart(`parsePrimary`);
       let result;
-
-      Logger.logStart(`parsePrimary: token '${token.value}' of type ${token.type}`);
-
-      if (token.type === TokenType.NUMBER) result = parseNumber();
-      else if (token.type === TokenType.STRING) result = parseString();
-      else if (token.type === TokenType.BOOLEAN) result = parseBoolean();
-      else if (token.type === TokenType.VAR) result = parseVariable();
-      else if (token.type === TokenType.LPAREN) result = parseGroup();
-
+      if (match(TokenType.NUMBER)) result = parseNumber( previous()); // Get the matched token without advancing again
+      else if (match(TokenType.STRING)) result = parseString( previous() );
+      else if (match(TokenType.BOOLEAN)) result = parseBoolean( previous() );
+      else if (match(TokenType.VAR)) result = parseVariable( previous() );
+      else if (match(TokenType.LPAREN)) result = parseGroup();
       Logger.logEnd(`parsePrimary`);
       return result;
     };
@@ -169,7 +165,7 @@ export class Parser {
         expr = new BinaryExpression(expr, operator, right);
         Logger.log(`Constructed BinaryExpression: ${expr.summarize()}`);
       }
-      Logger.logEnd(`Completed parsing term: ${expr.summarize()}`);
+      Logger.logEnd(`Completed parsing term`);
       return expr;
     };
 
@@ -192,7 +188,6 @@ export class Parser {
 
     const parseFactor = () => {
       Logger.logStart("Parsing factors for multiplication/division");
-
       let expr = parseExponent(); // Start with exponentiation to ensure it's evaluated first
 
       // Handle multiplication and division next, ensuring they're evaluated after exponentiation
@@ -207,18 +202,20 @@ export class Parser {
     };
 
     const parseUnary = () => {
+      Logger.logStart("Parsing Unary");
       while (match("-", "!")) {
         const operator = previous().value;
         const right = parseUnary();
         return new UnaryExpression(operator, right);
       }
+      Logger.logEnd("Parsed Unary");
       return parsePrimary();
     };
 
     const parseEquality = () => {
       Logger.logStart(`Parsing equality/non-equality operators between expressions`);
       var expr = parseComparison();
-      while (match("=", "!=")) {
+      while (match("==", "!=")) {
         const operator = previous().value;
         const right = parseComparison();
         expr = new BinaryExpression(expr, operator, right);
@@ -227,6 +224,19 @@ export class Parser {
 
       return expr;
     };
+
+    const parseAssignment = () => {
+      Logger.logStart(`parseAssignment`);
+      Logger.logEnd(`parseAssignment`);
+    }
+
+    const parseExpression = () => {
+      Logger.logStart(`parseExpression`);
+      const result = parseEquality();
+      Logger.logEnd(`parseExpression`);
+      return result;
+    };
+
 
     const parseComparison = () => {
       Logger.logStart(`Parsing comparison operators between expressions`);
@@ -246,14 +256,18 @@ export class Parser {
 
 //Testing the improved parser with the expression list
 const expression_list = [
-  "5",
-  "-5",
+  // "'toto'",
+  // "5",
+ // "-5",
+ //"5+2",
+ //"3 * (5+2)",
   // "a",
-  // "true",
+   "age=18",
+ //  "age==18",
+ //  "age is 18",
+//   "true",
   // "false",
   // "age",
-  // "'toto'",
-  // "age is 18",
   // "1 + 2",
   // "a = 1 + 2",
   //"eligible = age > 18",
@@ -269,15 +283,18 @@ const expression_list = [
   //'age is between TODDLER_AGE and MAJORITY_AGE',
   // "(age > BABY_AGE) and (age < TODDLER_AGE)",
   //   "age is between TODDLER_AGE and MAJORITY_AGE",
-  // "a + b * c = 200",
+  // "a + b * c == 200",
   //"a = ",
-  //  "a + b * c ="
+  //  "a + b * c =="
 ];
 
 expression_list.forEach((expression) => {
-  console.log(`Parsing of expression: '${expression}'`);
+  console.log(`\nParsing of expression: '${expression}'`);
   const parser = new Parser();
   const expressionNode = parser.parse(expression);
+  console.log(`expression: '${expression}' is`, expressionNode);
+
   console.log(`The AST for the expression: '${expression}' is '${JSON.stringify(expressionNode, null, 2)}'`);
+  console.log(`AST : ${expressionNode.summarize()}`);
   console.log(`Type of expressionNode: ${expressionNode.constructor.name}`);
 });
