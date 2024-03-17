@@ -16,7 +16,7 @@ export class Tokenizer {
   constructor() {
     this.operators = [
       { match: "is between", type: "IS_BETWEEN", length: 10 },
-      { match: "is not ", type: TokenType.OPERATOR, length: 6, value: "!=" },
+      { match: "is not", type: TokenType.NOT_EQUAL, length: 6, value: "!=" },
       { match: "is", type: TokenType.EQUALS, length: 2, value: "==" },
       { match: "==", type: TokenType.EQUALS, length: 2, value: "==" },
       { match: "=", type: TokenType.ASSIGN, length: 1 },
@@ -57,12 +57,19 @@ export class Tokenizer {
 
   findMatchingOperator(input, position) {
     for (const pattern of this.operators) {
-      if (input.substr(position, pattern.length) === pattern.match) {
-        return pattern;
-      }
+        // Check if the input at the current position starts with the pattern match
+        if (input.startsWith(pattern.match, position)) {
+            const matchEnd = position + pattern.length;
+            // Ensure the pattern is not part of a larger word by checking what follows it
+            const isEndOfPattern = matchEnd >= input.length || !this.isAlphaNumeric(input[matchEnd]);
+            if (isEndOfPattern) {
+                return pattern;
+            }
+        }
     }
     return null; // No pattern matched
-  }
+}
+
 
   parseTokens(input) {
     this.tokens = []; // Reset tokens for each call
