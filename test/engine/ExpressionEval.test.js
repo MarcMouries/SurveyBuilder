@@ -51,7 +51,7 @@ test("Evaluate BooleanNode with true", () => {
   expect(result).toBe(true);
 });
 
-test("Evaluate BinaryExpression comparing variable 'days' = 10", () => {
+test("Evaluate BinaryExpression comparing variable 'days' is 10", () => {
   console.log("\nEvaluating Expression comparing variable 'days' = 10");
   const expression = new BinaryExpression(new VariableNode("days"), "=", new NumberNode(10));
   const result = expression.evaluate(context);
@@ -104,6 +104,26 @@ test("Evaluate the expression a*2", () => {
   const result = expression.evaluate(context);
   console.log(`Result: ${result}`);
   expect(result).toBe(10);
+});
+
+test("Evaluate the expression '8 / 2 * 4'", () => {
+  console.log("\nEvaluating the expression '8 / 2 * 4'");
+  const parser = new Parser();
+  const expression = parser.parse("8 / 2 * 4");
+
+  const result = expression.evaluate();
+  console.log(`Result: ${result}`);
+  expect(result).toBe(16);
+});
+
+test("Evaluate the expression '8 / (2 * 4)'", () => {
+  console.log("\nEvaluating the expression '8 / (2 * 4)'");
+  const parser = new Parser();
+  const expression = parser.parse("8 / (2 * 4)");
+
+  const result = expression.evaluate();
+  console.log(`Result: ${result}`);
+  expect(result).toBe(1);
 });
 
 

@@ -91,10 +91,10 @@ const testCases = [
     }
   },
   {
-    expression_string: "10 + 2 * 5 = 20",
+    expression_string: "10 + 2 * 5 == 20",
     expected: {
       type: "BinaryExpression",
-      operator: "=",
+      operator: "==",
       left: {
         type: "BinaryExpression",
         operator: "+",
@@ -161,6 +161,31 @@ const testCases = [
       }
     }
   },
+  {
+    expression_string: "8 / 2 * 4",
+    expected:
+     {
+         left: {
+           left: {
+             type: "Number",
+             value: 8,
+           },
+           operator: "/",
+           right: {
+             type: "Number",
+             value: 2,
+           },
+           type: "BinaryExpression",
+         },
+         operator: "*",
+         right: {
+           type: "Number",
+           value: 4,
+         },
+         type: "BinaryExpression",
+       }
+  },
+
   {
     expression_string: "weight / height ^ 2",
     expected:
@@ -244,11 +269,13 @@ const testCases = [
 testCases.forEach(({ expression_string, expected }) => {
   test(`Testing '${expression_string}'`, () => {
     const parser = new Parser();
-    console.log(`\n Parsing: : '${expression_string}'`);
+    console.log(`\nParsing: : '${expression_string}'`);
     const expression = parser.parse(expression_string);
-    console.log("expression = ", expression.toJSON())
-    const summary = expression.summarize();
-    console.log("summary = " + summary)
+    //console.log("expression = ", expression.toJSON())
+    console.log("expression = ", expression.summarize())
+
+   // const summary = expression.summarize();
+   // console.log("summary = " + summary)
     expect(expression.toJSON()).toEqual(expected);
   });
 });

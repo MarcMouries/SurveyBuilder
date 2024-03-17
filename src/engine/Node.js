@@ -192,6 +192,29 @@ export class AssignmentExpression extends Expression {
   }
 }
 
+export class GroupingExpression extends Expression {
+  constructor(expression) {
+    super();
+    this.expression = expression;
+    this.type = "GroupingExpression";
+  }
+
+  evaluate(context) {
+    return this.expression.evaluate(context);
+  }
+
+  summarize() {
+    return `( ${this.expression.summarize()} )`;
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      expression: this.expression.toJSON(),
+    };
+  }
+}
+
 
 export class Logical extends Expression {
   constructor(left, right) {

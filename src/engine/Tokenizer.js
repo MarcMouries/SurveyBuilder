@@ -55,6 +55,8 @@ export class Tokenizer {
     return this.isAlpha(char) || this.isDigit(char);
   }
 
+  // checks that a matched operator or keyword is not just the prefix of a longer identifier 
+  // that should be tokenized as a variable. 
   findMatchingOperator(input, position) {
     for (const pattern of this.operators) {
         // Check if the input at the current position starts with the pattern match

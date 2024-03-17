@@ -15,9 +15,7 @@ export class FactsManager {
 
 
   evaluate(expressionStr: string): boolean {
-    // Parse the condition string into a structured condition tree
     const expressionNode: Expression = ExpressionParser.parse(expressionStr);
-    // Evaluate the structured condition tree against the stored facts
     return ExpressionEvaluator.evaluate(expressionNode, this.facts);
   }
 

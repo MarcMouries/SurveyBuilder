@@ -92,13 +92,21 @@ export class ContextManager {
   }
 }
 
-const expressionString = "person.eligible = person.age > 18";
+//const expressionString = "{{person.eligible}} = person.age > 18";
+const expressionString = "{{person.age}} > 18";
 const contextManager = new ContextManager();
 let person_John = { person: { name: "John", age: 25, eligible: null } };
-let person_Jane = { person: { name: "Jane", age: 18, eligible: null } };
+let question_Adult = { question_Adult: { 
+    label = "Question for Adult person",
+    visible_when: "{{person.age}} > 18" } 
+};
+contextManager.addObject(person_John);
+contextManager.addObject(question_Adult);
+
+//let person_Jane = { person: { name: "Jane", age: 18, eligible: null } };
 contextManager.addExpression(expressionString);
 contextManager.addObject(person_John);
-contextManager.addObject(person_Jane);
+//contextManager.addObject(person_Jane);
 contextManager.evaluateExpressions();
 console.log("person_John", person_John); // person's eligible should be TRUE because the expression 'eligible = age > 18' should have been evaluated to true.
-console.log("person_Jane", person_Jane); // person's eligible should be FALSE because the expression 'eligible = age > 18' should have been evaluated to false.
+//console.log("person_Jane", person_Jane); // person's eligible should be FALSE because the expression 'eligible = age > 18' should have been evaluated to false.
