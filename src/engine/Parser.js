@@ -1,33 +1,16 @@
-import { BooleanNode, NumberNode, StringNode, VariableNode, BinaryExpression, Logical } from "./Node";
-import { Tokenizer } from "./Tokenizer";
-import { Tokenizer2, TokenType } from "./Tokenizer2";
+import { BooleanNode, NumberNode, StringNode, VariableNode, UnaryExpression, BinaryExpression, Logical } from "./Node";
+import { Tokenizer, TokenType } from "./Tokenizer";
 import { Logger } from "./Logger";
 
 export class Parser {
   constructor() {}
 
   parse(input) {
-    const tokenizer = new Tokenizer2();
+    const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
     //console.log("Tokens = ", tokens);
     let current = 0;
     Logger.disableLogging();
-
-    const operatorsPrecedence = {
-      OR: 1,
-      AND: 2,
-      EQUALS: 3,
-      "!=": 3,
-      "<": 4,
-      ">": 4,
-      "<=": 4,
-      ">=": 4,
-      "+": 5,
-      "-": 5,
-      "*": 6,
-      "/": 6,
-      "^": 7,
-    };
 
     function formatToken(token) {
       if (!token) return "end of input";
@@ -36,7 +19,25 @@ export class Parser {
 
     const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
 
-    const precedence = (operator) => operatorsPrecedence[operator] || -1;
+    const precedence = (operator) => {
+      const operatorsPrecedence = {
+        OR: 1,
+        AND: 2,
+        EQUALS: 3,
+        "!=": 3,
+        "<": 4,
+        ">": 4,
+        "<=": 4,
+        ">=": 4,
+        "+": 5,
+        "-": 5,
+        "*": 6,
+        "/": 6,
+        "^": 7,
+      };
+
+      operatorsPrecedence[operator] || 0;
+    };
 
     const isAtEnd = () => current >= tokens.length;
 
@@ -107,28 +108,28 @@ export class Parser {
     };
 
     const parseNumber = () => {
-      Logger.logStart(` Parsing token #${current+1} of type NUMBER`);
+      Logger.logStart(` Parsing token #${current + 1} of type NUMBER`);
       const token = eat("NUMBER", "expect a number.");
       Logger.logEnd(`Completed parsing token #${current} as NUMBER with value: ${token.value}`);
       return new NumberNode(token.value);
     };
 
     const parseBoolean = () => {
-      Logger.logStart(`Parsing token #${current+1} of type BOOLEAN`);
+      Logger.logStart(`Parsing token #${current + 1} of type BOOLEAN`);
       const token = eat("BOOLEAN", "expect a number.");
       Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
       return new BooleanNode(token.value);
     };
 
     const parseString = () => {
-      Logger.logStart(`Parsing token #${current+1} of type STRING`);
+      Logger.logStart(`Parsing token #${current + 1} of type STRING`);
       const token = eat("STRING", "expect a string.");
       Logger.logEnd(`Parsing STRING token at position: ${current}`);
       return new StringNode(token.value.slice(1, -1)); // Remove quotes
     };
 
     const parseVariable = () => {
-      Logger.log(`Parsing token #${current+1} of type VARIABLE`);
+      Logger.log(`Parsing token #${current + 1} of type VARIABLE`);
       const token = eat("VAR", "expect a variable.");
       return new VariableNode(token.value);
     };
@@ -172,63 +173,48 @@ export class Parser {
       return expr;
     };
 
-    const parseFactor = (left) => {
-      Logger.logStart(`Parsing factor for potential multiplication/division operations`);
+    const parseExponent = () => {
+      Logger.logStart("Parsing exponentiation operations");
 
-      let expr = parsePrimary();
-      Logger.log(`Check for '/', '*': ${peek() && (peek().type === "/" || peek().type === "*") ? `Found '${peek().type}'` : "None found next"}`);
-      while (match("/", "*")) {
-        Logger.log(`Matched * or /:  ${previous().type}`);
+      let base = parseUnary(); // Start with the base which can be a unary operation (e.g., -5)
+
+      // As long as there's an exponent operator, handle the exponentiation with right associativity
+      while (match("^")) {
+        Logger.log("Found exponentiation operator ^");
+        const operator = previous().value; // The operator we just matched
+        const exponent = parseExponent(); // Recursively call parseExponent for right associativity
+        base = new BinaryExpression(base, operator, exponent);
+      }
+
+      Logger.logEnd("Parsed exponentiation operation");
+      return base;
+    };
+
+    const parseFactor = () => {
+      Logger.logStart("Parsing factors for multiplication/division");
+
+      let expr = parseExponent(); // Start with exponentiation to ensure it's evaluated first
+
+      // Handle multiplication and division next, ensuring they're evaluated after exponentiation
+      while (match("*", "/")) {
         const operator = previous().value;
-        const right = parsePrimary();
+        const right = parseExponent(); // Parse the right operand which could itself be an exponentiation
         expr = new BinaryExpression(expr, operator, right);
       }
-      Logger.logEnd(`ParseFactor (Result: ${expr.summarize ? expr.summarize() : typeof expr})`);
+
+      Logger.logEnd("Parsed factor");
       return expr;
     };
 
-    const parseAddition = (left) => {
-      eat("+");
-      const token = eat("VAR", "expect a variable.");
-
-      let right = parsePrimary();
-      return new BinaryExpression(expr, "+", right);
-    };
-
-    const parseMultiplication = (left) => {
-      eat("*");
-      let right = parsePrimary();
-      return new Multiplication(left, right);
-    };
-    const parseIsBetween = (left) => {
-      eat("IS BETWEEN");
-      let middle = parsePrimary();
-      eat("AND");
-      let right = parsePrimary();
-      return new isBetweenNode(left, middle, right);
-    };
-
-    const parseGreaterThan = (left) => {
-      eat(">");
-      let right = parsePrimary();
-      return new BinaryExpression(expr, ">", right);
-    };
-
-    const parseOperator = (left, operator) => {
-      Logger.logStart(`Parsing operator: '${operator}' for operation between expressions`);
-
-      switch (operator) {
-        case "+":
-          return parseAddition(left);
-        case "*":
-          return parseMultiplication(left);
-        case ">":
-          return parseGreaterThan(left);
-        // Add cases for other operators
-        default:
-          throw new Error(`Unhandled operator: ${operator}`);
+    const parseUnary = () => {
+      while (match("-", "!")) {
+        const operator = previous().value;
+        const right = parseUnary();
+        return new UnaryExpression(operator, right);
       }
+      return parsePrimary();
     };
+
     const parseEquality = () => {
       Logger.logStart(`Parsing equality/non-equality operators between expressions`);
       var expr = parseComparison();
@@ -254,31 +240,14 @@ export class Parser {
       return expr;
     };
 
-    function parseBinaryExpression() {
-      Logger.logStart(`BINARY Expression:  `); //token '${token.value}' of type ${token.type}`);
-      let left = parsePrimary();
-      while (peek().type !== "EOF" && isOperator(peek().type)) {
-        const op = peek().type;
-
-        if (op === "IS BETWEEN") {
-          left = parseIsBetween(left);
-        } else {
-          eat(op);
-          left = parseOperator(left, op);
-        }
-      }
-      Logger.logEnd(`BinaryExpression`);
-      return left;
-    }
-
     return parseEquality();
-    //return parseBinaryExpression().toJSON();
   }
 }
 
 //Testing the improved parser with the expression list
 const expression_list = [
-  // "18",
+  "5",
+  "-5",
   // "a",
   // "true",
   // "false",
@@ -288,8 +257,8 @@ const expression_list = [
   // "1 + 2",
   // "a = 1 + 2",
   //"eligible = age > 18",
-  //"2^2"
-  //const expressionString = "BMI = weight / height ^ 2";
+  //"2*3^2",
+  //"weight / height ^ 2",
   //"a > b",
   //"a > 18",
   // "10 + 2 * 5",
