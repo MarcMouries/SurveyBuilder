@@ -33,7 +33,7 @@ export class VariableNode extends Operand {
     return currentValue;
   }
   summarize() {
-    return `Variable(${this.name})`;
+    return `${this.name}`;
   }
   toJSON() {
     return { type: "Variable", name: this.name };
@@ -57,7 +57,7 @@ export class NumberNode extends Constant {
   }
 
   summarize() {
-    return `Number(${this.value})`;
+    return `${this.value}`;
   }
   toJSON() {
     return { type: "Number", value: this.value };
@@ -165,6 +165,32 @@ export class BinaryExpression extends Expression {
   }
 }
 
+export class AssignmentExpression extends Expression {
+  constructor(variable, value) {
+    super();
+    this.type = "AssignmentExpression";
+    this.variable = variable;
+    this.value = value;
+  }
+
+  evaluate(context) {
+    const val = this.value.evaluate(context);
+    context[this.variable.name] = val;
+    return val;
+  }
+
+  summarize() {
+    return `${this.variable.summarize()} = ${this.value.summarize()}`;
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      variable: this.variable.toJSON(),
+      value: this.value.toJSON(),
+    };
+  }
+}
 
 
 export class Logical extends Expression {
