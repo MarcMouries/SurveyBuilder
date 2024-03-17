@@ -3,88 +3,137 @@ export const TokenType = {
   STRING: "STRING",
   BOOLEAN: "BOOLEAN",
   VAR: "VAR",
-  OPERATOR: "OPERATOR",
+  OPERATOR: "OP",
+  AND: "AND",
+  OR: "OR",
   LPAREN: "(",
-  RPAREN: ")"
+  RPAREN: ")",
 };
-
 export class Tokenizer {
   constructor() {
-    this.tokenPatterns = [
-      [/^\s+/, null], // Whitespace, no token type
-      [/^\bis between\b/, "IS BETWEEN"], // IS BETWEEN must come before the general EQUALS to ensure it's matched correctly
-      [/^\bis not\b/, "NOT_EQUAL"], // IS NOT for inequality, before general EQUALS
-      [/^\bis\b/, "EQUALS"], // Equality, changed to match 'is' as a whole word
-      [/^==/, "EQUALS"], // Equality
-      [/^=/, "EQUALS"], // Equality
-      [/^!=/, "NOT_EQUAL"], // Inequality
-      [/^is not/, "NOT_EQUAL"], // Inequality
-      [/^\band\b/, "AND"], // Logical AND
-      [/^\bor\b/, "OR"], // Logical OR
-      [/^\bnot\b/, "NOT"], // Logical NOT
-      [/^-?\d+(?:\.\d+)?/, "NUMBER"], // Decimal numbers
-      [/^\btrue\b|\bfalse\b/, "BOOLEAN"],
-      [/^[a-zA-Z_][a-zA-Z0-9_]*/, "VAR"], // Variable Identifiers, allowing underscore
-      [/^'([^']*)'/, "STRING"], // String literals enclosed in single quotes
-      [/^"([^"]*)"/, "STRING"], // String literals enclosed in double quotes
-      [/^\+/, "+"], // Plus operator
-      [/^-/, "-"], // Minus operator
-      [/^\*/, "*"], // Multiplication operator
-      [/^\//, "/"], // Division operator
-      [/^\^/, "^"], // Power operator
-      [/^\(/, "("], // Open parenthesis
-      [/^\)/, ")"], // Close parenthesis
-      [/^,/, ","], // Comma
-      [/^>/, ">"], // Greater than
-      [/^</, "<"], // Less than
-      [/^>=/, ">="], // Greater than or equal to
-      [/^<=/, "<="], // Less than or equal to
+    this.operators = [
+      { match: "is between", type: "IS_BETWEEN", length: 10 },
+      { match: "is not ", type: TokenType.OPERATOR, length: 6, value: "!=" },
+      { match: "is", type: TokenType.OPERATOR, length: 2, value: "=" },
+      { match: "=", type: TokenType.OPERATOR, length: 1 },
+      { match: "==", type: TokenType.OPERATOR, length: 2 },
+      { match: "!=", type: TokenType.OPERATOR, length: 2 },
+      { match: "and", type: "AND", length: 3 },
+      { match: "or", type: "OR", length: 2 },
+      { match: "not", type: "NOT", length: 3 },
+      { match: "true", type: "BOOLEAN", length: 4 },
+      { match: "false", type: "BOOLEAN", length: 5 },
+      { match: "+", type: TokenType.OPERATOR, length: 1 },
+      { match: "-", type: TokenType.OPERATOR, length: 1 },
+      { match: "*", type: TokenType.OPERATOR, length: 1 },
+      { match: "/", type: TokenType.OPERATOR, length: 1 },
+      { match: "^", type: TokenType.OPERATOR, length: 1 },
+      { match: "(", type: "LPAREN", length: 1 },
+      { match: ")", type: "RPAREN", length: 1 },
+      { match: ",", type: ",", length: 1 },
+      { match: ">=", type: TokenType.OPERATOR, length: 2 },
+      { match: "<=", type: TokenType.OPERATOR, length: 2 },
+      { match: ">", type: TokenType.OPERATOR, length: 1 },
+      { match: "<", type: TokenType.OPERATOR, length: 1 },
+
     ];
+    this.tokens = [];
+  }
+
+  isDigit(char) {
+    return char >= "0" && char <= "9";
+  }
+
+  isAlpha(char) {
+    return (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char === "_" || char === ".";
+  }
+
+  isAlphaNumeric(char) {
+    return this.isAlpha(char) || this.isDigit(char);
+  }
+
+  findMatchingOperator(input, position) {
+    for (const pattern of this.operators) {
+      if (input.substr(position, pattern.length) === pattern.match) {
+        return pattern;
+      }
+    }
+    return null; // No pattern matched
   }
 
   parseTokens(input) {
-    let tokens = [];
+    this.tokens = []; // Reset tokens for each call
     let position = 0;
 
     while (position < input.length) {
-      let matched = false;
+      let char = input[position];
 
+      // Skip whitespace
+      if (/\s/.test(char)) {
+        position++;
+        continue;
+      }
 
-      
-      for (const [regex, type] of this.tokenPatterns) {
-        const match = input.substring(position).match(regex);
-        console.log("match = " + regex, type);
-        if (match) {
-          const tokenValueMatched = match[0]; // Store the matched string before any conversion
-          let tokenValue;
+      // String literals
+      if (char === '"' || char === "'") {
+        let endChar = char;
+        let stringLiteral = "";
+        position++; // Move past the opening quote
+        char = input[position];
 
-          switch (type) {
-            case TokenType.NUMBER:
-              tokenValue = Number(tokenValueMatched);
-              break;
-            case TokenType.BOOLEAN:
-              tokenValue = tokenValueMatched === "true";
-              break;
-            case TokenType.EQUALS:
-              tokenValue = "=";
-              break;
-            default:
-              tokenValue = tokenValueMatched;
-          }
+        while (position < input.length && char !== endChar) {
+          stringLiteral += char;
+          position++;
+          char = input[position];
+        }
 
-          if (type !== null) {
-            tokens.push({ type, value: tokenValue });
-          }
-          position += tokenValueMatched.length;
-          matched = true;
-          break; // Break the for-loop since we've found a match
+        if (char === endChar) {
+          this.tokens.push({ type: TokenType.STRING, value: stringLiteral });
+          position++; // Move past the closing quote
+          continue;
+        } else {
+          throw new Error("Syntax error: unclosed string literal");
         }
       }
 
-      if (!matched) {
-        throw new Error(`Syntax error at position ${position} of input '${input}'`);
+      // Number parsing
+      if (this.isDigit(char)) {
+        let number = "";
+        while (this.isDigit(char) || char === ".") {
+          number += char;
+          char = input[++position];
+        }
+        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number) });
+        continue;
       }
+
+      // Try to match operators or keywords
+      const operatorOrKeyword = this.findMatchingOperator(input, position);
+      if (operatorOrKeyword) {
+        if (operatorOrKeyword.match === "true" || operatorOrKeyword.match === "false") {
+          this.tokens.push({ type: TokenType.BOOLEAN, value: operatorOrKeyword.match === "true" });
+        } else {
+          // Use the 'value' property for operators like "is" and "is not"
+          let tokenValue = operatorOrKeyword.value ? operatorOrKeyword.value : operatorOrKeyword.match;
+          this.tokens.push({ type: operatorOrKeyword.type, value: tokenValue });
+        }
+        position += operatorOrKeyword.length;
+        continue;
+      }
+
+      // Identifiers
+      if (this.isAlpha(char)) {
+        let identifier = "";
+        while (this.isAlphaNumeric(char)) {
+          identifier += char;
+          char = input[++position];
+        }
+        this.tokens.push({ type: TokenType.VAR, value: identifier });
+        continue;
+      }
+
+      position++;
     }
-    return tokens;
+    return this.tokens;
   }
 }
