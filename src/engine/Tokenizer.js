@@ -27,7 +27,7 @@ export class Tokenizer {
       { match: "true", type: "BOOLEAN", length: 4 },
       { match: "false", type: "BOOLEAN", length: 5 },
       { match: "+", type: TokenType.OPERATOR, length: 1 },
-      { match: "-", type: TokenType.OPERATOR, length: 1 },
+      { match: "-", type: TokenType.OPERATOR, length: 1, value : "-" },
       { match: "*", type: TokenType.OPERATOR, length: 1 },
       { match: "/", type: TokenType.OPERATOR, length: 1 },
       { match: "^", type: TokenType.OPERATOR, length: 1 },
@@ -58,18 +58,21 @@ export class Tokenizer {
   // checks that a matched operator or keyword is not just the prefix of a longer identifier 
   // that should be tokenized as a variable. 
   findMatchingOperator(input, position) {
-    for (const pattern of this.operators) {
-        // Check if the input at the current position starts with the pattern match
-        if (input.startsWith(pattern.match, position)) {
-            const matchEnd = position + pattern.length;
-            // Ensure the pattern is not part of a larger word by checking what follows it
+    for (const operator of this.operators) {
+        // Check if the input at the current position starts with the operator match
+        if (input.startsWith(operator.match, position)) {
+            const matchEnd = position + operator.match.length;
+            // Ensure the operator is not a prefix of a longer identifier or keyword
             const isEndOfPattern = matchEnd >= input.length || !this.isAlphaNumeric(input[matchEnd]);
+            if (operator.match === "-") {
+              return operator;
+            }
             if (isEndOfPattern) {
-                return pattern;
+                return operator;
             }
         }
     }
-    return null; // No pattern matched
+    return null; // No operator matched
 }
 
 
@@ -143,7 +146,6 @@ export class Tokenizer {
         this.tokens.push({ type: TokenType.VAR, value: identifier });
         continue;
       }
-
       position++;
     }
     return this.tokens;
