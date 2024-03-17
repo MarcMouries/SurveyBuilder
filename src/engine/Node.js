@@ -86,6 +86,41 @@ export class BooleanNode extends Constant {
   }
 }
 
+export class UnaryExpression extends Expression {
+  constructor(operator, operand) {
+    super();
+    this.type = "UnaryExpression";
+    this.operator = operator;
+    this.operand = operand;
+  }
+
+  evaluate(context) {
+    const operandValue = this.operand.evaluate(context);
+    switch (this.operator) {
+      case "-":
+        return -operandValue;
+      case "!":
+        return !operandValue;
+      default:
+        throw new Error(`Unsupported unary operator ${this.operator}`);
+    }
+  }
+
+  summarize() {
+    return `${this.operator}${this.operand.summarize()}`;
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      operator: this.operator,
+      operand: this.operand.toJSON(),
+    };
+  }
+}
+
+
+
 export class BinaryExpression extends Expression {
   constructor(left, operator, right) {
     super();
@@ -130,14 +165,7 @@ export class BinaryExpression extends Expression {
   }
 }
 
-// export class isBetweenNode extends Operator {
-//   constructor(value, lower, upper) {
-//     super();
-//     this.lowerComparison = new Operator(value, ">=", lower);
-//     this.upperComparison = new Operator(value, "<=", upper);
-//     super(lowerComparison, upperComparison);
-//   }
-// }
+
 
 export class Logical extends Expression {
   constructor(left, right) {
@@ -153,3 +181,12 @@ export class Logical extends Expression {
     };
   }
 }
+
+// export class isBetweenNode extends Operator {
+//   constructor(value, lower, upper) {
+//     super();
+//     this.lowerComparison = new Operator(value, ">=", lower);
+//     this.upperComparison = new Operator(value, "<=", upper);
+//     super(lowerComparison, upperComparison);
+//   }
+// }
