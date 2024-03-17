@@ -17,7 +17,7 @@ export class Tokenizer {
     this.operators = [
       { match: "is between", type: "IS_BETWEEN", length: 10 },
       { match: "is not", type: TokenType.NOT_EQUAL, length: 6, value: "!=" },
-      { match: "is", type: TokenType.EQUALS, length: 2, value: "==" },
+      { match: "is ", type: TokenType.EQUALS, length: 3, value: "==" },
       { match: "==", type: TokenType.EQUALS, length: 2, value: "==" },
       { match: "=", type: TokenType.ASSIGN, length: 1 },
       { match: "!=", type: TokenType.NOT_EQUAL, length: 2 },
@@ -62,12 +62,13 @@ export class Tokenizer {
         // Check if the input at the current position starts with the operator match
         if (input.startsWith(operator.match, position)) {
             const matchEnd = position + operator.match.length;
-            // Ensure the operator is not a prefix of a longer identifier or keyword
-            const isEndOfPattern = matchEnd >= input.length || !this.isAlphaNumeric(input[matchEnd]);
-            if (operator.match === "-") {
+            if (matchEnd) {
               return operator;
             }
+            // Ensure the operator is not a prefix of a longer identifier or keyword
+            const isEndOfPattern = matchEnd >= input.length || !this.isAlphaNumeric(input[matchEnd]);
             if (isEndOfPattern) {
+              //console.log(`Operator '${operator.match}' found.`);
                 return operator;
             }
         }
