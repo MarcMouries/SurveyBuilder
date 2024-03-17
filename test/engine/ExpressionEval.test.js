@@ -1,6 +1,8 @@
 import { test, expect } from "bun:test";
 import { BooleanNode, BinaryExpression, NumberNode, VariableNode } from "../../src/engine/Node";
 
+import { Parser } from "../../src/engine/Parser";
+
 const context = {
   attending: true,
   days : 10,
@@ -69,6 +71,23 @@ test("Evaluate the expression 2^2", () => {
   expect(result).toBe(4);
 });
 
+test("Evaluate the expression 2^2", () => {
+  console.log("\nEvaluating the expression 2^2");
+  const parser = new Parser();
+  const expression = parser.parse("2^2");
+  const result = expression.evaluate({});
+  console.log(`Result: ${result}`);
+  expect(result).toBe(4);
+});
+test("Evaluate the expression 2*3^2", () => {
+  console.log("\nEvaluating the expression 2*3^2");
+  const parser = new Parser();
+  const expression = parser.parse("2*3^2");
+  const result = expression.evaluate({});
+  console.log(`Result: ${result}`);
+  expect(result).toBe(18);
+});
+
 // BMI formula
 /* 
 const context = {
@@ -76,6 +95,18 @@ const context = {
   height_in_meters: 1.75
 };
 */
+
+test("Evaluate the expression a*2", () => {
+  console.log("\nEvaluating the expression a*2");
+  const parser = new Parser();
+  const expression = parser.parse("a*2");
+  const context = {  a: 5 };
+  const result = expression.evaluate(context);
+  console.log(`Result: ${result}`);
+  expect(result).toBe(10);
+});
+
+
 const expression = new BinaryExpression(new NumberNode(1), "+", new NumberNode(2));
 console.log("expression --START ------");
 console.log(expression.toJSON());
