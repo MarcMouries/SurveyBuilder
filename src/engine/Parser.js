@@ -1,5 +1,5 @@
 import { BooleanNode, NumberNode, StringNode, VariableNode } from "./Node";
-import { UnaryExpression, BinaryExpression, GroupingExpression, Logical } from "./Node";
+import { AssignmentExpression, BinaryExpression, LogicalExpression, UnaryExpression } from "./Node";
 import { Tokenizer, TokenType } from "./Tokenizer";
 import { Logger } from "./Logger";
 
@@ -9,9 +9,9 @@ export class Parser {
   parse(input) {
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
-   // console.log("Tokens = ", tokens);
+    console.log("Tokens = ", tokens);
     let current = 0;
-    Logger.disableLogging();
+   Logger.disableLogging();
 
     function formatToken(token) {
       if (!token) return "end of input";
@@ -143,10 +143,33 @@ export class Parser {
       return expr; //new GroupingExpression(expr)
     }
 
+    const parseLogicalOr = () => {
+      let expr = parseLogicalAnd();
+
+      while (match("OR")) {
+        const operator = previous().value;
+        const right = parseLogicalAnd();
+        expr = new LogicalExpression(expr, operator, right);
+      }
+      return expr;
+    };
+
+    const parseLogicalAnd = () => {
+      let expr = parseEquality(); // Start from equality as it has higher precedence
+
+      while (match("AND")) {
+        const operator = previous().value;
+        const right = parseEquality();
+        expr = new LogicalExpression(expr, operator, right);
+      }
+      return expr;
+    };
+
+
     const parsePrimary = () => {
       Logger.logStart(`parsePrimary`);
       let result;
-      if (match(TokenType.NUMBER)) result = parseNumber( previous()); // Get the matched token without advancing again
+      if (match(TokenType.NUMBER)) result = parseNumber( previous());
       else if (match(TokenType.STRING)) result = parseString( previous() );
       else if (match(TokenType.BOOLEAN)) result = parseBoolean( previous() );
       else if (match(TokenType.VAR)) result = parseVariable( previous() );
@@ -177,7 +200,7 @@ export class Parser {
       // As long as there's an exponent operator, handle the exponentiation with right associativity
       while (match("^")) {
         Logger.log("Found exponentiation operator ^");
-        const operator = previous().value; // The operator we just matched
+        const operator = previous().value;
         const exponent = parseExponent(); // Recursively call parseExponent for right associativity
         base = new BinaryExpression(base, operator, exponent);
       }
@@ -227,12 +250,26 @@ export class Parser {
 
     const parseAssignment = () => {
       Logger.logStart(`parseAssignment`);
+      let expr = parseLogicalOr(); // Start with logical OR precedence
+
+      if (match("=")) {
+        const equals = previous();
+        const value = parseAssignment(); // Recursive call to handle chain assignments
+
+        if (expr instanceof VariableNode) {
+          return new AssignmentExpression(expr, value);
+        }
+
+        error(equals, "Invalid assignment target.");
+      }
       Logger.logEnd(`parseAssignment`);
+      return expr;
     }
+
 
     const parseExpression = () => {
       Logger.logStart(`parseExpression`);
-      const result = parseEquality();
+      const result = parseAssignment();
       Logger.logEnd(`parseExpression`);
       return result;
     };
@@ -250,7 +287,7 @@ export class Parser {
       return expr;
     };
 
-    return parseEquality();
+    return parseExpression();
   }
 }
 
@@ -258,13 +295,15 @@ export class Parser {
 const expression_list = [
   // "'toto'",
   // "5",
- // "-5",
+  //"-5",
+  //"2^3"
  //"5+2",
  //"3 * (5+2)",
   // "a",
-   "age=18",
+  //"age=18",
  //  "age==18",
  //  "age is 18",
+//"a and b",
 //   "true",
   // "false",
   // "age",
@@ -292,9 +331,8 @@ expression_list.forEach((expression) => {
   console.log(`\nParsing of expression: '${expression}'`);
   const parser = new Parser();
   const expressionNode = parser.parse(expression);
-  console.log(`expression: '${expression}' is`, expressionNode);
-
-  console.log(`The AST for the expression: '${expression}' is '${JSON.stringify(expressionNode, null, 2)}'`);
-  console.log(`AST : ${expressionNode.summarize()}`);
+  console.log(`1. expression: '${expression}' is`, expressionNode);
+  //console.log(`2. AST : ${expressionNode.summarize()}`);
+  console.log(`3. The AST for the expression: '${expression}' is '${JSON.stringify(expressionNode, null, 2)}'`);
   console.log(`Type of expressionNode: ${expressionNode.constructor.name}`);
 });
