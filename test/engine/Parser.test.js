@@ -50,23 +50,6 @@ const testCases = [
     }
   },
   {
-    expression_string: "age = 18",
-    expected: {
-      type: "BinaryExpression",
-      operator: "=",
-      left: {
-        type: "Variable",
-        name: "age"
-      },
-      right: {
-        type: "Number",
-        value: 18
-      }
-    }
-  },
-
-  ,
-  {
     expression_string: "10 + 2 * 5",
     expected:
     {
@@ -209,8 +192,51 @@ const testCases = [
         }
       }
     }
-  }
-  //
+  },
+  {
+    expression_string: "age = 18",
+    expected: {
+      type: "AssignmentExpression",
+      variable: {
+        type: "Variable",
+        name: "age",
+      },
+      value: {
+        type: "Number",
+        value: 18,
+      },
+    }
+  },
+  {
+    expression_string: "a and b",
+    expected: {
+      type: "LogicalExpression",
+      operator: "and",
+      left: {
+        type: "Variable",
+        name: "a",
+      },
+      right: {
+        type: "Variable",
+        name: "b",
+      },
+    }
+  },
+  {
+    expression_string: "a or b",
+    expected: {
+      type: "LogicalExpression",
+      operator: "or",
+      left: {
+        type: "Variable",
+        name: "a",
+      },
+      right: {
+        type: "Variable",
+        name: "b",
+      },
+    }
+  },
 
 
    
@@ -233,37 +259,38 @@ const testCases = [
   //     }
   //   }
   // }
-  // {
-  //   expression_string: "age > BABY_AGE and age < TODDLER_AGE",
-  //   expected: {
-  //     type: "LogicalAnd",
-  //     operator: "and",
-  //     left: {
-  //       type: "GreaterThan",
-  //       operator: ">",
-  //       left: {
-  //         type: "Variable",
-  //         name: "age"
-  //       },
-  //       right: {
-  //         type: "Variable",
-  //         name: "BABY_AGE"
-  //       }
-  //     },
-  //     right: {
-  //       type: "LessThan",
-  //       operator: "<",
-  //       left: {
-  //         type: "Variable",
-  //         name: "age"
-  //       },
-  //       right: {
-  //         type: "Variable",
-  //         name: "TODDLER_AGE"
-  //       }
-  //     }
-  //   }
-  // },
+
+  {
+    expression_string: "age > BABY_AGE and age < TODDLER_AGE",
+    expected: {
+      type: "LogicalExpression",
+      operator: "and",
+      left: {
+        type: "BinaryExpression",
+        operator: ">",
+        left: {
+          type: "Variable",
+          name: "age"
+        },
+        right: {
+          type: "Variable",
+          name: "BABY_AGE"
+        }
+      },
+      right: {
+        type: "BinaryExpression",
+        operator: "<",
+        left: {
+          type: "Variable",
+          name: "age"
+        },
+        right: {
+          type: "Variable",
+          name: "TODDLER_AGE"
+        }
+      }
+    }
+  },
 ];
 
 testCases.forEach(({ expression_string, expected }) => {
@@ -271,11 +298,8 @@ testCases.forEach(({ expression_string, expected }) => {
     const parser = new Parser();
     console.log(`\nParsing: : '${expression_string}'`);
     const expression = parser.parse(expression_string);
-    //console.log("expression = ", expression.toJSON())
-    console.log("expression = ", expression.summarize())
-
-   // const summary = expression.summarize();
-   // console.log("summary = " + summary)
+    console.log("expression = ", expression.toJSON())
+    console.log("summary = " + expression.summarize())
     expect(expression.toJSON()).toEqual(expected);
   });
 });
