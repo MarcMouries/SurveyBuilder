@@ -216,15 +216,22 @@ export class GroupingExpression extends Expression {
 }
 
 
-export class Logical extends Expression {
-  constructor(left, right) {
-    super("and", left, right);
+export class LogicalExpression extends Expression {
+  constructor(left, operator, right) {
+    super();
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+
+  summarize() {
+    return `${this.left.summarize()} ${this.operator} ${this.right.summarize()}`;
   }
 
   toJSON() {
     return {
-      type: "Logical",
-      operator: "and",
+      type: "LogicalExpression",
+      operator: this.operator,
       left: this.left.toJSON(),
       right: this.right.toJSON(),
     };
