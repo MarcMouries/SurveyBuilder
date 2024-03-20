@@ -9,6 +9,28 @@ const testCases = [
     }
   },
   {
+    expression_string: "'toto'",
+    expected: {
+      type: "String",
+      value: "toto"
+    }
+  },
+  {
+    expression_string: "true",
+    expected: {
+      type: "Boolean",
+      value: true
+    }
+  },
+  {
+    expression_string: "false",
+    expected: {
+      type: "Boolean",
+      value: false
+    }
+  },
+
+  {
     expression_string: "-18",
     expected: {
       type: "UnaryExpression",
@@ -19,19 +41,55 @@ const testCases = [
       },
     }
   },
-   {
+  {
     expression_string: "age",
     expected: {
       type: "Variable",
       name: "age"
     }
   },
- 
   {
-    expression_string: "true",
+    expression_string: "age == 18",
     expected: {
-      type: "Boolean",
-      value: true
+      type: "BinaryExpression",
+      operator: "==",
+      left: {
+        type: "Variable",
+        name: "age"
+      },
+      right: {
+        type: "Number",
+        value: 18
+      }
+    }
+  },
+  {
+    expression_string: "age is 18",
+    expected: {
+      type: "BinaryExpression",
+      operator: "==",
+      left: {
+        type: "Variable",
+        name: "age"
+      },
+      right: {
+        type: "Number",
+        value: 18
+      }
+    }
+  },
+  {
+    expression_string: "age = 18",
+    expected: {
+      type: "AssignmentExpression",
+      variable: {
+        type: "Variable",
+        name: "age",
+      },
+      value: {
+        type: "Number",
+        value: 18,
+      },
     }
   },
   {
@@ -106,7 +164,7 @@ const testCases = [
   },
   {
     expression_string: "2 ^ 3",
-    expected: 
+    expected:
     {
       "type": "BinaryExpression",
       "operator": "^",
@@ -122,7 +180,7 @@ const testCases = [
   },
   {
     expression_string: "2 * 3 ^ 2",
-    expected: 
+    expected:
     {
       "type": "BinaryExpression",
       "operator": "*",
@@ -147,26 +205,26 @@ const testCases = [
   {
     expression_string: "8 / 2 * 4",
     expected:
-     {
-         left: {
-           left: {
-             type: "Number",
-             value: 8,
-           },
-           operator: "/",
-           right: {
-             type: "Number",
-             value: 2,
-           },
-           type: "BinaryExpression",
-         },
-         operator: "*",
-         right: {
-           type: "Number",
-           value: 4,
-         },
-         type: "BinaryExpression",
-       }
+    {
+      left: {
+        left: {
+          type: "Number",
+          value: 8,
+        },
+        operator: "/",
+        right: {
+          type: "Number",
+          value: 2,
+        },
+        type: "BinaryExpression",
+      },
+      operator: "*",
+      right: {
+        type: "Number",
+        value: 4,
+      },
+      type: "BinaryExpression",
+    }
   },
 
   {
@@ -193,20 +251,7 @@ const testCases = [
       }
     }
   },
-  {
-    expression_string: "age = 18",
-    expected: {
-      type: "AssignmentExpression",
-      variable: {
-        type: "Variable",
-        name: "age",
-      },
-      value: {
-        type: "Number",
-        value: 18,
-      },
-    }
-  },
+
   {
     expression_string: "a and b",
     expected: {
@@ -237,29 +282,6 @@ const testCases = [
       },
     }
   },
-
-
-   
-  // {
-  //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
-  //   expected: {
-  //     type: "Between",
-  //     operator: "between",
-  //     left: {
-  //       type: "Variable",
-  //       name: "age"
-  //     },
-  //     middle: {
-  //       type: "Variable",
-  //       name: "TODDLER_AGE"
-  //     },
-  //     right: {
-  //       type: "Variable",
-  //       name: "MAJORITY_AGE"
-  //     }
-  //   }
-  // }
-
   {
     expression_string: "age > BABY_AGE and age < TODDLER_AGE",
     expected: {
@@ -291,7 +313,47 @@ const testCases = [
       }
     }
   },
+  // {
+  //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
+  //   expected: {
+  //     type: "Between",
+  //     operator: "between",
+  //     left: {
+  //       type: "Variable",
+  //       name: "age"
+  //     },
+  //     middle: {
+  //       type: "Variable",
+  //       name: "TODDLER_AGE"
+  //     },
+  //     right: {
+  //       type: "Variable",
+  //       name: "MAJORITY_AGE"
+  //     }
+  //   }
+  // },
+
+  // {
+  //   expression_string: "a = ",
+  //   expected: {
+  //   }
+  // }
+
+
 ];
+
+//   expect(() => tokenizer.parseTokens(test_error)).toThrow("Syntax error: unclosed string literal");
+
+
+/*
+//   "a = 1 + 2",
+//   "eligible = age > 18",
+//   
+//   "BMI = weight / height ^ 2",
+
+*/
+
+
 
 testCases.forEach(({ expression_string, expected }) => {
   test(`Testing '${expression_string}'`, () => {
@@ -302,4 +364,13 @@ testCases.forEach(({ expression_string, expected }) => {
     console.log("summary = " + expression.summarize())
     expect(expression.toJSON()).toEqual(expected);
   });
+});
+
+//Test for error handling: missing expression after '=' in assignment 
+const test_error = "a = ";
+test(`Parsing: '${test_error}'`, () => {
+  console.log(`\nParsing: : '${test_error}'`);
+  const parser = new Parser();
+ // parser.parse(test_error);
+  expect(() => parser.parse(test_error)).toThrow("Missing expression after '='");
 });
