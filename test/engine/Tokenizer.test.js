@@ -7,27 +7,32 @@ describe("Tokenizer Tests", () => {
     console.log(`\nTokenize: '${test_number}'`);
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(test_number);
-    expect(tokens).toEqual([{ type: TokenType.NUMBER, value: 42 }]);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.NUMBER, value: 42 }]);
   });
 
-   // Test for arithmetic operators
-    const test_arithmetic = "1 + 2 - 3 * 4 / 5";
-    test(`Tokenize: '${test_arithmetic}'`, () => {
-      console.log(`\nTokenize: '${test_arithmetic}'`);
-      const tokenizer = new Tokenizer();
-      const tokens = tokenizer.parseTokens(test_arithmetic);
-      expect(tokens).toEqual([
-        { type: TokenType.NUMBER, value: 1 },
-        { type: TokenType.OPERATOR, value: "+" },
-        { type: TokenType.NUMBER, value: 2 },
-        { type: TokenType.OPERATOR, value: "-" },
-        { type: TokenType.NUMBER, value: 3 },
-        { type: TokenType.OPERATOR, value: "*" },
-        { type: TokenType.NUMBER, value: 4 },
-        { type: TokenType.OPERATOR, value: "/" },
-        { type: TokenType.NUMBER, value: 5 }
-      ]);
-    });
+  // Test for arithmetic operators
+  const test_arithmetic = "1 + 2 - 3 * 4 / 5";
+  test(`Tokenize: '${test_arithmetic}'`, () => {
+    console.log(`\nTokenize: '${test_arithmetic}'`);
+    const tokenizer = new Tokenizer();
+    const tokens = tokenizer.parseTokens(test_arithmetic);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.NUMBER, value: 1 },
+    { type: TokenType.OPERATOR, value: "+" },
+    { type: TokenType.NUMBER, value: 2 },
+    { type: TokenType.OPERATOR, value: "-" },
+    { type: TokenType.NUMBER, value: 3 },
+    { type: TokenType.OPERATOR, value: "*" },
+    { type: TokenType.NUMBER, value: 4 },
+    { type: TokenType.OPERATOR, value: "/" },
+    { type: TokenType.NUMBER, value: 5 }
+    ]);
+  });
 
   // Test for logical operators
   const test_logical = "true and false";
@@ -35,10 +40,12 @@ describe("Tokenizer Tests", () => {
     console.log(`\nTokenize: : '${test_logical}'`);
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(test_logical);
-    expect(tokens).toEqual([
-      { type: TokenType.BOOLEAN, value: true },
-      { type: TokenType.AND, value: "and" },
-      { type: TokenType.BOOLEAN, value: false },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.BOOLEAN, value: true },
+    { type: TokenType.AND, value: "and" },
+    { type: TokenType.BOOLEAN, value: false },
     ]);
   });
 
@@ -54,23 +61,31 @@ describe("Tokenizer Tests", () => {
     const test_string = "'ok'";
     console.log(`\nTokenize: : '${test_string}'`);
     const tokens = new Tokenizer().parseTokens(test_string);
-    expect(tokens).toEqual([{ type: TokenType.STRING, value: "ok" }]);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.STRING, value: "ok" }]);
   });
 
   test("Tokenize: 'Object and Field' for 'Person.Name'", () => {
     const test_object_field = "Person.Name";
     const tokens = new Tokenizer().parseTokens(test_object_field);
-    expect(tokens).toEqual([{ type: TokenType.VAR, value: "Person.Name" }]);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Name" }]);
   });
 
   test("Tokenize: 'Person.Age is 18'", () => {
     const test_age_is = "Person.Age is 18";
     console.log(`\nTokenize: : '${test_age_is}'`);
     const tokens = new Tokenizer().parseTokens(test_age_is);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Age" },
-      { type: TokenType.EQUALS, value: "==" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
+    { type: TokenType.EQUALS, value: "==" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -78,10 +93,12 @@ describe("Tokenizer Tests", () => {
     const test_age_equal = "Person.Age = 18";
     console.log(`\nTokenize: : '${test_age_equal}'`);
     const tokens = new Tokenizer().parseTokens(test_age_equal);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Age" },
-      { type: TokenType.ASSIGN, value: "=" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
+    { type: TokenType.ASSIGN, value: "=" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -89,10 +106,12 @@ describe("Tokenizer Tests", () => {
     const test_inequality = "Age != 18";
     console.log(`\nTokenize: : '${test_inequality}'`);
     const tokens = new Tokenizer().parseTokens(test_inequality);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Age" },
-      { type: TokenType.NOT_EQUAL, value: "!=" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Age" },
+    { type: TokenType.NOT_EQUAL, value: "!=" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -100,10 +119,12 @@ describe("Tokenizer Tests", () => {
     const test_age_greater = "Person.Age > 18";
     console.log(`\nTokenize: : '${test_age_greater}'`);
     const tokens = new Tokenizer().parseTokens(test_age_greater);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Age" },
-      { type: TokenType.OPERATOR, value: ">" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
+    { type: TokenType.OPERATOR, value: ">" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -111,10 +132,12 @@ describe("Tokenizer Tests", () => {
     const test_age_lesser_equal = "Person.Age <= 18";
     console.log(`\nTokenize: : '${test_age_lesser_equal}'`);
     const tokens = new Tokenizer().parseTokens(test_age_lesser_equal);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Age" },
-      { type: TokenType.OPERATOR, value: "<=" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
+    { type: TokenType.OPERATOR, value: "<=" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -122,10 +145,12 @@ describe("Tokenizer Tests", () => {
     const test_age_greater_equal = "Person.Age >= 18";
     console.log(`\nTokenize: : '${test_age_greater_equal}'`);
     const tokens = new Tokenizer().parseTokens(test_age_greater_equal);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Age" },
-      { type: TokenType.OPERATOR, value: ">=" },
-      { type: TokenType.NUMBER, value: 18 },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
+    { type: TokenType.OPERATOR, value: ">=" },
+    { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -133,10 +158,12 @@ describe("Tokenizer Tests", () => {
     const test_var_is_string = "Person.Name is 'John'";
     console.log(`\nTokenize: : '${test_var_is_string}'`);
     const tokens = new Tokenizer().parseTokens(test_var_is_string);
-    expect(tokens).toEqual([
-      { type: TokenType.VAR, value: "Person.Name" },
-      { type: TokenType.EQUALS, value: "==" },
-      { type: TokenType.STRING, value: "John" },
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Name" },
+    { type: TokenType.EQUALS, value: "==" },
+    { type: TokenType.STRING, value: "John" },
     ]);
   });
 
@@ -153,7 +180,10 @@ describe("Tokenizer Tests", () => {
   test("Tokenize: 'isVisible is true'", () => {
     const test_is_true = "isVisible is true";
     const tokens = new Tokenizer().parseTokens(test_is_true);
-    expect(tokens).toEqual([
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([
       { type: TokenType.VAR, value: "isVisible" },
       { type: TokenType.EQUALS, value: "==" },
       { type: TokenType.BOOLEAN, value: true },
@@ -163,7 +193,10 @@ describe("Tokenizer Tests", () => {
   test("Tokenize: 'isVisible is true' (Object variable is true)", () => {
     const object_var_is_true = "isVisible is true";
     const tokens = new Tokenizer().parseTokens(object_var_is_true);
-    expect(tokens).toEqual([
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([
       { type: TokenType.VAR, value: "isVisible" },
       { type: TokenType.EQUALS, value: "==" },
       { type: TokenType.BOOLEAN, value: true },
@@ -172,8 +205,10 @@ describe("Tokenizer Tests", () => {
   test("Tokenize: 'is not' phrase", () => {
     const test_is_not = "isVisible is not true";
     const tokens = new Tokenizer().parseTokens(test_is_not);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(tokens).toEqual([
+    expect(simplifiedTokens).toEqual([
       { type: TokenType.VAR, value: "isVisible" },
       { type: TokenType.NOT_EQUAL, value: "!=" },
       { type: TokenType.BOOLEAN, value: true },
@@ -183,12 +218,24 @@ describe("Tokenizer Tests", () => {
   test("Tokenize: '2 - -3", () => {
     const test_minus = "2 - -3";
     const tokens = new Tokenizer().parseTokens(test_minus);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(tokens).toEqual([
+    expect(simplifiedTokens).toEqual([
       { type: TokenType.NUMBER, value: 2 },
       { type: TokenType.OPERATOR, value: "-" },
       { type: TokenType.OPERATOR, value: "-" },
       { type: TokenType.NUMBER, value: 3 },
+    ]);
+  });
+  test("Tokenize: '1+3", () => {
+    const test_minus = "1+3";
+    const tokens = new Tokenizer().parseTokens(test_minus);
+    console.log("TOKENS = ", tokens)
+    expect(tokens).toEqual([
+      { type: TokenType.NUMBER, value: 1, line: 1, column: 1 },
+      { type: TokenType.OPERATOR, value: "+", line: 1, column: 2 },
+      { type: TokenType.NUMBER, value: 3, line: 1, column: 3 },
     ]);
   });
 
