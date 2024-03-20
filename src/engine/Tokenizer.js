@@ -14,6 +14,7 @@ export const TokenType = {
 };
 export class Tokenizer {
   constructor() {
+
     this.operators = [
       { match: "is between", type: "IS_BETWEEN", length: 10 },
       { match: "is not", type: TokenType.NOT_EQUAL, length: 6, value: "!=" },
@@ -38,7 +39,6 @@ export class Tokenizer {
       { match: "<=", type: TokenType.OPERATOR, length: 2 },
       { match: ">", type: TokenType.OPERATOR, length: 1 },
       { match: "<", type: TokenType.OPERATOR, length: 1 },
-
     ];
     this.tokens = [];
   }
@@ -54,6 +54,7 @@ export class Tokenizer {
   isAlphaNumeric(char) {
     return this.isAlpha(char) || this.isDigit(char);
   }
+
 
   // checks that a matched operator or keyword is not just the prefix of a longer identifier 
   // that should be tokenized as a variable. 
@@ -78,15 +79,23 @@ export class Tokenizer {
 
 
   parseTokens(input) {
-    this.tokens = []; // Reset tokens for each call
+    this.tokens = [];
     let position = 0;
+    let column = 1; // Start columns at 1 for readability
+    let line = 1;
 
     while (position < input.length) {
       let char = input[position];
 
+      // New line 
+      if (char === '\n') {
+        line++;
+        column = 1;
+      }
+
       // Skip whitespace
       if (/\s/.test(char)) {
-        position++;
+        position++; column++;
         continue;
       }
 
@@ -94,18 +103,18 @@ export class Tokenizer {
       if (char === '"' || char === "'") {
         let endChar = char;
         let stringLiteral = "";
-        position++; // Move past the opening quote
+        position++; column++; // Move past the opening quote
         char = input[position];
 
         while (position < input.length && char !== endChar) {
           stringLiteral += char;
-          position++;
+          position++; column++;
           char = input[position];
         }
 
         if (char === endChar) {
-          this.tokens.push({ type: TokenType.STRING, value: stringLiteral });
-          position++; // Move past the closing quote
+          this.tokens.push({ type: TokenType.STRING, value: stringLiteral, line: line, column: column });
+          position++; column++; // Move past the closing quote
           continue;
         } else {
           throw new Error("Syntax error: unclosed string literal");
@@ -115,11 +124,13 @@ export class Tokenizer {
       // Number parsing
       if (this.isDigit(char)) {
         let number = "";
+        let startColumn = column;
         while (this.isDigit(char) || char === ".") {
           number += char;
-          char = input[++position];
+          position++; column++;
+          char = input[position];
         }
-        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number) });
+        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number) , line: line, column: startColumn });
         continue;
       }
 
@@ -127,13 +138,14 @@ export class Tokenizer {
       const operatorOrKeyword = this.findMatchingOperator(input, position);
       if (operatorOrKeyword) {
         if (operatorOrKeyword.match === "true" || operatorOrKeyword.match === "false") {
-          this.tokens.push({ type: TokenType.BOOLEAN, value: operatorOrKeyword.match === "true" });
+          this.tokens.push({ type: TokenType.BOOLEAN, value: operatorOrKeyword.match === "true", line: line, column: column });
         } else {
           // Use the 'value' property for operators like "is" and "is not"
           let tokenValue = operatorOrKeyword.value ? operatorOrKeyword.value : operatorOrKeyword.match;
-          this.tokens.push({ type: operatorOrKeyword.type, value: tokenValue });
+          this.tokens.push({ type: operatorOrKeyword.type, value: tokenValue , line: line, column: column });
         }
         position += operatorOrKeyword.length;
+        column += operatorOrKeyword.length;
         continue;
       }
 
@@ -142,12 +154,13 @@ export class Tokenizer {
         let identifier = "";
         while (this.isAlphaNumeric(char)) {
           identifier += char;
-          char = input[++position];
+          position++; column++;
+          char = input[position];
         }
-        this.tokens.push({ type: TokenType.VAR, value: identifier });
+        this.tokens.push({ type: TokenType.VAR, value: identifier, line: line, column: column });
         continue;
       }
-      position++;
+      position++; column++;
     }
     return this.tokens;
   }
