@@ -13,6 +13,7 @@ const context = {
    },
 };
 
+
 const objects= 
 [
   {
@@ -61,8 +62,6 @@ test("Evaluate BinaryExpression comparing variable 'days' is 10", () => {
 
 
 
-  // Construct the expression 2^2
-
 test("Evaluate the expression 2^2", () => {
   console.log("\nEvaluating the expression 2^2");
   const expression = new BinaryExpression(new NumberNode(2), '^', new NumberNode(2));
@@ -88,14 +87,6 @@ test("Evaluate the expression 2*3^2", () => {
   expect(result).toBe(18);
 });
 
-// BMI formula
-/* 
-const context = {
-  weight_in_kg: 68,
-  height_in_meters: 1.75
-};
-*/
-
 test("Evaluate the expression a*2", () => {
   console.log("\nEvaluating the expression a*2");
   const parser = new Parser();
@@ -120,11 +111,41 @@ test("Evaluate the expression '8 / (2 * 4)'", () => {
   console.log("\nEvaluating the expression '8 / (2 * 4)'");
   const parser = new Parser();
   const expression = parser.parse("8 / (2 * 4)");
-
   const result = expression.evaluate();
   console.log(`Result: ${result}`);
   expect(result).toBe(1);
 });
+
+
+// BMI formula
+test("BMI Formula in metric units: weight ÷ height²", () => {
+  console.log("\nBMI Formula in metric units: weight ÷ height²");
+  const context = {
+    weight_kg: 75,
+    height_mt: 1.75
+  };
+  const parser = new Parser();
+  const expression = parser.parse("weight_kg / height_mt^2");
+  const result = expression.evaluate(context);
+  console.log(`Result: ${result}`);
+  expect(result).toBe(24.489795918367346);
+});
+
+// Pythagorean equation: a² + b² = c²
+// if a = 3 and b = 4
+// c = (a^2 + b^2)^0.5
+test("Pythagorean equation: a² + b² = c²", () => {
+  console.log("\nPythagorean equation: a² + b² = c²");
+  const context = { a: 3, b: 4 };
+  const parser = new Parser();
+  const expression = parser.parse("c = a^2 + b^2");
+  const result = expression.evaluate(context);
+  console.log(`Result: ${result}`);
+  console.log(`context: ${context}`);
+  expect(result).toBe(25);
+});
+
+
 
 
 const expression = new BinaryExpression(new NumberNode(1), "+", new NumberNode(2));
