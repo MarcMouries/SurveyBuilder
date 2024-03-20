@@ -1,23 +1,19 @@
 /* Represents an Abstract Syntax Tree expression */
 export class Expression {
-  constructor(value) {
-    this.value = value;
-  }
+
   evaluate(context) {
     throw new Error("Must implement evaluate method in subclass");
   }
 }
 
-export class Operand extends Expression {}
-
-export class VariableNode extends Operand {
+export class VariableNode extends Expression {
   constructor(name) {
     super(name);
     this.name = name;
   }
   evaluate(context) {
     console.log(`VariableNode.evaluate(): Looking for value of '${this.name}' within context: `, context);
-    const parts = this.value.split(".");
+    const parts = this.name.split(".");
     let currentValue = context;
 
     for (const part of parts) {
@@ -40,9 +36,11 @@ export class VariableNode extends Operand {
   }
 }
 
-export class Constant extends Operand {
+export class Constant extends Expression {
   constructor(value) {
-    super(value);
+    super();
+    this.value = value;
+
   }
   evaluate(context) {
     return this.value;
@@ -139,6 +137,7 @@ export class BinaryExpression extends Expression {
       case "*":
         return leftVal * rightVal;
       case "/":
+        if (rightVal === 0) throw new Error("Division by zero");
         return leftVal / rightVal;
       case ">":
         return leftVal > rightVal;
