@@ -9,9 +9,8 @@ export class Parser {
   parse(input) {
     const tokenizer = new Tokenizer();
     const tokens = tokenizer.parseTokens(input);
-    console.log("Tokens = ", tokens);
     let current = 0;
-   Logger.disableLogging();
+    Logger.disableLogging();
 
     function formatToken(token) {
       if (!token) return "end of input";
@@ -136,6 +135,9 @@ export class Parser {
       Logger.logStart(`Parsing GROUP at position: ${current}`);
       //consume("LPAREN", "Expect '(' to start group.");
       let expr = parseExpression();
+      if (expr === null) {
+        throw new Error("Expect expression within parentheses.");
+      }
       consume("RPAREN", "Expect ')' after expression.");
       Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
       Logger.logEnd(`Parsing GROUP at position: ${current}`);
@@ -168,7 +170,7 @@ export class Parser {
 
     const parsePrimary = () => {
       Logger.logStart(`parsePrimary`);
-      let result;
+      let result = null;
       if (match(TokenType.NUMBER)) result = parseNumber( previous());
       else if (match(TokenType.STRING)) result = parseString( previous() );
       else if (match(TokenType.BOOLEAN)) result = parseBoolean( previous() );
@@ -255,6 +257,10 @@ export class Parser {
       if (match("=")) {
         const equals = previous();
         const value = parseAssignment(); // Recursive call to handle chain assignments
+        if (value === null) {
+          throw new Error(`Missing expression after '='`); 
+          // at ${equals.line}:${equals.column}`);
+        }
 
         if (expr instanceof VariableNode) {
           return new AssignmentExpression(expr, value);
@@ -293,38 +299,21 @@ export class Parser {
 
 //Testing the improved parser with the expression list
 const expression_list = [
-  // "'toto'",
-  // "5",
-  //"-5",
-  //"2^3"
- //"5+2",
- //"3 * (5+2)",
-  // "a",
-  //"age=18",
- //  "age==18",
- //  "age is 18",
-//"a and b",
-//   "true",
-  // "false",
-  // "age",
-  // "1 + 2",
-  // "a = 1 + 2",
-  //"eligible = age > 18",
-  //"2*3^2",
-  //"weight / height ^ 2",
-  //"a > b",
-  //"a > 18",
-  // "10 + 2 * 5",
-  // "10 - 2 + 5",
-  //  "MAJORITY_AGE",
-  //  "age = MAJORITY_AGE",
-  //   "age is MAJORITY_AGE",
-  //'age is between TODDLER_AGE and MAJORITY_AGE',
-  // "(age > BABY_AGE) and (age < TODDLER_AGE)",
-  //   "age is between TODDLER_AGE and MAJORITY_AGE",
-  // "a + b * c == 200",
-  //"a = ",
-  //  "a + b * c =="
+
+//  "a = "
+
+// "a and b",
+//   "1 + 2",
+//   "a > b",
+//   "10 + 2 * 5",
+//   "10 - 2 + 5",
+//    "age = MAJORITY_AGE",
+//     "age is MAJORITY_AGE",
+//   'age is between TODDLER_AGE and MAJORITY_AGE',
+//   "(age > BABY_AGE) and (age < TODDLER_AGE)",
+//     "age is between TODDLER_AGE and MAJORITY_AGE",
+//   "a + b * c == 200",
+//    "a + b * c =="
 ];
 
 expression_list.forEach((expression) => {
