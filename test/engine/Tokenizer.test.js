@@ -1,6 +1,6 @@
 import { Tokenizer, TokenType } from "../../src/engine/Tokenizer";
 
-describe("Tokenizer Tests", () => {
+//describe("Tokenizer Tests", () => {
   // Test for numeric values
   const test_number = "42";
   test(`Tokenize: '${test_number}'`, () => {
@@ -11,6 +11,17 @@ describe("Tokenizer Tests", () => {
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
     expect(simplifiedTokens).toEqual([{ type: TokenType.NUMBER, value: 42 }]);
+  });
+
+  const test_float = "37.2";
+  test(`Tokenize: '${test_float}'`, () => {
+    console.log(`\nTokenize: '${test_float}'`);
+    const tokenizer = new Tokenizer();
+    const tokens = tokenizer.parseTokens(test_float);
+    // Transform tokens to only include type and value properties
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    console.log("TOKENS = ", tokens)
+    expect(simplifiedTokens).toEqual([{ type: TokenType.NUMBER, value: 37.2 }]);
   });
 
   // Test for arithmetic operators
@@ -72,8 +83,12 @@ describe("Tokenizer Tests", () => {
     const tokens = new Tokenizer().parseTokens(test_object_field);
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
-    console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Name" }]);
+    console.log("TOKENS = ", simplifiedTokens)
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Name" },
+    ]);
   });
 
   test("Tokenize: 'Person.Age is 18'", () => {
@@ -83,9 +98,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
-    { type: TokenType.EQUALS, value: "==" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.EQUALS, value: "==" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -96,9 +114,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
-    { type: TokenType.ASSIGN, value: "=" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.ASSIGN, value: "=" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -109,9 +130,10 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Age" },
-    { type: TokenType.NOT_EQUAL, value: "!=" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.NOT_EQUAL, value: "!=" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -122,9 +144,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
-    { type: TokenType.OPERATOR, value: ">" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.OPERATOR, value: ">" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -135,9 +160,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
-    { type: TokenType.OPERATOR, value: "<=" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.OPERATOR, value: "<=" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -148,9 +176,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Age" },
-    { type: TokenType.OPERATOR, value: ">=" },
-    { type: TokenType.NUMBER, value: 18 },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Age" },
+      { type: TokenType.OPERATOR, value: ">=" },
+      { type: TokenType.NUMBER, value: 18 },
     ]);
   });
 
@@ -161,9 +192,12 @@ describe("Tokenizer Tests", () => {
     // Transform tokens to only include type and value properties
     const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
     console.log("TOKENS = ", tokens)
-    expect(simplifiedTokens).toEqual([{ type: TokenType.VAR, value: "Person.Name" },
-    { type: TokenType.EQUALS, value: "==" },
-    { type: TokenType.STRING, value: "John" },
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.VAR, value: "Person" },
+      { type: TokenType.DOT, value: "." },
+      { type: TokenType.VAR, value: "Name" },
+      { type: TokenType.EQUALS, value: "==" },
+      { type: TokenType.STRING, value: "John" },
     ]);
   });
 
@@ -202,6 +236,7 @@ describe("Tokenizer Tests", () => {
       { type: TokenType.BOOLEAN, value: true },
     ]);
   });
+
   test("Tokenize: 'is not' phrase", () => {
     const test_is_not = "isVisible is not true";
     const tokens = new Tokenizer().parseTokens(test_is_not);
@@ -228,6 +263,7 @@ describe("Tokenizer Tests", () => {
       { type: TokenType.NUMBER, value: 3 },
     ]);
   });
+
   test("Tokenize: '1+3", () => {
     const test_minus = "1+3";
     const tokens = new Tokenizer().parseTokens(test_minus);
@@ -239,19 +275,20 @@ describe("Tokenizer Tests", () => {
     ]);
   });
 
-  // Test for combined operators and variables
-  // const test_combined = "(age + 10) >= 65";
-  // test(`Tokenize: '${test_combined}'`, () => {
-  //   console.log(`\nTokenize: : '${test_combined}'`);
-  //   const tokenizer = new Tokenizer();
-  //   const tokens = tokenizer.parseTokens(test_combined);
-  //   expect(tokens).toEqual([
-  //     { type: TokenType.LPAREN, value: "(" },
-  //     { type: TokenType.VAR, value: "age" },
-  //     { type: TokenType.OPERATOR, value: "+" },
-  //     { type: TokenType.NUMBER, value: 10 },
-  //     { type: TokenType.RPAREN, value: ")" },
-  //     { type: TokenType.GREATER_THAN_EQUAL, value: ">=" },
-  //     { type: TokenType.NUMBER, value: 65 },
-  //   ]);
-});
+  //Test for combined operators and variables
+  const test_combined = "(age + 10) >= 65";
+  test(`Tokenize: '${test_combined}'`, () => {
+    console.log(`\nTokenize: : '${test_combined}'`);
+    const tokenizer = new Tokenizer();
+    const tokens = tokenizer.parseTokens(test_combined);
+    const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+    expect(simplifiedTokens).toEqual([
+      { type: TokenType.LPAREN, value: "(" },
+      { type: TokenType.VAR, value: "age" },
+      { type: TokenType.OPERATOR, value: "+" },
+      { type: TokenType.NUMBER, value: 10 },
+      { type: TokenType.RPAREN, value: ")" },
+      { type: TokenType.OPERATOR, value: ">=" },
+      { type: TokenType.NUMBER, value: 65 },
+    ]);
+  });

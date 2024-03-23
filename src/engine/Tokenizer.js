@@ -11,10 +11,11 @@ export const TokenType = {
   OR: "OR",
   LPAREN: "LPAREN",
   RPAREN: "RPAREN",
+  DOT: "DOT"
 };
+
 export class Tokenizer {
   constructor() {
-
     this.operators = [
       { match: "is between", type: "IS_BETWEEN", length: 10 },
       { match: "is not", type: TokenType.NOT_EQUAL, length: 6, value: "!=" },
@@ -29,9 +30,9 @@ export class Tokenizer {
       { match: "false", type: "BOOLEAN", length: 5 },
       { match: "+", type: TokenType.OPERATOR, length: 1 },
       { match: "-", type: TokenType.OPERATOR, length: 1, value : "-" },
-      { match: "*", type: TokenType.OPERATOR, length: 1 },
-      { match: "/", type: TokenType.OPERATOR, length: 1 },
-      { match: "^", type: TokenType.OPERATOR, length: 1 },
+      { match: "*", type: TokenType.OPERATOR, length: 1, value : "*" },
+      { match: "/", type: TokenType.OPERATOR, length: 1, value : "/" },
+      { match: "^", type: TokenType.OPERATOR, length: 1, value : "^" },
       { match: "(", type: "LPAREN", length: 1 },
       { match: ")", type: "RPAREN", length: 1 },
       { match: ",", type: ",", length: 1 },
@@ -39,6 +40,7 @@ export class Tokenizer {
       { match: "<=", type: TokenType.OPERATOR, length: 2 },
       { match: ">", type: TokenType.OPERATOR, length: 1 },
       { match: "<", type: TokenType.OPERATOR, length: 1 },
+      { match: ".", type: TokenType.DOT, length: 1 },
     ];
     this.tokens = [];
   }
@@ -48,7 +50,9 @@ export class Tokenizer {
   }
 
   isAlpha(char) {
-    return (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") || char === "_" || char === ".";
+    return (char >= "a" && char <= "z")
+     || (char >= "A" && char <= "Z")
+     || char === "_" ;// || char === ".";
   }
 
   isAlphaNumeric(char) {
