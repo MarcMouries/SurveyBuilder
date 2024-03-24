@@ -18,7 +18,7 @@ export class ASTtoString implements ASTNodeVisitor {
   }
 
   visitBinaryExpression(node: BinaryExpression): string {
-    return `${node.left.accept(this)} ${node.operator} ${node.right.accept(this)}`;
+    return `(${node.left.accept(this)} ${node.operator} ${node.right.accept(this)})`;
   }
 
   visitBooleanNode(node: BooleanNode): boolean {
