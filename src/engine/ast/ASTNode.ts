@@ -34,13 +34,13 @@ export class LogicalExpression implements ASTNode {
   }
 }
 
-export class VariableNode implements ASTNode {
+export class Identifier implements ASTNode {
   name: string;
   constructor(name: string) {
     this.name = name;
   }
   accept(visitor: ASTNodeVisitor): void {
-    return visitor.visitVariableNode(this);
+    return visitor.visitIdentifier(this);
   }
 }
 
@@ -100,9 +100,9 @@ export class GroupingExpression implements ASTNode {
 
 export class MemberExpression implements ASTNode {
   object: ASTNode; 
-  property: VariableNode;
+  property: Identifier;
 
-  constructor(object: ASTNode, property: VariableNode) {
+  constructor(object: ASTNode, property: Identifier) {
     this.object = object;
     this.property = property;
   }
