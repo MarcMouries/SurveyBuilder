@@ -1,6 +1,6 @@
 import type {
-  AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
-  LogicalExpression, MemberExpression, NumberNode, StringNode, UnaryExpression, VariableNode
+  AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,Identifier,
+  LogicalExpression, MemberExpression, NumberNode, StringNode, UnaryExpression 
 } from "./ASTNode";
 
 export interface ASTNodeVisitor {
@@ -9,9 +9,9 @@ export interface ASTNodeVisitor {
   visitBinaryExpression(node: BinaryExpression): void;
   visitBooleanNode(node: BooleanNode): void;
   visitGroupingExpression(node: GroupingExpression): void;
+  visitIdentifier(node: Identifier): void;
   visitLogicalExpression(node: LogicalExpression): void;
   visitNumberNode(node: NumberNode): void;
   visitStringNode(node: StringNode): void;
   visitUnaryExpression(node: UnaryExpression): void;
-  visitVariableNode(node: VariableNode): void;
 }

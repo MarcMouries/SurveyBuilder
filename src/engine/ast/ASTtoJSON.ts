@@ -1,7 +1,7 @@
 import type { ASTNodeVisitor } from './ASTNodeVisitor';
 import type {
     ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
-    LogicalExpression, MemberExpression, NumberNode, StringNode, UnaryExpression, VariableNode
+    LogicalExpression, MemberExpression, NumberNode, StringNode, UnaryExpression, Identifier
   } from "./ASTNode";
 
 export class ASTtoJSON implements ASTNodeVisitor {
@@ -63,7 +63,7 @@ export class ASTtoJSON implements ASTNodeVisitor {
             operand: node.operand.accept(this),
         };
     }
-    visitVariableNode(node: VariableNode): any {
+    visitIdentifier(node: Identifier): any {
         return {
             type: "Identifier",
             name: node.name,
