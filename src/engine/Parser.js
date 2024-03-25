@@ -1,10 +1,14 @@
-import { BooleanNode, NumberNode, StringNode, VariableNode } from "./Node";
-import { AssignmentExpression, BinaryExpression, LogicalExpression, UnaryExpression } from "./Node";
+import {
+  BooleanNode, NumberNode, StringNode, Identifier,
+  AssignmentExpression, BinaryExpression, GroupingExpression, 
+  LogicalExpression, MemberExpression, UnaryExpression
+//} from "./Node";
+} from "./ast/ASTNode";
 import { Tokenizer, TokenType } from "./Tokenizer";
 import { Logger } from "./Logger";
 
 export class Parser {
-  constructor() {}
+  constructor() { }
 
   parse(input) {
     const tokenizer = new Tokenizer();
@@ -68,8 +72,8 @@ export class Parser {
       const nextToken = peek();
       let matchFound = expected.includes(nextToken.type) || expected.includes(nextToken.value);
 
-     //Logger.log(`Does Next token ${formatToken(nextToken)} match [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
-      
+      //Logger.log(`Does Next token ${formatToken(nextToken)} match [${expected.join(", ")}]: ${matchFound ? "YES" : "NO"}`);
+
       return matchFound;
     };
 
@@ -128,7 +132,7 @@ export class Parser {
       Logger.logStart(`parseVariable: token #${current} of type VAR with value: ${token.value}`);
       //const token = consume("VAR", "expect a variable.");
       Logger.logEnd(`Parsing VAR token at position: ${current}`);
-      return new VariableNode(token.value);
+      return new Identifier(token.value);
     };
 
     function parseGroup() {
@@ -142,7 +146,7 @@ export class Parser {
       Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
       Logger.logEnd(`Parsing GROUP at position: ${current}`);
 
-      return expr; //new GroupingExpression(expr)
+      return new GroupingExpression(expr);
     }
 
     const parseLogicalOr = () => {
@@ -171,11 +175,17 @@ export class Parser {
     const parsePrimary = () => {
       Logger.logStart(`parsePrimary`);
       let result = null;
-      if (match(TokenType.NUMBER)) result = parseNumber( previous());
-      else if (match(TokenType.STRING)) result = parseString( previous() );
-      else if (match(TokenType.BOOLEAN)) result = parseBoolean( previous() );
-      else if (match(TokenType.VAR)) result = parseVariable( previous() );
+      if (match(TokenType.NUMBER)) result = parseNumber(previous());
+      else if (match(TokenType.STRING)) result = parseString(previous());
+      else if (match(TokenType.BOOLEAN)) result = parseBoolean(previous());
       else if (match(TokenType.LPAREN)) result = parseGroup();
+      else if (match(TokenType.VAR)) 
+        result = parseVariable(previous());
+        if (match(".")) { // Handle dot notation for properties
+          const property = consume(TokenType.VAR, "Expect property name after '.'.");
+          result = new MemberExpression(result, new Identifier(property.value));
+        }
+
       Logger.logEnd(`parsePrimary`);
       return result;
     };
@@ -187,8 +197,12 @@ export class Parser {
         Logger.log(`Matched + or -: ${previous().type}`);
         const operator = previous().value; // Operator matched by match()
         const right = parseFactor();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}' ` );
+          // at ${equals.line}:${equals.column}`);
+        }
         expr = new BinaryExpression(expr, operator, right);
-        Logger.log(`Constructed BinaryExpression: ${expr.summarize()}`);
+        //Logger.log(`Constructed BinaryExpression: ${expr.summarize()}`);
       }
       Logger.logEnd(`Completed parsing term`);
       return expr;
@@ -204,9 +218,12 @@ export class Parser {
         Logger.log("Found exponentiation operator ^");
         const operator = previous().value;
         const exponent = parseExponent(); // Recursively call parseExponent for right associativity
+        if (exponent === null) {
+          throw new Error(`Missing exponent after '${operator}'`);
+          // at ${equals.line}:${equals.column}`);
+        }
         base = new BinaryExpression(base, operator, exponent);
       }
-
       Logger.logEnd("Parsed exponentiation operation");
       return base;
     };
@@ -219,6 +236,10 @@ export class Parser {
       while (match("*", "/")) {
         const operator = previous().value;
         const right = parseExponent(); // Parse the right operand which could itself be an exponentiation
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+          // at ${equals.line}:${equals.column}`);
+        }
         expr = new BinaryExpression(expr, operator, right);
       }
 
@@ -243,6 +264,10 @@ export class Parser {
       while (match("==", "!=")) {
         const operator = previous().value;
         const right = parseComparison();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+          // at ${equals.line}:${equals.column}`);
+        }
         expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`parseEquality`);
@@ -258,13 +283,18 @@ export class Parser {
         const equals = previous();
         const value = parseAssignment(); // Recursive call to handle chain assignments
         if (value === null) {
-          throw new Error(`Missing expression after '='`); 
+          throw new Error(`Missing expression after '='`);
           // at ${equals.line}:${equals.column}`);
         }
 
-        if (expr instanceof VariableNode) {
+
+        if (expr instanceof Identifier) {
           return new AssignmentExpression(expr, value);
         }
+        if (expr instanceof MemberExpression) {
+          return new AssignmentExpression(expr, value);
+        }
+        
 
         error(equals, "Invalid assignment target.");
       }
@@ -287,6 +317,10 @@ export class Parser {
       while (match(">", ">=", "<", "<=")) {
         const operator = previous().value;
         const right = parseTerm();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+          // at ${equals.line}:${equals.column}`);
+        }
         expr = new BinaryExpression(expr, operator, right);
       }
       Logger.logEnd(`parseComparison`);
@@ -300,20 +334,20 @@ export class Parser {
 //Testing the improved parser with the expression list
 const expression_list = [
 
-//  "a = "
+  //  "a = "
 
-// "a and b",
-//   "1 + 2",
-//   "a > b",
-//   "10 + 2 * 5",
-//   "10 - 2 + 5",
-//    "age = MAJORITY_AGE",
-//     "age is MAJORITY_AGE",
-//   'age is between TODDLER_AGE and MAJORITY_AGE',
-//   "(age > BABY_AGE) and (age < TODDLER_AGE)",
-//     "age is between TODDLER_AGE and MAJORITY_AGE",
-//   "a + b * c == 200",
-//    "a + b * c =="
+  // "a and b",
+  //   "1 + 2",
+  //   "a > b",
+  //   "10 + 2 * 5",
+  //   "10 - 2 + 5",
+  //    "age = MAJORITY_AGE",
+  //     "age is MAJORITY_AGE",
+  //   'age is between TODDLER_AGE and MAJORITY_AGE',
+  //   "(age > BABY_AGE) and (age < TODDLER_AGE)",
+  //     "age is between TODDLER_AGE and MAJORITY_AGE",
+  //   "a + b * c == 200",
+  //    "a + b * c =="
 ];
 
 expression_list.forEach((expression) => {
