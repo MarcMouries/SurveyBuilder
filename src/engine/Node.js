@@ -6,13 +6,13 @@ export class Expression {
   }
 }
 
-export class VariableNode extends Expression {
+export class Identifier extends Expression {
   constructor(name) {
     super(name);
     this.name = name;
   }
   evaluate(context) {
-    console.log(`VariableNode.evaluate(): Looking for value of '${this.name}' within context: `, context);
+    console.log(`Identifier.evaluate(): Looking for value of '${this.name}' within context: `, context);
     const parts = this.name.split(".");
     let currentValue = context;
 
@@ -20,12 +20,12 @@ export class VariableNode extends Expression {
       if (currentValue.hasOwnProperty(part)) {
         currentValue = currentValue[part];
       } else {
-        console.error(`VariableNode.evaluate(): Variable or property ${part} not found in context`);
+        console.error(`Identifier.evaluate(): Variable or property ${part} not found in context`);
         return undefined; // or throw an error based on your error handling strategy
       }
     }
     const valueDisplay = currentValue === null ? 'null' : currentValue;
-    console.log(`VariableNode.evaluate(): Found variable '${this.name}' with value ${valueDisplay}`);
+    console.log(`Identifier.evaluate(): Found variable '${this.name}' with value ${valueDisplay}`);
     return currentValue;
   }
   summarize() {
