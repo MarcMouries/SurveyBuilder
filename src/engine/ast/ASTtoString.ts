@@ -1,7 +1,7 @@
 import type { ASTNodeVisitor } from './ASTNodeVisitor';
 import type { ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression, LogicalExpression, MemberExpression }
   from "./ASTNode";
-import type { NumberNode, StringNode, UnaryExpression, VariableNode } from "./ASTNode";
+import type { NumberNode, StringNode, UnaryExpression, Identifier } from "./ASTNode";
 
 export class ASTtoString implements ASTNodeVisitor {
 
@@ -18,7 +18,9 @@ export class ASTtoString implements ASTNodeVisitor {
   }
 
   visitBinaryExpression(node: BinaryExpression): string {
-    return `(${node.left.accept(this)} ${node.operator} ${node.right.accept(this)})`;
+    const left = node.left.accept(this);
+    const right = node.right.accept(this);
+    return `(${left} ${node.operator} ${right})`;
   }
 
   visitBooleanNode(node: BooleanNode): boolean {
@@ -26,7 +28,7 @@ export class ASTtoString implements ASTNodeVisitor {
   }
 
   visitGroupingExpression(node: GroupingExpression): string {
-    return `(${node.expression.accept(this)})`;
+    return `${node.expression.accept(this)}`;
   }
 
   visitLogicalExpression(node: LogicalExpression): string {
@@ -42,7 +44,7 @@ export class ASTtoString implements ASTNodeVisitor {
   visitStringNode(node: StringNode): string {
     return `"${node.value}"`;
   }
-  visitVariableNode(node: VariableNode): string {
+  visitIdentifier(node: Identifier): string {
     return node.name;
   }
   visitUnaryExpression(node: UnaryExpression): string {
