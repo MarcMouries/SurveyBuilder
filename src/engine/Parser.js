@@ -15,6 +15,7 @@ export class Parser {
     const tokens = tokenizer.parseTokens(input);
     let current = 0;
     Logger.disableLogging();
+    //console.log(tokens);
 
     function formatToken(token) {
       if (!token) return "end of input";
@@ -128,10 +129,10 @@ export class Parser {
       return new StringNode(token.value);
     };
 
-    const parseVariable = (token) => {
-      Logger.logStart(`parseVariable: token #${current} of type VAR with value: ${token.value}`);
-      //const token = consume("VAR", "expect a variable.");
-      Logger.logEnd(`Parsing VAR token at position: ${current}`);
+    const parseIdentifier = (token) => {
+      Logger.logStart(`parseIdentifier: token #${current} of type IDENTIFIER with value: ${token.value}`);
+      //const token = consume("IDENTIFIER", "expect a Identifier.");
+      Logger.logEnd(`Parsing IDENTIFIER token at position: ${current}`);
       return new Identifier(token.value);
     };
 
@@ -179,10 +180,12 @@ export class Parser {
       else if (match(TokenType.STRING)) result = parseString(previous());
       else if (match(TokenType.BOOLEAN)) result = parseBoolean(previous());
       else if (match(TokenType.LPAREN)) result = parseGroup();
-      else if (match(TokenType.VAR)) 
-        result = parseVariable(previous());
-        if (match(".")) { // Handle dot notation for properties
-          const property = consume(TokenType.VAR, "Expect property name after '.'.");
+      else if (match(TokenType.IDENTIFIER)) 
+        result = parseIdentifier(previous());
+        while (match(".")) {
+          consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+          const property = previous();
+//          const property = consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
           result = new MemberExpression(result, new Identifier(property.value));
         }
 

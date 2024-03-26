@@ -2,10 +2,10 @@ export const TokenType = {
   NUMBER: "NUMBER",
   STRING: "STRING",
   BOOLEAN: "BOOLEAN",
-  VAR: "VAR",
+  IDENTIFIER: "IDENTIFIER",
   OPERATOR: "OP",
   EQUALS: "EQUALS",
-  NOT_EQUAL : "NOT_EQUAL",
+  NOT_EQUAL: "NOT_EQUAL",
   ASSIGN: "ASSIGN",
   AND: "AND",
   OR: "OR",
@@ -16,32 +16,41 @@ export const TokenType = {
 
 export class Tokenizer {
   constructor() {
-    this.operators = [
-      { match: "is between", type: "IS_BETWEEN", length: 10 },
-      { match: "is not", type: TokenType.NOT_EQUAL, length: 6, value: "!=" },
-      { match: "is ", type: TokenType.EQUALS, length: 3, value: "==" },
-      { match: "==", type: TokenType.EQUALS, length: 2, value: "==" },
-      { match: "=", type: TokenType.ASSIGN, length: 1 },
-      { match: "!=", type: TokenType.NOT_EQUAL, length: 2 },
-      { match: "and", type: "AND", length: 3 },
-      { match: "or", type: "OR", length: 2 },
-      { match: "not", type: "NOT", length: 3 },
+
+    //Operators that don't require Whitespace separation:
+    this.compactOperators = [
+      { match: "==", type: TokenType.EQUALS, value: "==" },
+      { match: "=", type: TokenType.ASSIGN, value: "=" },
+      { match: "!=", type: TokenType.NOT_EQUAL, value: "!=" },
+      { match: "+", type: TokenType.OPERATOR, value: "+" },
+      { match: "-", type: TokenType.OPERATOR, value: "-" },
+      { match: "*", type: TokenType.OPERATOR, value: "*" },
+      { match: "/", type: TokenType.OPERATOR, value: "/" },
+      { match: "^", type: TokenType.OPERATOR, value: "^" },
+      { match: "(", type: "LPAREN", value: "(" },
+      { match: ")", type: "RPAREN", value: ")" },
+      { match: ",", type: ",", value: "," },
+      { match: ">=", type: TokenType.OPERATOR, value: ">=" },
+      { match: "<=", type: TokenType.OPERATOR, value: "<=" },
+      { match: ">", type: TokenType.OPERATOR, value: ">" },
+      { match: "<", type: TokenType.OPERATOR, value: "<" },
+      { match: ".", type: TokenType.DOT, value: "." },
+    ];
+
+    this.spaceSensitiveKeywords = [
+      { match: "and", type: "AND" },
+      { match: "or", type: "OR" },
+      { match: "not", type: "NOT" },
+      { match: "is between", type: "IS_BETWEEN" },
+      { match: "is not", type: TokenType.NOT_EQUAL, value: "!=" },
+      { match: "is", type: TokenType.EQUALS, value: "==" },
+    ];
+
+    this.booleans = [
       { match: "true", type: "BOOLEAN", length: 4 },
       { match: "false", type: "BOOLEAN", length: 5 },
-      { match: "+", type: TokenType.OPERATOR, length: 1 },
-      { match: "-", type: TokenType.OPERATOR, length: 1, value : "-" },
-      { match: "*", type: TokenType.OPERATOR, length: 1, value : "*" },
-      { match: "/", type: TokenType.OPERATOR, length: 1, value : "/" },
-      { match: "^", type: TokenType.OPERATOR, length: 1, value : "^" },
-      { match: "(", type: "LPAREN", length: 1 },
-      { match: ")", type: "RPAREN", length: 1 },
-      { match: ",", type: ",", length: 1 },
-      { match: ">=", type: TokenType.OPERATOR, length: 2 },
-      { match: "<=", type: TokenType.OPERATOR, length: 2 },
-      { match: ">", type: TokenType.OPERATOR, length: 1 },
-      { match: "<", type: TokenType.OPERATOR, length: 1 },
-      { match: ".", type: TokenType.DOT, length: 1 },
-    ];
+    ]
+
     this.tokens = [];
   }
 
@@ -51,36 +60,22 @@ export class Tokenizer {
 
   isAlpha(char) {
     return (char >= "a" && char <= "z")
-     || (char >= "A" && char <= "Z")
-     || char === "_" ;// || char === ".";
+      || (char >= "A" && char <= "Z")
+      || char === "_";
   }
 
   isAlphaNumeric(char) {
     return this.isAlpha(char) || this.isDigit(char);
   }
 
-
-  // checks that a matched operator or keyword is not just the prefix of a longer identifier 
-  // that should be tokenized as a variable. 
-  findMatchingOperator(input, position) {
-    for (const operator of this.operators) {
-        // Check if the input at the current position starts with the operator match
-        if (input.startsWith(operator.match, position)) {
-            const matchEnd = position + operator.match.length;
-            if (matchEnd) {
-              return operator;
-            }
-            // Ensure the operator is not a prefix of a longer identifier or keyword
-            const isEndOfPattern = matchEnd >= input.length || !this.isAlphaNumeric(input[matchEnd]);
-            if (isEndOfPattern) {
-              //console.log(`Operator '${operator.match}' found.`);
-                return operator;
-            }
-        }
+  matchToken(input, position, tokenList) {
+    for (const token of tokenList) {
+      if (input.startsWith(token.match, position)) {
+        return token;
+      }
     }
-    return null; // No operator matched
-}
-
+    return null;
+  }
 
   parseTokens(input) {
     this.tokens = [];
@@ -134,23 +129,39 @@ export class Tokenizer {
           position++; column++;
           char = input[position];
         }
-        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number) , line: line, column: startColumn });
+        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number), line: line, column: startColumn });
         continue;
       }
 
-      // Try to match operators or keywords
-      const operatorOrKeyword = this.findMatchingOperator(input, position);
-      if (operatorOrKeyword) {
-        if (operatorOrKeyword.match === "true" || operatorOrKeyword.match === "false") {
-          this.tokens.push({ type: TokenType.BOOLEAN, value: operatorOrKeyword.match === "true", line: line, column: column });
-        } else {
-          // Use the 'value' property for operators like "is" and "is not"
-          let tokenValue = operatorOrKeyword.value ? operatorOrKeyword.value : operatorOrKeyword.match;
-          this.tokens.push({ type: operatorOrKeyword.type, value: tokenValue , line: line, column: column });
-        }
-        position += operatorOrKeyword.length;
-        column += operatorOrKeyword.length;
+      const compactOp = this.matchToken(input, position, this.compactOperators);
+      if (compactOp) {
+        this.tokens.push({ type: compactOp.type, value: compactOp.match, line: line, column: column });
+        position += compactOp.match.length;
+        column += compactOp.match.length;
         continue;
+      }
+
+      const boolOp = this.matchToken(input, position, this.booleans);
+      if (boolOp) {
+        this.tokens.push({ type: TokenType.BOOLEAN, value: boolOp.match === "true", line: line, column: column });
+        position += boolOp.match.length;
+        column += boolOp.match.length;
+        continue;
+      }
+
+      /* Match with space sensitive operators and check the character after the match 
+      to ensure the operator is not a prefix of a longer identifier or keyword*/
+      const keyword = this.matchToken(input, position, this.spaceSensitiveKeywords);
+      if (keyword) {
+        const operatorEndPosition = position + keyword.match.length;
+        const charAfterMatch = input[operatorEndPosition];
+        if (charAfterMatch === undefined || !this.isAlphaNumeric(charAfterMatch)) {
+          let tokenValue = keyword.value ? keyword.value : keyword.match;
+          this.tokens.push({ type: keyword.type, value: tokenValue, line: line, column: column });
+          position += keyword.match.length;
+          column += keyword.match.length;
+          continue;
+        }
       }
 
       // Identifiers
@@ -161,7 +172,7 @@ export class Tokenizer {
           position++; column++;
           char = input[position];
         }
-        this.tokens.push({ type: TokenType.VAR, value: identifier, line: line, column: column });
+        this.tokens.push({ type: TokenType.IDENTIFIER, value: identifier, line: line, column: column });
         continue;
       }
       position++; column++;
