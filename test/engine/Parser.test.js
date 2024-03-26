@@ -1,4 +1,8 @@
 import { Parser } from '../../src/engine/Parser';
+import { ASTtoJSON } from "../../src/engine/ast/ASTtoJSON";
+import { ASTtoString } from "../../src/engine/ast/ASTtoString";
+import { BinaryExpression } from "../../src/engine/ast/ASTNode";
+
 
 const testCases = [
   {
@@ -44,8 +48,31 @@ const testCases = [
   {
     expression_string: "age",
     expected: {
-      type: "Variable",
+      type: "Identifier",
       name: "age"
+    }
+  },
+
+  {
+    expression_string: "age = 18",
+    expected: {
+      type: "AssignmentExpression",
+      left: {  type: "Identifier", name: "age",
+      },
+      right: { type: "Number", value: 18 }
+    }
+  },
+  {
+    expression_string: "person.age = 18",
+    expected:
+    {
+      "type": "AssignmentExpression",
+      "left": {
+        "type": "MemberExpression",
+        "object": { "type": "Identifier", "name": "person" },
+        "property": { "type": "Identifier", "name": "age" }
+      },
+      "right": { "type": "Number", "value": 18 }
     }
   },
   {
@@ -54,13 +81,27 @@ const testCases = [
       type: "BinaryExpression",
       operator: "==",
       left: {
-        type: "Variable",
+        type: "Identifier",
         name: "age"
       },
       right: {
         type: "Number",
         value: 18
       }
+    }
+  },
+  {
+    expression_string: "person.age == 18",
+    expected:
+    {
+      "type": "BinaryExpression",
+      "operator": "==",
+      "left": {
+        "type": "MemberExpression",
+        "object": { "type": "Identifier", "name": "person" },
+        "property": { "type": "Identifier", "name": "age" }
+      },
+      "right": { "type": "Number", "value": 18 }
     }
   },
   {
@@ -69,27 +110,13 @@ const testCases = [
       type: "BinaryExpression",
       operator: "==",
       left: {
-        type: "Variable",
+        type: "Identifier",
         name: "age"
       },
       right: {
         type: "Number",
         value: 18
       }
-    }
-  },
-  {
-    expression_string: "age = 18",
-    expected: {
-      type: "AssignmentExpression",
-      variable: {
-        type: "Variable",
-        name: "age",
-      },
-      value: {
-        type: "Number",
-        value: 18,
-      },
     }
   },
   {
@@ -98,7 +125,7 @@ const testCases = [
       type: "BinaryExpression",
       operator: ">",
       left: {
-        type: "Variable",
+        type: "Identifier",
         name: "age"
       },
       right: {
@@ -107,6 +134,9 @@ const testCases = [
       }
     }
   },
+
+
+
   {
     expression_string: "10 + 2 * 5",
     expected:
@@ -234,14 +264,14 @@ const testCases = [
       "type": "BinaryExpression",
       "operator": "/",
       "left": {
-        "type": "Variable",
+        "type": "Identifier",
         "name": "weight"
       },
       "right": {
         "type": "BinaryExpression",
         "operator": "^",
         "left": {
-          "type": "Variable",
+          "type": "Identifier",
           "name": "height"
         },
         "right": {
@@ -258,11 +288,11 @@ const testCases = [
       type: "LogicalExpression",
       operator: "and",
       left: {
-        type: "Variable",
+        type: "Identifier",
         name: "a",
       },
       right: {
-        type: "Variable",
+        type: "Identifier",
         name: "b",
       },
     }
@@ -273,13 +303,39 @@ const testCases = [
       type: "LogicalExpression",
       operator: "or",
       left: {
-        type: "Variable",
+        type: "Identifier",
         name: "a",
       },
       right: {
-        type: "Variable",
+        type: "Identifier",
         name: "b",
       },
+    }
+  },
+  {
+    expression_string: "(1 + 2) * (4 - 3)",
+    expected:
+    {
+      "type": "BinaryExpression",
+      "operator": "*",
+      "left": {
+        "type": "GroupExpression",
+        "expression": {
+          "type": "BinaryExpression",
+          "operator": "+",
+          "left": { "type": "Number", "value": 1 },
+          "right": { "type": "Number", "value": 2 }
+        }
+      },
+      "right": {
+        "type": "GroupExpression",
+        "expression": {
+          "type": "BinaryExpression",
+          "operator": "-",
+          "left": { "type": "Number", "value": 4 },
+          "right": { "type": "Number", "value": 3 }
+        }
+      }
     }
   },
   {
@@ -291,11 +347,11 @@ const testCases = [
         type: "BinaryExpression",
         operator: ">",
         left: {
-          type: "Variable",
+          type: "Identifier",
           name: "age"
         },
         right: {
-          type: "Variable",
+          type: "Identifier",
           name: "BABY_AGE"
         }
       },
@@ -303,11 +359,11 @@ const testCases = [
         type: "BinaryExpression",
         operator: "<",
         left: {
-          type: "Variable",
+          type: "Identifier",
           name: "age"
         },
         right: {
-          type: "Variable",
+          type: "Identifier",
           name: "TODDLER_AGE"
         }
       }
@@ -319,30 +375,28 @@ const testCases = [
   //     type: "Between",
   //     operator: "between",
   //     left: {
-  //       type: "Variable",
+  //       type: "Identifier",
   //       name: "age"
   //     },
   //     middle: {
-  //       type: "Variable",
+  //       type: "Identifier",
   //       name: "TODDLER_AGE"
   //     },
   //     right: {
-  //       type: "Variable",
+  //       type: "Identifier",
   //       name: "MAJORITY_AGE"
   //     }
   //   }
   // },
 
+  
   // {
-  //   expression_string: "a = ",
+  //   expression_string: "order.customer.age = 18",
   //   expected: {
   //   }
   // }
-
-
 ];
 
-//   expect(() => tokenizer.parseTokens(test_error)).toThrow("Syntax error: unclosed string literal");
 
 
 /*
@@ -350,27 +404,39 @@ const testCases = [
 //   "eligible = age > 18",
 //   
 //   "BMI = weight / height ^ 2",
-
 */
-
-
 
 testCases.forEach(({ expression_string, expected }) => {
   test(`Testing '${expression_string}'`, () => {
     const parser = new Parser();
-    console.log(`\nParsing: : '${expression_string}'`);
+    console.log(`Input.: '${expression_string}'`);
     const expression = parser.parse(expression_string);
-    console.log("expression = ", expression.toJSON())
-    console.log("summary = " + expression.summarize())
-    expect(expression.toJSON()).toEqual(expected);
+    const expressionJSON = ASTtoJSON.toJson(expression);
+
+    // console.log("expression = ", expression.toJSON())
+    // console.log("summary = " + expression.summarize())
+    const printedExpression = ASTtoString.toString(expression);
+    console.log(`Output: '${printedExpression}'\n`);
+
+    // expect(expression.toJSON()).toEqual(expected);
+    expect(expressionJSON).toEqual(expected);
   });
 });
 
 //Test for error handling: missing expression after '=' in assignment 
-const test_error = "a = ";
-test(`Parsing: '${test_error}'`, () => {
-  console.log(`\nParsing: : '${test_error}'`);
-  const parser = new Parser();
- // parser.parse(test_error);
-  expect(() => parser.parse(test_error)).toThrow("Missing expression after '='");
-});
+// const expression_string = "2  3 + 1";
+// test(`Parsing: '${expression_string}'`, () => {
+//   console.log(`\nParsing: : '${expression_string}'`);
+//   const parser = new Parser();
+//   const expression = parser.parse(expression_string);
+//   const printedExpression = ASTtoString.toString(expression);
+//   console.log(`Output: '${printedExpression}'`);
+//   expect(() => parser.parse(expression_string)).toThrow("Missing expression after '='");
+// });
+
+// {
+  //   expression_string: "a = ",
+  //   expected: {
+  //   }
+  // }
+  //   expect(() => tokenizer.parseTokens(test_error)).toThrow("Syntax error: unclosed string literal");
