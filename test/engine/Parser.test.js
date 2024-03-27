@@ -13,6 +13,17 @@ const testCases = [
     }
   },
   {
+    expression_string: "-18",
+    expected: {
+      type: "UnaryExpression",
+      operator: "-",
+      operand: {
+        type: "Number",
+        value: 18,
+      },
+    }
+  },
+  {
     expression_string: "'toto'",
     expected: {
       type: "String",
@@ -33,15 +44,25 @@ const testCases = [
       value: false
     }
   },
-
   {
-    expression_string: "-18",
+    expression_string: "!true",
     expected: {
       type: "UnaryExpression",
-      operator: "-",
+      operator: "!",
       operand: {
-        type: "Number",
-        value: 18,
+        type: "Boolean",
+        value: true,
+      },
+    }
+  },
+  {
+    expression_string: "!false",
+    expected: {
+      type: "UnaryExpression",
+      operator: "!",
+      operand: {
+        type: "Boolean",
+        value: false,
       },
     }
   },
@@ -371,25 +392,25 @@ const testCases = [
       }
     }
   },
-  // {
-  //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
-  //   expected: {
-  //     type: "Between",
-  //     operator: "between",
-  //     left: {
-  //       type: "Identifier",
-  //       name: "age"
-  //     },
-  //     middle: {
-  //       type: "Identifier",
-  //       name: "TODDLER_AGE"
-  //     },
-  //     right: {
-  //       type: "Identifier",
-  //       name: "MAJORITY_AGE"
-  //     }
-  //   }
-  // },
+  // // {
+  // //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
+  // //   expected: {
+  // //     type: "Between",
+  // //     operator: "between",
+  // //     left: {
+  // //       type: "Identifier",
+  // //       name: "age"
+  // //     },
+  // //     middle: {
+  // //       type: "Identifier",
+  // //       name: "TODDLER_AGE"
+  // //     },
+  // //     right: {
+  // //       type: "Identifier",
+  // //       name: "MAJORITY_AGE"
+  // //     }
+  // //   }
+  // // },
 
   {
     expression_string: "person.age == 18",
