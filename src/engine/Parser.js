@@ -131,8 +131,8 @@ export class Parser {
     const parseLogicalOr = () => {
       let expr = parseLogicalAnd();
 
-      while (match("OR")) {
-        const operator = previous().value;
+      while (match(TokenType.OR)) {
+        const operator = TokenType.OR;
         const right = parseLogicalAnd();
         expr = new LogicalExpression(expr, operator, right);
       }
@@ -142,8 +142,8 @@ export class Parser {
     const parseLogicalAnd = () => {
       let expr = parseEquality(); // Start from equality as it has higher precedence
 
-      while (match("AND")) {
-        const operator = previous().value;
+      while (match(TokenType.AND)) {
+        const operator = TokenType.AND;
         const right = parseEquality();
         expr = new LogicalExpression(expr, operator, right);
       }

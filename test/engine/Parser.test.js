@@ -288,7 +288,7 @@ const testCases = [
     expression_string: "a and b",
     expected: {
       type: "LogicalExpression",
-      operator: "and",
+      operator: "AND",
       left: {
         type: "Identifier",
         name: "a",
@@ -303,7 +303,7 @@ const testCases = [
     expression_string: "a or b",
     expected: {
       type: "LogicalExpression",
-      operator: "or",
+      operator: "OR",
       left: {
         type: "Identifier",
         name: "a",
@@ -344,7 +344,7 @@ const testCases = [
     expression_string: "age > BABY_AGE and age < TODDLER_AGE",
     expected: {
       type: "LogicalExpression",
-      operator: "and",
+      operator: "AND",
       left: {
         type: "BinaryExpression",
         operator: ">",
