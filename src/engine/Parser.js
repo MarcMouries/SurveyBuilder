@@ -2,9 +2,9 @@ import {
   BooleanNode, NumberNode, StringNode, Identifier,
   AssignmentExpression, BinaryExpression, GroupingExpression, 
   LogicalExpression, MemberExpression, UnaryExpression
-//} from "./Node";
 } from "./ast/ASTNode";
-import { Tokenizer, TokenType } from "./Tokenizer";
+import { Tokenizer } from "./Tokenizer";
+import { TokenType } from "./Token";
 import { Logger } from "./Logger";
 
 export class Parser {
@@ -21,28 +21,6 @@ export class Parser {
       if (!token) return "end of input";
       return `${token.type}(${token.value})`;
     }
-
-    const isOperator = (tokenType) => operatorsPrecedence.hasOwnProperty(tokenType);
-
-    const precedence = (operator) => {
-      const operatorsPrecedence = {
-        OR: 1,
-        AND: 2,
-        EQUALS: 3,
-        "!=": 3,
-        "<": 4,
-        ">": 4,
-        "<=": 4,
-        ">=": 4,
-        "+": 5,
-        "-": 5,
-        "*": 6,
-        "/": 6,
-        "^": 7,
-      };
-
-      operatorsPrecedence[operator] || 0;
-    };
 
     const isAtEnd = () => current >= tokens.length;
 
