@@ -79,6 +79,52 @@ test("Evaluate Known variable in Binary Expression 'age >= 13 and age <= 19", ()
   expect(result).toBe(true);
 });
 
+test("Evaluate OR expression with true short-circuit", () => {
+  console.log("\nEvaluating 'age > 20 or age < 30'");
+  let environment = new Environment();
+  environment.define("age", 25);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("age > 20 or age < 30");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+test("Evaluate AND expression with false short-circuit", () => {
+  console.log("\nEvaluating 'age > 20 and age < 18'");
+  let environment = new Environment();
+  environment.define("age", 15);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("age > 20 and age < 18");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(false);
+});
+
+test("Evaluate AND expression with both sides false", () => {
+  console.log("\nEvaluating 'age > 30 and age < 10'");
+  let environment = new Environment();
+  environment.define("age", 20);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("age > 30 and age < 10");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(false);
+});
+
+test("Evaluate nested logical expressions", () => {
+  console.log("\nEvaluating '(age >= 13 and age <= 19) or age == 21'");
+  let environment = new Environment();
+  environment.define("age", 21);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("(age >= 13 and age <= 19) or age == 21");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+
+
 //  test("Evaluate Assignment Expression  'person.age' = 18", () => {
 //    console.log("\nEvaluating Assignment 'person.age = 18'");
 //    let interpreter = new Interpreter();
