@@ -1,6 +1,7 @@
 
 import { Parser } from "../../src/engine/Parser";
 import { Interpreter } from "../../src/engine/Interpreter";
+import { Environment } from "../../src/engine/Environment";
 import { ASTtoJSON } from "../../src/engine/ast/ASTtoJSON";
 
 
@@ -46,14 +47,36 @@ test("Evaluate BinaryExpression 20 > 18", () => {
   expect(result).toBe(true);
 });
 
-test("Evaluate Unknown variable in Assignment Expression  'age' == 18", () => {
-  console.log("\nEvaluating Assignment 'age == 18'");
+test("Evaluate Unknown variable in Binary Expression  'age' == 18", () => {
+  console.log("\nEvaluating 'age == 18'");
   let interpreter = new Interpreter();
   const parser = new Parser();
   const expression = parser.parse("age == 18");
   expect(() => {
     interpreter.interpret(expression);
   }).toThrow("Undefined variable name 'age'");
+});
+
+test("Evaluate Known variable in Binary Expression  'age' == 18", () => {
+  console.log("\nEvaluating 'age == 18'");
+  let environment = new Environment();
+  environment.define("age", 18);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("age == 18");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+test("Evaluate Known variable in Binary Expression 'age >= 13 and age <= 19", () => {
+  console.log("\nEvaluating 'age >= 13 and age <= 19'");
+  let environment = new Environment();
+  environment.define("age", 18);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("age >= 13 and age <= 19");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
 });
 
 //  test("Evaluate Assignment Expression  'person.age' = 18", () => {
