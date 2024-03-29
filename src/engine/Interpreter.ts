@@ -1,15 +1,16 @@
 import type { ASTNodeVisitor } from './ast/ASTNodeVisitor';
 import {
-  type ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression, 
+  type ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
   Identifier, LogicalExpression, NumberNode, StringNode, UnaryExpression, MemberExpression
 } from "./ast/ASTNode";
 import { Environment } from './Environment';
+import { TokenType } from "./Token";
 
 export class Interpreter implements ASTNodeVisitor {
   private environment: Environment;
 
-  constructor() {
-    this.environment = new Environment();
+  constructor(environment?: Environment) {
+    this.environment = environment ? environment : new Environment();
   }
 
   visitMemberExpression(node: MemberExpression): void {
@@ -29,7 +30,7 @@ export class Interpreter implements ASTNodeVisitor {
     const value = this.evaluate(node.right);
     //console.log(node.left);
     //console.log(value);
-   // this.environment.set()
+    // this.environment.set()
     //const val = this.value.evaluate(context);
     //context[this.variable.name] = val;
 
@@ -53,7 +54,11 @@ export class Interpreter implements ASTNodeVisitor {
         return leftVal > rightVal;
       case "<":
         return leftVal < rightVal;
-      case "=":
+      case ">=":
+        return leftVal >= rightVal;
+      case "<=":
+        return leftVal <= rightVal;
+      case "==":
         return leftVal == rightVal;
       case "^":
         return Math.pow(leftVal, rightVal);
@@ -69,9 +74,17 @@ export class Interpreter implements ASTNodeVisitor {
     return this.evaluate(node.expression);
   }
 
-  visitLogicalExpression(node: LogicalExpression): void {
-    throw new Error('Method not implemented.');
+  visitLogicalExpression(expr: LogicalExpression): boolean {
+    const left = this.evaluate(expr.left);
+    if (expr.operator === TokenType.OR) {
+      if (left === true) return left;
+    }
+    else {
+
+    }
+    return this.evaluate(expr.right);
   }
+
   visitNumberNode(node: NumberNode): any {
     return node.value
   }
