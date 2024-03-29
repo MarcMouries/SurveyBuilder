@@ -77,10 +77,11 @@ export class Interpreter implements ASTNodeVisitor {
   visitLogicalExpression(expr: LogicalExpression): boolean {
     const left = this.evaluate(expr.left);
     if (expr.operator === TokenType.OR) {
-      if (left === true) return left;
-    }
-    else {
-
+      if (left === true)
+       return true; 
+    } else if (expr.operator === TokenType.AND) {
+      if (left === false) 
+        return false;
     }
     return this.evaluate(expr.right);
   }
