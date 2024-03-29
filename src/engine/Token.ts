@@ -1,15 +1,16 @@
 export const TokenType = {
+    ASSIGN: "ASSIGN",
+    BOOLEAN: "BOOLEAN",
+    DOT: "DOT",
+    EQUALS: "EQUALS",
     NUMBER: "NUMBER",
     STRING: "STRING",
-    BOOLEAN: "BOOLEAN",
     IDENTIFIER: "IDENTIFIER",
     OPERATOR: "OP",
-    EQUALS: "EQUALS",
+    NOT: "NOT",
     NOT_EQUAL: "NOT_EQUAL",
-    ASSIGN: "ASSIGN",
     AND: "AND",
     OR: "OR",
     LPAREN: "LPAREN",
     RPAREN: "RPAREN",
-    DOT: "DOT"
 };
