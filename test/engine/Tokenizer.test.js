@@ -2,7 +2,7 @@ import { TokenType } from "../../src/engine/Token";
 import { Tokenizer } from "../../src/engine/Tokenizer";
 
 //describe("Tokenizer Tests", () => {
-// Test for numeric values
+//Test for numeric values
 const test_number = "42";
 test(`Tokenize: '${test_number}'`, () => {
   console.log(`\nTokenize: '${test_number}'`);
@@ -47,9 +47,11 @@ test(`Tokenize: '${test_logical}'`, () => {
   const tokenizer = new Tokenizer();
   const tokens = tokenizer.parseTokens(test_logical);
   const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
-  expect(simplifiedTokens).toEqual([{ type: TokenType.BOOLEAN, value: true },
-  { type: TokenType.AND, value: "and" },
-  { type: TokenType.BOOLEAN, value: false },
+  console.log("Tokens = ", tokens);
+  expect(simplifiedTokens).toEqual([
+    { type: TokenType.BOOLEAN, value: true },
+    { type: TokenType.AND, value: "and" },
+    { type: TokenType.BOOLEAN, value: false },
   ]);
 });
 
@@ -193,6 +195,16 @@ test("Tokenize: 'isVisible is true'", () => {
   expect(simplifiedTokens).toEqual([
     { type: TokenType.IDENTIFIER, value: "isVisible" },
     { type: TokenType.EQUALS, value: "==" },
+    { type: TokenType.BOOLEAN, value: true },
+  ]);
+});
+
+test("Tokenize: '! true'", () => {
+  const test_is_true = "!true";
+  const tokens = new Tokenizer().parseTokens(test_is_true);
+  const simplifiedTokens = tokens.map(({ type, value }) => ({ type, value }));
+  expect(simplifiedTokens).toEqual([
+    { type: TokenType.NOT, value: "!" },
     { type: TokenType.BOOLEAN, value: true },
   ]);
 });
