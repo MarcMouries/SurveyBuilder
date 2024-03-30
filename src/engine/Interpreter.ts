@@ -13,7 +13,7 @@ export class Interpreter implements ASTNodeVisitor {
     this.environment = environment ? environment : new Environment();
   }
 
-  visitMemberExpression(node: MemberExpression): void {
+  visitMemberExpression(expr: MemberExpression): void {
     throw new Error('Method not implemented.');
   }
 
@@ -26,8 +26,8 @@ export class Interpreter implements ASTNodeVisitor {
     return expression.accept(this)
   }
 
-  visitAssignmentExpression(node: AssignmentExpression): void {
-    const value = this.evaluate(node.right);
+  visitAssignmentExpression(expr: AssignmentExpression): void {
+    const value = this.evaluate(expr.right);
     //console.log(node.left);
     //console.log(value);
     // this.environment.set()
@@ -37,10 +37,10 @@ export class Interpreter implements ASTNodeVisitor {
 
     throw new Error('Method not implemented.');
   }
-  visitBinaryExpression(node: BinaryExpression): any {
-    const leftVal = this.evaluate(node.left);
-    const rightVal = this.evaluate(node.right);
-    switch (node.operator) {
+  visitBinaryExpression(expr: BinaryExpression): any {
+    const leftVal = this.evaluate(expr.left);
+    const rightVal = this.evaluate(expr.right);
+    switch (expr.operator) {
       case "+":
         return leftVal + rightVal;
       case "-":
@@ -63,15 +63,15 @@ export class Interpreter implements ASTNodeVisitor {
       case "^":
         return Math.pow(leftVal, rightVal);
       default:
-        throw new Error(`Unsupported operator ${node.operator}`);
+        throw new Error(`Unsupported operator ${expr.operator}`);
     }
   }
   visitBooleanNode(node: BooleanNode): boolean {
     return node.value
   }
 
-  visitGroupingExpression(node: GroupingExpression): void {
-    return this.evaluate(node.expression);
+  visitGroupingExpression(expr: GroupingExpression): void {
+    return this.evaluate(expr.expression);
   }
 
   visitLogicalExpression(expr: LogicalExpression): boolean {
@@ -93,15 +93,13 @@ export class Interpreter implements ASTNodeVisitor {
     return node.value
   }
 
-  visitUnaryExpression(node: UnaryExpression): any {
-    const right = this.evaluate(node.operand)
-    if (node.operator == "-") return - right;
-    if (node.operator == "!") return !right;
+  visitUnaryExpression(expr: UnaryExpression): any {
+    const right = this.evaluate(expr.operand)
+    if (expr.operator == "-") return - right;
+    if (expr.operator == "!") return ! right;
   }
 
   visitIdentifier(node: Identifier): any {
-    console.log("visitIdentifier for : " + node.name);
     return this.environment.get(node.name);
   }
-
 }
