@@ -285,7 +285,7 @@ export class Parser {
 
 
     const parseExpression = () => {
-      Logger.logStart(`parseExpression`);
+      Logger.logStart(`parseExpression: '${input}'`);
       const result = parseAssignment();
       Logger.logEnd(`parseExpression`);
       return result;
@@ -311,32 +311,3 @@ export class Parser {
     return parseExpression();
   }
 }
-
-//Testing the improved parser with the expression list
-const expression_list = [
-
-  //  "a = "
-
-  // "a and b",
-  //   "1 + 2",
-  //   "a > b",
-  //   "10 + 2 * 5",
-  //   "10 - 2 + 5",
-  //    "age = MAJORITY_AGE",
-  //     "age is MAJORITY_AGE",
-  //   'age is between TODDLER_AGE and MAJORITY_AGE',
-  //   "(age > BABY_AGE) and (age < TODDLER_AGE)",
-  //     "age is between TODDLER_AGE and MAJORITY_AGE",
-  //   "a + b * c == 200",
-  //    "a + b * c =="
-];
-
-expression_list.forEach((expression) => {
-  console.log(`\nParsing of expression: '${expression}'`);
-  const parser = new Parser();
-  const expressionNode = parser.parse(expression);
-  console.log(`1. expression: '${expression}' is`, expressionNode);
-  //console.log(`2. AST : ${expressionNode.summarize()}`);
-  console.log(`3. The AST for the expression: '${expression}' is '${JSON.stringify(expressionNode, null, 2)}'`);
-  console.log(`Type of expressionNode: ${expressionNode.constructor.name}`);
-});
