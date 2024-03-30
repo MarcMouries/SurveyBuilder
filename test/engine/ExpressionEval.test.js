@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { BooleanNode, BinaryExpression, NumberNode, VariableNode } from "../../src/engine/Node";
+import { BooleanNode, BinaryExpression, NumberNode, Identifier } from "../../src/engine/Node";
 
 import { Parser } from "../../src/engine/Parser";
 
@@ -37,9 +37,9 @@ console.log(objects);
 
 test("Evaluate BinaryExpression using nested property 'Person.age' > 18", () => {
   console.log("\nEvaluating BinaryExpression using nested property 'Person.age'");
-  const complexExpression
-     = new BinaryExpression(new VariableNode("Person.age"), ">", new NumberNode(18));
-  const result = complexExpression.evaluate(context);
+  const expression
+     = new BinaryExpression(new Identifier("age"), ">", new NumberNode(18));
+  const result = expression.evaluate(context);
   console.log(`Result: ${result}`);
   expect(result).toBe(true);
 });
@@ -54,7 +54,7 @@ test("Evaluate BooleanNode with true", () => {
 
 test("Evaluate BinaryExpression comparing variable 'days' is 10", () => {
   console.log("\nEvaluating Expression comparing variable 'days' = 10");
-  const expression = new BinaryExpression(new VariableNode("days"), "=", new NumberNode(10));
+  const expression = new BinaryExpression(new Identifier("days"), "=", new NumberNode(10));
   const result = expression.evaluate(context);
   console.log(`Result: ${result}`);
   expect(result).toBe(true);
