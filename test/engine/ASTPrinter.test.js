@@ -27,8 +27,14 @@ function generateTest(input, expected) {
 }
 
 // Use the generateTest function to create tests
-generateTest("age > 18",       "(age > 18)");
+generateTest("age > 18",          "(age > 18)");
 
-generateTest("2 * 3 ^ 2",      "(2 * (3 ^ 2))");
+generateTest("2 * 3 ^ 2",         "(2 * (3 ^ 2))");
 
-generateTest("(2 * (3 ^ 2))",  "(2 * (3 ^ 2))");
+generateTest("(2 * (3 ^ 2))",     "(2 * (3 ^ 2))");
+
+generateTest("10 + 2 * 5",        "(10 + (2 * 5))");
+
+generateTest("age > 18 and age < 65", "(age > 18) AND (age < 65)");
+
+generateTest("weight / height ^ 2", "(weight / (height ^ 2))");
