@@ -13,4 +13,7 @@ export const TokenType = {
     OR: "OR",
     LPAREN: "LPAREN",
     RPAREN: "RPAREN",
-};
+    CONTAINS: "CONTAINS",
+    IN: "IN",
+    COMMA: "COMMA"
+}; 

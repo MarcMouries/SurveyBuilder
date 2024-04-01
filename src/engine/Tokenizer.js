@@ -16,16 +16,20 @@ export class Tokenizer {
       { match: "^",  type: TokenType.OPERATOR, value: "^" },
       { match: "(",  type: "LPAREN", value: "(" },
       { match: ")",  type: "RPAREN", value: ")" },
-      { match: ",",  type: ",", value: "," },
+      { match: ",",  type: TokenType.COMMA, value: "," },
       { match: ">=", type: TokenType.OPERATOR, value: ">=" },
       { match: "<=", type: TokenType.OPERATOR, value: "<=" },
       { match: ">",  type: TokenType.OPERATOR, value: ">" },
       { match: "<",  type: TokenType.OPERATOR, value: "<" },
       { match: ".",  type: TokenType.DOT, value: "." },
+      { match: "[", type: "LBRACKET", value: "[" },
+      { match: "]", type: "RBRACKET", value: "]" },
     ];
 
     this.spaceSensitiveKeywords = [
       { match: "and",  type: TokenType.AND },
+      { match: "contains",  type: TokenType.CONTAINS },
+      { match: "in",  type: TokenType.IN },
       { match: "or",   type: TokenType.OR },
       { match: "not",  type: TokenType.NOT },
       { match: "is between", type: "IS_BETWEEN" },
