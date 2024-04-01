@@ -1,8 +1,6 @@
-import {
-  BooleanNode, NumberNode, StringNode, Identifier,
+import { BooleanNode, NumberNode, StringNode, Identifier,
   AssignmentExpression, BinaryExpression, GroupingExpression, 
-  LogicalExpression, MemberExpression, UnaryExpression
-} from "./ast/ASTNode";
+  LogicalExpression, MemberExpression, UnaryExpression} from "./ast/ASTNode";
 import { Tokenizer } from "./Tokenizer";
 import { TokenType } from "./Token";
 import { Logger } from "./Logger";
@@ -295,12 +293,11 @@ export class Parser {
     const parseComparison = () => {
       Logger.logStart(`Parsing comparison operators between expressions`);
       var expr = parseTerm();
-      while (match(">", ">=", "<", "<=")) {
+      while (match(">", ">=", "<", "<=", "contains", "in")) {
         const operator = previous().value;
         const right = parseTerm();
         if (right === null) {
           throw new Error(`Missing expression after '${operator}'`);
-          // at ${equals.line}:${equals.column}`);
         }
         expr = new BinaryExpression(expr, operator, right);
       }
