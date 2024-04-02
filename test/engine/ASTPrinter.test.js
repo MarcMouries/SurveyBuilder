@@ -38,3 +38,6 @@ generateTest("10 + 2 * 5",        "(10 + (2 * 5))");
 generateTest("age > 18 and age < 65", "(age > 18) AND (age < 65)");
 
 generateTest("weight / height ^ 2", "(weight / (height ^ 2))");
+
+generateTest("answer in ['No', 'Undecided']", '(answer in ["No", "Undecided"])');
+
