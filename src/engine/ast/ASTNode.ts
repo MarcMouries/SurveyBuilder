@@ -18,6 +18,18 @@ export class AssignmentExpression implements ASTNode {
   }
 }
 
+export class ArrayLiteral implements ASTNode {
+  elements: ASTNode[];
+
+  constructor(elements: ASTNode[]) {
+    this.elements = elements;
+  }
+
+  accept(visitor: ASTNodeVisitor): void {
+    return visitor.visitArrayLiteral(this);
+  }
+}
+
 export class LogicalExpression implements ASTNode {
   left: ASTNode;
   operator: string;

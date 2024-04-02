@@ -1,44 +1,44 @@
-import { TokenType } from "./Token";
+import { Token } from "./Token";
 
 export class Tokenizer {
   constructor() {
 
     //Operators that don't require Whitespace separation:
     this.compactOperators = [
-      { match: "==", type: TokenType.EQUALS, value: "==" },
-      { match: "=",  type: TokenType.ASSIGN, value: "=" },
-      { match: "!=", type: TokenType.NOT_EQUAL, value: "!=" },
-      { match: "!",  type: TokenType.NOT, value: "!" },
-      { match: "+",  type: TokenType.OPERATOR, value: "+" },
-      { match: "-",  type: TokenType.OPERATOR, value: "-" },
-      { match: "*",  type: TokenType.OPERATOR, value: "*" },
-      { match: "/",  type: TokenType.OPERATOR, value: "/" },
-      { match: "^",  type: TokenType.OPERATOR, value: "^" },
-      { match: "(",  type: "LPAREN", value: "(" },
-      { match: ")",  type: "RPAREN", value: ")" },
-      { match: ",",  type: TokenType.COMMA, value: "," },
-      { match: ">=", type: TokenType.OPERATOR, value: ">=" },
-      { match: "<=", type: TokenType.OPERATOR, value: "<=" },
-      { match: ">",  type: TokenType.OPERATOR, value: ">" },
-      { match: "<",  type: TokenType.OPERATOR, value: "<" },
-      { match: ".",  type: TokenType.DOT, value: "." },
-      { match: "[", type: "LBRACKET", value: "[" },
-      { match: "]", type: "RBRACKET", value: "]" },
+      { match: "==", type: Token.EQUALS, value: "==" },
+      { match: "=",  type: Token.ASSIGN, value: "=" },
+      { match: "!=", type: Token.NOT_EQUAL, value: "!=" },
+      { match: "!",  type: Token.NOT, value: "!" },
+      { match: "+",  type: Token.OPERATOR, value: "+" },
+      { match: "-",  type: Token.OPERATOR, value: "-" },
+      { match: "*",  type: Token.OPERATOR, value: "*" },
+      { match: "/",  type: Token.OPERATOR, value: "/" },
+      { match: "^",  type: Token.OPERATOR, value: "^" },
+      { match: "(",  type: Token.LPAREN,   value: "(" },
+      { match: ")",  type: Token.RPAREN,   value: ")" },
+      { match: ",",  type: Token.COMMA,    value: "," },
+      { match: ">=", type: Token.OPERATOR, value: ">=" },
+      { match: "<=", type: Token.OPERATOR, value: "<=" },
+      { match: ">",  type: Token.OPERATOR, value: ">" },
+      { match: "<",  type: Token.OPERATOR, value: "<" },
+      { match: ".",  type: Token.DOT,      value: "." },
+      { match: "[",  type: Token.LBRACKET, value: "[" },
+      { match: "]",  type: Token.RBRACKET, value: "]" },
     ];
 
     this.spaceSensitiveKeywords = [
-      { match: "and",  type: TokenType.AND },
-      { match: "contains",  type: TokenType.CONTAINS },
-      { match: "in",  type: TokenType.IN },
-      { match: "or",   type: TokenType.OR },
-      { match: "not",  type: TokenType.NOT },
+      { match: "and",        type: Token.AND },
+      { match: "contains",   type: Token.CONTAINS },
+      { match: "in",         type: Token.IN },
+      { match: "or",         type: Token.OR },
+      { match: "not",        type: Token.NOT },
       { match: "is between", type: "IS_BETWEEN" },
-      { match: "is not", type: TokenType.NOT_EQUAL, value: "!=" },
-      { match: "is", type: TokenType.EQUALS, value: "==" },
+      { match: "is not",     type: Token.NOT_EQUAL, value: "!=" },
+      { match: "is",         type: Token.EQUALS, value: "==" },
     ];
 
     this.booleans = [
-      { match: "true", type: "BOOLEAN", length: 4 },
+      { match: "true",  type: "BOOLEAN", length: 4 },
       { match: "false", type: "BOOLEAN", length: 5 },
     ]
 
@@ -103,7 +103,7 @@ export class Tokenizer {
         }
 
         if (char === endChar) {
-          this.tokens.push({ type: TokenType.STRING, value: stringLiteral, line: line, column: column });
+          this.tokens.push({ type: Token.STRING, value: stringLiteral, line: line, column: column });
           position++; column++; // Move past the closing quote
           continue;
         } else {
@@ -120,7 +120,7 @@ export class Tokenizer {
           position++; column++;
           char = input[position];
         }
-        this.tokens.push({ type: TokenType.NUMBER, value: parseFloat(number), line: line, column: startColumn });
+        this.tokens.push({ type: Token.NUMBER, value: parseFloat(number), line: line, column: startColumn });
         continue;
       }
 
@@ -134,7 +134,7 @@ export class Tokenizer {
 
       const boolOp = this.matchToken(input, position, this.booleans);
       if (boolOp) {
-        this.tokens.push({ type: TokenType.BOOLEAN, value: boolOp.match === "true", line: line, column: column });
+        this.tokens.push({ type: Token.BOOLEAN, value: boolOp.match === "true", line: line, column: column });
         position += boolOp.match.length;
         column += boolOp.match.length;
         continue;
@@ -163,7 +163,7 @@ export class Tokenizer {
           position++; column++;
           char = input[position];
         }
-        this.tokens.push({ type: TokenType.IDENTIFIER, value: identifier, line: line, column: column });
+        this.tokens.push({ type: Token.IDENTIFIER, value: identifier, line: line, column: column });
         continue;
       }
       position++; column++;
