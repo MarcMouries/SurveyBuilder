@@ -1,8 +1,8 @@
-import { BooleanNode, NumberNode, StringNode, Identifier,
+import { ArrayLiteral, BooleanNode, NumberNode, StringNode, Identifier,
   AssignmentExpression, BinaryExpression, GroupingExpression, 
   LogicalExpression, MemberExpression, UnaryExpression} from "./ast/ASTNode";
 import { Tokenizer } from "./Tokenizer";
-import { TokenType } from "./Token";
+import { Token } from "./Token";
 import { Logger } from "./Logger";
 
 export class Parser {
@@ -129,8 +129,8 @@ export class Parser {
     const parseLogicalOr = () => {
       let expr = parseLogicalAnd();
 
-      while (match(TokenType.OR)) {
-        const operator = TokenType.OR;
+      while (match(Token.OR)) {
+        const operator = Token.OR;
         const right = parseLogicalAnd();
         expr = new LogicalExpression(expr, operator, right);
       }
@@ -140,31 +140,30 @@ export class Parser {
     const parseLogicalAnd = () => {
       let expr = parseEquality(); // Start from equality as it has higher precedence
 
-      while (match(TokenType.AND)) {
-        const operator = TokenType.AND;
+      while (match(Token.AND)) {
+        const operator = Token.AND;
         const right = parseEquality();
         expr = new LogicalExpression(expr, operator, right);
       }
       return expr;
     };
 
-
     const parsePrimary = () => {
       Logger.logStart(`parsePrimary`);
       let result = null;
-      if (match(TokenType.NUMBER)) result = parseNumber(previous());
-      else if (match(TokenType.STRING)) result = parseString(previous());
-      else if (match(TokenType.BOOLEAN)) result = parseBoolean(previous());
-      else if (match(TokenType.LPAREN)) result = parseGroup();
-      else if (match(TokenType.IDENTIFIER)) 
+      if (match(Token.NUMBER)) result = parseNumber(previous());
+      else if (match(Token.STRING)) result = parseString(previous());
+      else if (match(Token.BOOLEAN)) result = parseBoolean(previous());
+      else if (match(Token.LPAREN)) result = parseGroup();
+      else if (match(Token.LBRACKET)) result = parseArrayLiteral();
+      else if (match(Token.IDENTIFIER)) 
         result = parseIdentifier(previous());
         while (match(".")) {
-          consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+          consume(Token.IDENTIFIER, "Expect property name after '.'.");
           const property = previous();
 //          const property = consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
           result = new MemberExpression(result, new Identifier(property.value));
         }
-
       Logger.logEnd(`parsePrimary`);
       return result;
     };
@@ -237,6 +236,18 @@ export class Parser {
       return parsePrimary();
     };
 
+    const parseArrayLiteral = () => {
+      const elements = [];
+      if (!check(Token.RBRACKET)) { // If the next token is not ']', we have elements to parse.
+        do {
+          const element = parseExpression(); // Use parseExpression to handle all types of elements.
+          elements.push(element);
+        } while (match(Token.COMMA)); // Support comma-separated values.
+      }
+      consume(Token.RBRACKET, "Expect ']' after array elements.");
+      return new ArrayLiteral(elements);
+    };
+
     const parseEquality = () => {
       Logger.logStart(`Parsing equality/non-equality operators between expressions`);
       var expr = parseComparison();
@@ -265,16 +276,12 @@ export class Parser {
           throw new Error(`Missing expression after '='`);
           // at ${equals.line}:${equals.column}`);
         }
-
-
         if (expr instanceof Identifier) {
           return new AssignmentExpression(expr, value);
         }
         if (expr instanceof MemberExpression) {
           return new AssignmentExpression(expr, value);
         }
-        
-
         error(equals, "Invalid assignment target.");
       }
       Logger.logEnd(`parseAssignment`);
