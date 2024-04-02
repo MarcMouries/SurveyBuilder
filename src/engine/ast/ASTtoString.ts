@@ -1,9 +1,14 @@
 import type { ASTNodeVisitor } from './ASTNodeVisitor';
-import type { ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression, LogicalExpression, MemberExpression }
-  from "./ASTNode";
-import type { NumberNode, StringNode, UnaryExpression, Identifier } from "./ASTNode";
+import type { ArrayLiteral, ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, 
+    GroupingExpression, LogicalExpression, MemberExpression, NumberNode, StringNode, 
+    UnaryExpression, Identifier} from "./ASTNode";
 
 export class ASTtoString implements ASTNodeVisitor {
+  
+  visitArrayLiteral(node: ArrayLiteral): string {
+    const elementsAsString = node.elements.map(element => element.accept(this)).join(", ");
+    return `[${elementsAsString}]`;
+  }
 
   visitMemberExpression(node: MemberExpression): string {
     const object= node.object.accept(this);

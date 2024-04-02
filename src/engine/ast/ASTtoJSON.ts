@@ -1,16 +1,23 @@
 import type { ASTNodeVisitor } from './ASTNodeVisitor';
-import type {
-    ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
-    LogicalExpression, MemberExpression, NumberNode, StringNode, UnaryExpression, Identifier
-  } from "./ASTNode";
+import type { ArrayLiteral, ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, 
+    GroupingExpression, LogicalExpression, MemberExpression, NumberNode, StringNode, 
+    UnaryExpression, Identifier} from "./ASTNode";
 
 export class ASTtoJSON implements ASTNodeVisitor {
 
- visitMemberExpression(node: MemberExpression): any {
+    visitArrayLiteral(node: ArrayLiteral): any {
+        const elements = node.elements.map(element => element.accept(this));
+        return {
+            type: "ArrayLiteral",
+            elements: elements
+        };
+    }
+
+    visitMemberExpression(node: MemberExpression): any {
         return {
             type: "MemberExpression",
             object: node.object.accept(this),
-            property: node.property.accept(this),
+            property: node.property.accept(this)
         };
     }
 
@@ -18,7 +25,7 @@ export class ASTtoJSON implements ASTNodeVisitor {
         return {
             type: "AssignmentExpression",
             left: node.left.accept(this),
-            right: node.right.accept(this),
+            right: node.right.accept(this)
         };
     }
 
@@ -27,7 +34,7 @@ export class ASTtoJSON implements ASTNodeVisitor {
             type: "BinaryExpression",
             operator: node.operator,
             left: node.left.accept(this),
-            right: node.right.accept(this),
+            right: node.right.accept(this)
         };
     }
     visitBooleanNode(node: BooleanNode): any {
@@ -37,14 +44,12 @@ export class ASTtoJSON implements ASTNodeVisitor {
         return { type: "String", value: node.value };
     }
 
-
-
     visitLogicalExpression(node: LogicalExpression): any {
         return {
             type: "LogicalExpression",
             operator: node.operator,
             left: node.left.accept(this),
-            right: node.right.accept(this),
+            right: node.right.accept(this)
         };
     }
     visitNumberNode(node: NumberNode): any {
@@ -60,13 +65,13 @@ export class ASTtoJSON implements ASTNodeVisitor {
         return {
             type: "UnaryExpression",
             operator: node.operator,
-            operand: node.operand.accept(this),
+            operand: node.operand.accept(this)
         };
     }
     visitIdentifier(node: Identifier): any {
         return {
             type: "Identifier",
-            name: node.name,
+            name: node.name
         };
     }
 
