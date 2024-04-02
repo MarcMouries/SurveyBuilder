@@ -1,4 +1,4 @@
-export const TokenType = {
+export const Token = {
     ASSIGN: "ASSIGN",
     BOOLEAN: "BOOLEAN",
     DOT: "DOT",
@@ -15,5 +15,7 @@ export const TokenType = {
     RPAREN: "RPAREN",
     CONTAINS: "CONTAINS",
     IN: "IN",
-    COMMA: "COMMA"
+    COMMA: "COMMA",
+    LBRACKET: "LBRACKET",
+    RBRACKET: "RBRACKET",
 }; 
