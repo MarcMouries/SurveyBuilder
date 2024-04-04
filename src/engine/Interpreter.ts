@@ -1,16 +1,21 @@
 import type { ASTNodeVisitor } from './ast/ASTNodeVisitor';
 import {
   type ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
-  Identifier, LogicalExpression, NumberNode, StringNode, UnaryExpression, MemberExpression
+  Identifier, LogicalExpression, NumberNode, StringNode, UnaryExpression, MemberExpression, ArrayLiteral
 } from "./ast/ASTNode";
 import { Environment } from './Environment';
-import { TokenType } from "./Token";
+import { Token } from "./Token";
 
 export class Interpreter implements ASTNodeVisitor {
   private environment: Environment;
 
   constructor(environment?: Environment) {
     this.environment = environment ? environment : new Environment();
+  }
+
+
+  visitArrayLiteral(node: ArrayLiteral): any[] {
+    return node.elements.map(element => this.evaluate(element));
   }
 
   visitAssignmentExpression(expr: AssignmentExpression): any {
@@ -101,8 +106,13 @@ export class Interpreter implements ASTNodeVisitor {
         return leftVal == rightVal;
       case "^":
         return Math.pow(leftVal, rightVal);
+      case "in":
+          if (!Array.isArray(rightVal)) {
+              throw new Error("Operator 'in' requires an array on the right side");
+          }
+          return rightVal.includes(leftVal);
       default:
-        throw new Error(`Unsupported operator ${expr.operator}`);
+        throw new Error(`Unsupported operator '${expr.operator}'`);
     }
   }
   visitBooleanNode(node: BooleanNode): boolean {
@@ -115,10 +125,10 @@ export class Interpreter implements ASTNodeVisitor {
 
   visitLogicalExpression(expr: LogicalExpression): boolean {
     const left = this.evaluate(expr.left);
-    if (expr.operator === TokenType.OR) {
+    if (expr.operator === Token.OR) {
       if (left === true)
         return true;
-    } else if (expr.operator === TokenType.AND) {
+    } else if (expr.operator === Token.AND) {
       if (left === false)
         return false;
     }
