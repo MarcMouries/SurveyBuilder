@@ -14,8 +14,8 @@ function createTest(input, expected) {
       expect(result).toBe(expected);
     } catch (error) {
       console.log("Result: : ", result);
-      const json = ASTtoJSON.toJson(expression);
-      console.log("toString: ", json);
+      const jsonAST = ASTtoJSON.toJson(expression);
+      console.log("AST: ", jsonAST);
       throw error; // Rethrow the error to ensure the test fails.
     }
   });
@@ -39,6 +39,20 @@ createTest("(10-5)*2", 10);
 
 createTest("2^3", 8);
 
+createTest("4 in [2, 4]", true);
+createTest("2 in [1, 3]", false);
+
+test("Test the expression '2 in answer_list' with Known variable", () => {
+  let environment = new Environment();
+  environment.define("answer_list", [6, 4, 2]);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("2 in answer_list");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+
 test("Test the expression 'age > 18' with Unknown variable", () => {
   let interpreter = new Interpreter();
   const parser = new Parser();
@@ -59,8 +73,7 @@ test("Test the expression 'height * 2 == 10' with Known variable", () => {
 });
 
 
-test("Evaluate Known variable in Binary Expression  'age' == 18", () => {
-  console.log("\nEvaluating 'age == 18'");
+test("Test Known variable in Binary Expression  'age' == 18", () => {
   let environment = new Environment();
   environment.define("age", 18);
   let interpreter = new Interpreter(environment);
@@ -70,8 +83,7 @@ test("Evaluate Known variable in Binary Expression  'age' == 18", () => {
   expect(result).toBe(true);
 });
 
-test("Evaluate Known variable in Binary Expression 'age >= 13 and age <= 19", () => {
-  console.log("\nEvaluating 'age >= 13 and age <= 19'");
+test("Test Known variable in Binary Expression 'age >= 13 and age <= 19", () => {
   let environment = new Environment();
   environment.define("age", 18);
   let interpreter = new Interpreter(environment);
@@ -81,8 +93,7 @@ test("Evaluate Known variable in Binary Expression 'age >= 13 and age <= 19", ()
   expect(result).toBe(true);
 });
 
-test("Evaluate OR expression with true short-circuit", () => {
-  console.log("\nEvaluating 'age > 20 or age < 30'");
+test("Test OR expression with true short-circuit with 'age > 20 or age < 30'", () => {
   let environment = new Environment();
   environment.define("age", 25);
   let interpreter = new Interpreter(environment);
@@ -92,8 +103,7 @@ test("Evaluate OR expression with true short-circuit", () => {
   expect(result).toBe(true);
 });
 
-test("Evaluate AND expression with false short-circuit", () => {
-  console.log("\nEvaluating 'age > 20 and age < 18'");
+test("Test AND expression with false short-circuit: 'age > 20 and age < 18'", () => {
   let environment = new Environment();
   environment.define("age", 15);
   let interpreter = new Interpreter(environment);
@@ -103,8 +113,7 @@ test("Evaluate AND expression with false short-circuit", () => {
   expect(result).toBe(false);
 });
 
-test("Evaluate AND expression with both sides false", () => {
-  console.log("\nEvaluating 'age > 30 and age < 10'");
+test("Test AND expression with both sides false: 'age > 30 and age < 10'", () => {
   let environment = new Environment();
   environment.define("age", 20);
   let interpreter = new Interpreter(environment);
@@ -114,8 +123,7 @@ test("Evaluate AND expression with both sides false", () => {
   expect(result).toBe(false);
 });
 
-test("Evaluate nested logical expressions", () => {
-  console.log("\nEvaluating '(age >= 13 and age <= 19) or age == 21'");
+test("Test nested logical expressions: '(age >= 13 and age <= 19) or age == 21'", () => {
   let environment = new Environment();
   environment.define("age", 21);
   let interpreter = new Interpreter(environment);
@@ -125,11 +133,7 @@ test("Evaluate nested logical expressions", () => {
   expect(result).toBe(true);
 });
 
-
-
-
-test("Evaluate Unary Negation on variable '-age' where age is 25", () => {
-  console.log("\nEvaluating '-age' where age is 25");
+test("Test Unary Negation on variable '-age' where age is 25", () => {
   let environment = new Environment();
   environment.define("age", 25);
   let interpreter = new Interpreter(environment);
@@ -139,8 +143,7 @@ test("Evaluate Unary Negation on variable '-age' where age is 25", () => {
   expect(result).toBe(-25);
 });
 
-test("Evaluate Unary NOT on variable '!registered' where registered is true", () => {
-  console.log("\nEvaluating '!registered' where registered is true");
+test("Test Unary NOT on variable with expression: '!registered'", () => {
   let environment = new Environment();
   environment.define("registered", true);
   let interpreter = new Interpreter(environment);
@@ -150,51 +153,38 @@ test("Evaluate Unary NOT on variable '!registered' where registered is true", ()
   expect(result).toBe(false);
 });
 
-test("Evaluate Direct Assignment to a Variable 'x = 10'", () => {
-  console.log("\nEvaluating Direct Assignment 'x = 10'");
+test("Test Direct Assignment to a Variable with expression: 'x = 10'", () => {
   const parser = new Parser();
   let expression = parser.parse("x = 10");
   let environment = new Environment();
   let interpreter = new Interpreter(environment);
-  //console.log(`Environment: `, environment.toString());
   let result = interpreter.interpret(expression);
-  console.log(`Result of Assignment: ${result}`);
-  console.log(environment.toString());
-
-  // The result of the assignment expression itself should be the value assigned, according to most language specifications
   expect(result).toBe(10);
-
   const value = environment.get("x");
-  console.log(`new value in Environment: ${value}`);
   expect(value).toBe(10);
-
 });
 
+test("Test Member Expression  'person.age' == 18", () => {
+  const parser = new Parser();
+  let expression = parser.parse("person.age = 18");
 
+  let environment = new Environment();
+  environment.set("person", {});
+  let interpreter = new Interpreter(environment);
+  //let json = ASTtoJSON.toJson(expression);
+  //console.log("ASTtoJSON.toString   : ", json);
 
+  let result = interpreter.interpret(expression);
+  //console.log(`Result: ${result}`);
 
-// test("Evaluate Member Expression  'person.age' = 18", () => {
-//   console.log("\nEvaluating Assignment 'person.age = 18'");
-//   const parser = new Parser();
-//   let expression = parser.parse("person.age = 18");
+  expression = parser.parse("person.age == 18");
+  result = interpreter.interpret(expression);
+  //console.log(`Result: ${result}`);
+  //console.log(`Environment: `, environment.toString());
+  expect(result).toBe(true);
+});
 
-//   let environment = new Environment();
-//   environment.set("person", {});
-//   let interpreter = new Interpreter(environment);
-//   let json = ASTtoJSON.toJson(expression);
-//   console.log("ASTtoJSON.toString   : ", json);
-
-//   let result = interpreter.interpret(expression);
-//   console.log(`Result: ${result}`);
-
-//   expression = parser.parse("person.age == 18");
-//   result = interpreter.interpret(expression);
-//   console.log(`Result: ${result}`);
-//   console.log(`Environment: `, environment.toString());
-//   expect(result).toBe(true);
-// });
-
-// test("Evaluate Assignment Expression  'person.age' = 18", () => {
+// test("Test Assignment Expression  'person.age' = 18", () => {
 //   console.log("\nEvaluating Assignment 'person.age = 18'");
 //   let interpreter = new Interpreter();
 //   const parser = new Parser();
@@ -206,7 +196,7 @@ test("Evaluate Direct Assignment to a Variable 'x = 10'", () => {
 //   expect(result).toBe(true);
 // });
 
-//  test("Evaluate Assignment Expression  'order.customer.age' = 18", () => {
+//  test("Test Assignment Expression  'order.customer.age' = 18", () => {
 //   console.log("\nEvaluating Assignment 'order.customer.age = 18'");
 //   let interpreter = new Interpreter();
 //   const parser = new Parser();
@@ -218,7 +208,7 @@ test("Evaluate Direct Assignment to a Variable 'x = 10'", () => {
 //   expect(result).toBe(true);
 // });
 
-//  test("Evaluate BinaryExpression  'age' > 18", () => {
+//  test("Test BinaryExpression  'age' > 18", () => {
 //    console.log("\nEvaluating BinaryExpression 'age > 18'");
 //    let interpreter = new Interpreter();
 //    const parser = new Parser();
