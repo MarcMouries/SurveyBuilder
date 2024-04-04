@@ -5,15 +5,13 @@ import { BinaryExpression } from "../../src/engine/ast/ASTNode";
 
 
 const testCases = [
-  {
-    expression_string: "18",
+  { expression_string: "18",
     expected: {
       type: "Number",
       value: 18
     }
   },
-  {
-    expression_string: "-18",
+  { expression_string: "-18",
     expected: {
       type: "UnaryExpression",
       operator: "-",
@@ -23,11 +21,17 @@ const testCases = [
       },
     }
   },
+  { expression_string: "37.2",
+    expected: {
+      type: "Number",
+      value: 37.2
+    }
+  },
   {
-    expression_string: "'toto'",
+    expression_string: "'A String'",
     expected: {
       type: "String",
-      value: "toto"
+      value: "A String"
     }
   },
   {
@@ -116,6 +120,21 @@ const testCases = [
     }
   },
   {
+    expression_string: "age is not 18",
+    expected: {
+      type: "BinaryExpression",
+      operator: "!=",
+      left: {
+        type: "Identifier",
+        name: "age"
+      },
+      right: {
+        type: "Number",
+        value: 18
+      }
+    }
+  },
+  {
     expression_string: "age > 18",
     expected: {
       type: "BinaryExpression",
@@ -131,11 +150,11 @@ const testCases = [
     }
   },
   {
-    expression_string: "10 + 2 * 5",
+    expression_string: "10 - 2 * 5",
     expected:
     {
       "type": "BinaryExpression",
-      "operator": "+",
+      "operator": "-",
       "left": {
         "type": "Number",
         "value": 10
@@ -154,6 +173,24 @@ const testCases = [
       }
     }
   },
+  {
+    expression_string: "(10-5)*2",
+    expected:
+    { type: "BinaryExpression",
+      "left": {
+        type: "GroupExpression",
+        expression: {
+          type: "BinaryExpression",
+          left: {  type: "Number",  value: 10  },
+          operator: "-",
+          right: {  type: "Number", value: 5   },
+        },
+      },
+      "operator": "*",
+      right: { type: "Number",      value: 2     },
+    }
+  },
+
   {
     expression_string: "10 + 2 * 5 == 20",
     expected: {
@@ -249,7 +286,24 @@ const testCases = [
       type: "BinaryExpression",
     }
   },
-
+  {  // to ensure the parser can handle extreme nesting 
+    expression_string: "((((10))))",
+    expected: {
+      type: "GroupExpression",
+      expression: {
+        type: "GroupExpression",
+        expression: {
+            type: "GroupExpression",
+            expression: {     
+              type: "GroupExpression",
+              expression: {     
+                type: "Number",  value: 10       
+              }
+            }
+        }
+      },
+    }
+  },
   {
     expression_string: "weight / height ^ 2",
     expected:
@@ -392,26 +446,6 @@ const testCases = [
       }
     }
   },
-  // // {
-  // //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
-  // //   expected: {
-  // //     type: "Between",
-  // //     operator: "between",
-  // //     left: {
-  // //       type: "Identifier",
-  // //       name: "age"
-  // //     },
-  // //     middle: {
-  // //       type: "Identifier",
-  // //       name: "TODDLER_AGE"
-  // //     },
-  // //     right: {
-  // //       type: "Identifier",
-  // //       name: "MAJORITY_AGE"
-  // //     }
-  // //   }
-  // // },
-
   {
     expression_string: "person.age == 18",
     expected:
@@ -439,6 +473,7 @@ const testCases = [
       right: { type: "Number", value: 18 },
     }
   },
+
   {
     expression_string: "customer.person.age = 18",
     expected: {
@@ -461,6 +496,43 @@ const testCases = [
       right: { type: "Number", value: 18 },
     }
   },
+  {
+    expression_string: "List_of_Colors contains 'blue'",
+    expected: {
+      type: "BinaryExpression",
+      operator: "contains",
+      left: {   type: "Identifier", name: "List_of_Colors",   },
+      right: {  type: "String",     value: "blue"      },
+    }
+  },
+  {
+    expression_string: "'blue' in List_of_Colors",
+    expected: {
+      type: "BinaryExpression",
+      operator: "in",
+      left: {   type: "String",     value: "blue"    },
+      right: {  type: "Identifier", name:  "List_of_Colors" },
+    }
+  },
+  {
+    expression_string: "answer in ['blue', 'gren']",
+    expected: {
+      type: "BinaryExpression",
+      operator: "in",
+      left: {
+        type: "Identifier",
+        name: "answer",
+      },
+      right: {
+        type: "ArrayLiteral",
+        elements: [
+          { type: "String",  value: "blue" }, 
+          { type: "String",  value: "gren" }
+        ],
+      },
+    }
+  },
+
   // {
   //   expression_string: "class Person{}",
   //   expected: {
@@ -473,6 +545,27 @@ const testCases = [
   //     right: { type: "Number", value: 18 },
   //   }
   // }
+
+  // {
+  //   expression_string: "age is between TODDLER_AGE and MAJORITY_AGE",
+  //   expected: {
+  //     type: "Between",
+  //     operator: "between",
+  //     left: {
+  //       type: "Identifier",
+  //       name: "age"
+  //     },
+  //     middle: {
+  //       type: "Identifier",
+  //       name: "TODDLER_AGE"
+  //     },
+  //     right: {
+  //       type: "Identifier",
+  //       name: "MAJORITY_AGE"
+  //     }
+  //   }
+  // },  
+
 ];
 
 
@@ -494,6 +587,8 @@ testCases.forEach(({ expression_string, expected }) => {
     }
   });
 })
+
+
 
 //Test for error handling: missing expression after '=' in assignment 
 // const expression_string = "2  3 + 1";
