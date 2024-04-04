@@ -32,8 +32,8 @@ export class ASTtoJSON implements ASTNodeVisitor {
     visitBinaryExpression(node: BinaryExpression): any {
         return {
             type: "BinaryExpression",
-            operator: node.operator,
             left: node.left.accept(this),
+            operator: node.operator,
             right: node.right.accept(this)
         };
     }
