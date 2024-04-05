@@ -111,12 +111,10 @@ test("Tokenize: 1+3", () => {
 });
 
 
-
-
-createTest("myList contains 'toto'", 
-[ {     type: "IDENTIFIER",   value: "myList"   },
+createTest("List_of_Colors contains 'blue'", 
+[ {     type: "IDENTIFIER",   value: "List_of_Colors"   },
   {     type: "CONTAINS",     value: "contains" },
-  {     type: "STRING",       value: "toto"     }
+  {     type: "STRING",       value: "blue"     }
 ]); 
 
 createTest("'blue' in List_of_Colors", 
