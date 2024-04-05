@@ -42,6 +42,29 @@ createTest("2^3", 8);
 createTest("4 in [2, 4]", true);
 createTest("2 in [1, 3]", false);
 
+
+test("Test the expression: 'List_of_Colors contains 'blue''", () => {
+  let environment = new Environment();
+  environment.define("List_of_Colors", ['blue', 'green']);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("List_of_Colors contains 'blue'");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+test("Test the expression: 'blue' in List_of_Colors'", () => {
+  let environment = new Environment();
+  environment.define("List_of_Colors", ['blue', 'green']);
+  let interpreter = new Interpreter(environment);
+  const parser = new Parser();
+  const expression = parser.parse("'blue' in List_of_Colors");
+  const result = interpreter.interpret(expression);
+  expect(result).toBe(true);
+});
+
+//✓ Testing 'answer in ['blue', 'green']' [0.06ms]
+
 test("Test the expression '2 in answer_list' with Known variable", () => {
   let environment = new Environment();
   environment.define("answer_list", [6, 4, 2]);
