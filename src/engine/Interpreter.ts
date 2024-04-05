@@ -55,21 +55,21 @@ export class Interpreter implements ASTNodeVisitor {
 
   visitMemberExpression(expr: MemberExpression): any {
     const object = this.evaluate(expr.object);
-  
+
     // Assuming the property is an Identifier and not a more complex expression
-    if ( ! (expr.property instanceof Identifier)) {
+    if (!(expr.property instanceof Identifier)) {
       throw new Error("Only simple identifiers are supported for property names.");
     }
-  
+
     // Access the property value
     const propertyName = expr.property.name;
     if (object && typeof object === 'object' && propertyName in object) {
       return object[propertyName];
     }
-  
+
     throw new Error(`Property '${propertyName}' not found`);
   }
-  
+
 
   interpret(expression: ASTNode): any {
     const value = this.evaluate(expression)
@@ -106,11 +106,16 @@ export class Interpreter implements ASTNodeVisitor {
         return leftVal == rightVal;
       case "^":
         return Math.pow(leftVal, rightVal);
+      case "contains":
+        if (!Array.isArray(leftVal)) {
+          throw new Error("Operator 'contains' requires an array on the left side");
+        }
+        return leftVal.includes(rightVal);
       case "in":
-          if (!Array.isArray(rightVal)) {
-              throw new Error("Operator 'in' requires an array on the right side");
-          }
-          return rightVal.includes(leftVal);
+        if (!Array.isArray(rightVal)) {
+          throw new Error("Operator 'in' requires an array on the right side");
+        }
+        return rightVal.includes(leftVal);
       default:
         throw new Error(`Unsupported operator '${expr.operator}'`);
     }
