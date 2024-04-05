@@ -515,7 +515,7 @@ const testCases = [
     }
   },
   {
-    expression_string: "answer in ['blue', 'gren']",
+    expression_string: "answer in ['blue', 'green']",
     expected: {
       type: "BinaryExpression",
       operator: "in",
@@ -527,7 +527,7 @@ const testCases = [
         type: "ArrayLiteral",
         elements: [
           { type: "String",  value: "blue" }, 
-          { type: "String",  value: "gren" }
+          { type: "String",  value: "green" }
         ],
       },
     }
