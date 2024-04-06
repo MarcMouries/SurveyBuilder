@@ -5,8 +5,7 @@ import {
     SingleLineTextQuestion,
     MultiChoice, OneChoice,
     MultiLineTextQuestion,
-    YesNoQuestion2
-} from './question-types/index.js';
+    YesNoQuestion2} from './question-types/index.js';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
@@ -69,6 +68,8 @@ class SurveyBuilder implements ISurveyBuilder {
         this.navigationContainer = document.createElement('div');
         this.navigationContainer.id = 'navigation-buttons';
         this.navigationContainer.role = 'navigation';
+        this.navigationContainer.style.display = 'none'; // Initially hide the navigation container
+
         this.nextButton = document.createElement('button');
         this.prevButton = document.createElement('button');
         this.completeButton = document.createElement('button');
@@ -133,7 +134,8 @@ class SurveyBuilder implements ISurveyBuilder {
 
 
     private startSurvey() {
-        this.questionsContainer.style.display = 'block'; // Make it visible
+        this.questionsContainer.style.display = 'block'; // Make questions visible
+        this.navigationContainer.style.display = 'block'; // Make navigation buttons visible
         this.initializeQuestions();
         this.showNextQuestion();
     }
