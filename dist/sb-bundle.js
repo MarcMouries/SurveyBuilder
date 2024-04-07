@@ -769,15 +769,6 @@ class SurveyBuilder {
     this.questionsContainer.id = "survey-questions";
     this.questionsContainer.style.display = "none";
     this.surveyContainer.appendChild(this.questionsContainer);
-    this.navigationContainer = document.createElement("div");
-    this.navigationContainer.id = "navigation-buttons";
-    this.navigationContainer.role = "navigation";
-    this.nextButton = document.createElement("button");
-    this.prevButton = document.createElement("button");
-    this.completeButton = document.createElement("button");
-    this.navigationContainer.appendChild(this.prevButton);
-    this.navigationContainer.appendChild(this.nextButton);
-    this.surveyContainer.appendChild(this.navigationContainer);
   }
   createInitialPage(container) {
     this.createSurveyTitle(this.surveyTitle, container);
@@ -826,21 +817,7 @@ class SurveyBuilder {
     this.questionsContainer.style.display = "block";
     this.initializeQuestions();
     this.showNextQuestion();
-  }
-  addNavigationControls() {
-    this.nextButton.textContent = "Next";
-    this.nextButton.className = "survey-button";
-    this.nextButton.addEventListener("click", () => this.showNextQuestion());
-    this.prevButton.textContent = "Previous";
-    this.prevButton.className = "survey-button";
-    this.prevButton.addEventListener("click", () => this.showPreviousQuestion());
-    this.prevButton.style.display = "none";
-    this.completeButton = document.createElement("button");
-    this.completeButton.className = "survey-button";
-    this.completeButton.textContent = "Complete";
-    this.completeButton.addEventListener("click", () => this.finishSurvey());
-    this.navigationContainer.appendChild(this.completeButton);
-    this.completeButton.style.display = "none";
+    this.initNavigationButtons();
   }
   initializeQuestions() {
     this.questions.forEach((question, index) => {
@@ -878,7 +855,6 @@ class SurveyBuilder {
       }
     });
     this.questionComponents.forEach((component) => component.hide());
-    this.addNavigationControls();
   }
   showPreviousQuestion() {
     let foundQuestion = false;
@@ -1037,6 +1013,28 @@ class SurveyBuilder {
     if (config.questions.some((question) => typeof question !== "object")) {
       throw new Error("All items in questions array must be objects");
     }
+  }
+  initNavigationButtons() {
+    if (!this.navigationContainer) {
+      this.navigationContainer = document.createElement("div");
+      this.navigationContainer.id = "navigation-buttons";
+      this.navigationContainer.role = "navigation";
+      this.surveyContainer.appendChild(this.navigationContainer);
+    } else {
+      this.navigationContainer.innerHTML = "";
+    }
+    this.prevButton = this.createButton("Previous", "survey-button", () => this.showPreviousQuestion(), "none");
+    this.nextButton = this.createButton("Next", "survey-button", () => this.showNextQuestion(), "block");
+    this.completeButton = this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none");
+  }
+  createButton(text, className, onClick, displayStyle) {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.className = className;
+    button.addEventListener("click", onClick);
+    button.style.display = displayStyle;
+    this.navigationContainer.appendChild(button);
+    return button;
   }
   getQuestionElement(index) {
     let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");

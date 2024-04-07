@@ -18,11 +18,11 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private surveyContainer: HTMLElement;
     private questionsContainer: HTMLElement;
-    private navigationContainer: HTMLElement;
+    private navigationContainer!: HTMLElement;
 
-    private nextButton: HTMLElement;
-    private prevButton: HTMLElement;
-    private completeButton: HTMLElement;
+    private nextButton!: HTMLElement;
+    private prevButton!: HTMLElement;
+    private completeButton!: HTMLElement;
 
     private questionComponents: any[];
     private responses: { [key: string]: any };
@@ -63,20 +63,6 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.id = 'survey-questions';
         this.questionsContainer.style.display = 'none'; // Hide until the survey starts
         this.surveyContainer.appendChild(this.questionsContainer);
-
-        // NAV BUTTONS
-        this.navigationContainer = document.createElement('div');
-        this.navigationContainer.id = 'navigation-buttons';
-        this.navigationContainer.role = 'navigation';
-        this.navigationContainer.style.display = 'none'; // Initially hide the navigation container
-
-        this.nextButton = document.createElement('button');
-        this.prevButton = document.createElement('button');
-        this.completeButton = document.createElement('button');
-
-        this.navigationContainer.appendChild(this.prevButton);
-        this.navigationContainer.appendChild(this.nextButton);
-        this.surveyContainer.appendChild(this.navigationContainer);
     }
 
     private createInitialPage(container: HTMLElement) {
@@ -135,35 +121,9 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private startSurvey() {
         this.questionsContainer.style.display = 'block'; // Make questions visible
-        this.navigationContainer.style.display = 'block'; // Make navigation buttons visible
         this.initializeQuestions();
         this.showNextQuestion();
-    }
-
-    private addNavigationControls() {
-       // this.nextButton = document.createElement('button');
-        this.nextButton.textContent = 'Next';
-        this.nextButton.className = 'survey-button';
-
-        this.nextButton.addEventListener('click', () => this.showNextQuestion());
-
-        //this.prevButton = document.createElement('button');
-        this.prevButton.textContent = 'Previous';
-        this.prevButton.className = 'survey-button';
-
-        this.prevButton.addEventListener('click', () => this.showPreviousQuestion());
-
-        // Initially, hide the Previous button as you start from the first question
-        this.prevButton.style.display = 'none';
-
-        // complete button
-        this.completeButton = document.createElement('button');
-        this.completeButton.className = 'survey-button';
-        this.completeButton.textContent = 'Complete';
-        this.completeButton.addEventListener('click', () => this.finishSurvey());
-        this.navigationContainer.appendChild(this.completeButton);
-        // Initially, hide the Complete button 
-        this.completeButton.style.display = 'none';
+        this.initNavigationButtons();
     }
 
 
@@ -208,7 +168,7 @@ class SurveyBuilder implements ISurveyBuilder {
         // Initially, hide all questions
         this.questionComponents.forEach(component => component.hide());
 
-        this.addNavigationControls();
+       // this.addNavigationControls();
     }
 
     private showPreviousQuestion() {
@@ -435,6 +395,33 @@ class SurveyBuilder implements ISurveyBuilder {
             throw new Error('All items in questions array must be objects');
         }
     }
+
+    private initNavigationButtons() {
+        if (!this.navigationContainer) {
+            this.navigationContainer = document.createElement('div');
+            this.navigationContainer.id = 'navigation-buttons';
+            this.navigationContainer.role = 'navigation';
+            this.surveyContainer.appendChild(this.navigationContainer);
+        } else {
+            this.navigationContainer.innerHTML = '';
+        }
+    
+        this.prevButton = this.createButton('Previous', 'survey-button', () => this.showPreviousQuestion(), 'none');
+        this.nextButton = this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'block');
+        this.completeButton = this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none');
+    }
+    
+
+    private createButton(text: string, className: string, onClick: () => void, displayStyle: 'none' | 'block') {
+        const button = document.createElement('button');
+        button.textContent = text;
+        button.className = className;
+        button.addEventListener('click', onClick);
+        button.style.display = displayStyle;
+        this.navigationContainer.appendChild(button);
+        return button;
+    }
+    
 
     getQuestionElement(index: number): any {
         let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
