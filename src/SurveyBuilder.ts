@@ -122,8 +122,8 @@ class SurveyBuilder implements ISurveyBuilder {
     private startSurvey() {
         this.questionsContainer.style.display = 'block'; // Make questions visible
         this.initializeQuestions();
-        this.showNextQuestion();
         this.initNavigationButtons();
+        this.showNextQuestion();
     }
 
 
@@ -274,7 +274,6 @@ class SurveyBuilder implements ISurveyBuilder {
         console.log("handleEndOfSurvey");
         this.nextButton.style.display = 'none'; // Hide Next button
         // Show a Complete or Submit button, or take any action to finalize the survey
-
     }
 
 

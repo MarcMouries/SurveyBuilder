@@ -816,8 +816,8 @@ class SurveyBuilder {
   startSurvey() {
     this.questionsContainer.style.display = "block";
     this.initializeQuestions();
-    this.showNextQuestion();
     this.initNavigationButtons();
+    this.showNextQuestion();
   }
   initializeQuestions() {
     this.questions.forEach((question, index) => {
