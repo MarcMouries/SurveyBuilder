@@ -13,28 +13,9 @@ interface ICondition {
  * 2) conditions are separated by 'And' or 'Or'
  */
 export class ConditionParser {
-  constructor(private responses: { [key: string]: any }) {}
+  constructor(private responses: { [key: string]: any }) { }
 
-/** Extract question names from a condition*/ 
-public static extractQuestionNamesFromCondition(conditionStr: string): string[] {
-  console.log(`extractQuestionNamesFromCondition`);
-  console.log(`  - conditionStr : ${conditionStr}`);
 
-  const questionNames: string[] = [];
-  // This regex attempts to capture question names more accurately
-  // It assumes question names do not contain the operators or the space around them
-  // This is a simplistic approach and might need adjustments
-  const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
-
-  let match;
-  while ((match = regex.exec(conditionStr))) {
-      if (match[1] && !questionNames.includes(match[1])) {
-          questionNames.push(match[1]);
-      }
-  }
-  console.log(`  - references questions: ${questionNames.join(", ")}`);
-  return questionNames;
-}
 
 
 
@@ -61,7 +42,7 @@ public static extractQuestionNamesFromCondition(conditionStr: string): string[] 
         case '<':
           return answer < value;
         case '>':
-            return answer > value;
+          return answer > value;
         default:
           throw new Error(`Unsupported operator ${operator}`);
       }
