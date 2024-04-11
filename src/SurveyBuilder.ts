@@ -1,11 +1,12 @@
 import {
-    FollowUpQuestion, 
+    FollowUpQuestion,
     RankingQuestion,
     SelectQuestion,
     SingleLineTextQuestion,
     MultiChoice, OneChoice,
     MultiLineTextQuestion,
-    YesNoQuestion2} from './question-types/index.js';
+    YesNoQuestion2
+} from './question-types/index.js';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
@@ -42,6 +43,8 @@ class SurveyBuilder implements ISurveyBuilder {
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
         this.questions = config.questions;
+
+        console.log("QUESTIONS", this.questions)
 
 
         const containerElement = document.getElementById(containerId);
@@ -126,8 +129,6 @@ class SurveyBuilder implements ISurveyBuilder {
         this.showNextQuestion();
     }
 
-
-
     private initializeQuestions() {
         this.questions.forEach((question: IQuestion, index: number) => {
             this.storeQuestionDependencies(question);
@@ -168,7 +169,7 @@ class SurveyBuilder implements ISurveyBuilder {
         // Initially, hide all questions
         this.questionComponents.forEach(component => component.hide());
 
-       // this.addNavigationControls();
+        // this.addNavigationControls();
     }
 
     private showPreviousQuestion() {
@@ -189,7 +190,6 @@ class SurveyBuilder implements ISurveyBuilder {
             // Handle case where we're at the beginning of the survey
             // This could be resetting to the survey start or hiding the "Previous" button
         }
-        this.updateNavigationButtons();
     }
 
 
@@ -213,7 +213,6 @@ class SurveyBuilder implements ISurveyBuilder {
         } else {
             this.handleEndOfSurvey();
         }
-        this.updateNavigationButtons();
     }
 
 
@@ -270,6 +269,41 @@ class SurveyBuilder implements ISurveyBuilder {
 
     }
 
+/**
+ * Evaluate visibility conditions for dependent questions based on the given response.
+ */
+    evaluateVisibilityConditions(response: IQuestionResponse): void {
+        console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
+
+        // Get the list of questions whose visibility depends on the question responded to
+        const dependentQuestions = this.questionDependencies.get(response.questionName);
+        console.log("dependentQuestions: ", dependentQuestions);
+
+
+        if (dependentQuestions) {
+            const conditionParser = new ConditionParser(this.responses);
+
+            // Go through each dependent question and determine if it should be shown or hidden
+            dependentQuestions.forEach(dependentQuestionName => {
+                console.log(" - question: " + dependentQuestionName);
+
+                const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
+                if (questionComponent) {
+                    const visible_when = questionComponent.questionData.visible_when;
+                    if (visible_when) {
+                        const shouldShow = conditionParser.evaluateCondition(visible_when);
+                        if (shouldShow) {
+                            questionComponent.show();
+                        } else {
+                            questionComponent.hide();
+
+                        }
+                    }
+                }
+            });
+        }
+    }
+
     private handleEndOfSurvey(): void {
         console.log("handleEndOfSurvey");
         this.nextButton.style.display = 'none'; // Hide Next button
@@ -320,40 +354,7 @@ class SurveyBuilder implements ISurveyBuilder {
 
     }
 
-    /**
-     * Evaluate visibility conditions for dependent questions based on the given response.
-     */
-    evaluateVisibilityConditions(response: IQuestionResponse): void {
-        console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
 
-        // Get the list of questions whose visibility depends on the question responded to
-        const dependentQuestions = this.questionDependencies.get(response.questionName);
-        console.log("dependentQuestions: ", dependentQuestions);
-
-
-        if (dependentQuestions) {
-            const conditionParser = new ConditionParser(this.responses);
-
-            // Go through each dependent question and determine if it should be shown or hidden
-            dependentQuestions.forEach(dependentQuestionName => {
-                console.log(" - question: " + dependentQuestionName);
-
-                const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
-                if (questionComponent) {
-                    const visible_when = questionComponent.questionData.visible_when;
-                    if (visible_when) {
-                        const shouldShow = conditionParser.evaluateCondition(visible_when);
-                        if (shouldShow) {
-                            questionComponent.show();
-                        } else {
-                            questionComponent.hide();
-
-                        }
-                    }
-                }
-            });
-        }
-    }
 
 
     /**
@@ -404,12 +405,12 @@ class SurveyBuilder implements ISurveyBuilder {
         } else {
             this.navigationContainer.innerHTML = '';
         }
-    
+
         this.prevButton = this.createButton('Previous', 'survey-button', () => this.showPreviousQuestion(), 'none');
         this.nextButton = this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'block');
         this.completeButton = this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none');
     }
-    
+
 
     private createButton(text: string, className: string, onClick: () => void, displayStyle: 'none' | 'block') {
         const button = document.createElement('button');
@@ -420,7 +421,7 @@ class SurveyBuilder implements ISurveyBuilder {
         this.navigationContainer.appendChild(button);
         return button;
     }
-    
+
 
     getQuestionElement(index: number): any {
         let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
