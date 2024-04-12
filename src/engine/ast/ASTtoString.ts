@@ -1,6 +1,6 @@
 import type { ASTNodeVisitor } from './ASTNodeVisitor';
 import type { ArrayLiteral, ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, 
-    GroupingExpression, LogicalExpression, MemberExpression, NumberNode, StringNode, 
+    GroupExpression, LogicalExpression, MemberExpression, NumberNode, StringNode, 
     UnaryExpression, Identifier} from "./ASTNode";
 
 export class ASTtoString implements ASTNodeVisitor {
@@ -32,7 +32,7 @@ export class ASTtoString implements ASTNodeVisitor {
     return node.value;
   }
 
-  visitGroupingExpression(node: GroupingExpression): string {
+  visitGroupExpression(node: GroupExpression): string {
     return `${node.expression.accept(this)}`;
   }
 

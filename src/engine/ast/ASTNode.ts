@@ -100,13 +100,13 @@ export class BinaryExpression implements ASTNode {
   }
 }
 
-export class GroupingExpression implements ASTNode {
+export class GroupExpression implements ASTNode {
   expression: ASTNode;
   constructor(expression: ASTNode) {
     this.expression = expression;
   }
   accept(visitor: ASTNodeVisitor): void {
-    return visitor.visitGroupingExpression(this);
+    return visitor.visitGroupExpression(this);
   }
 }
 

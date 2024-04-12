@@ -1,5 +1,5 @@
 import { ArrayLiteral, BooleanNode, NumberNode, StringNode, Identifier,
-  AssignmentExpression, BinaryExpression, GroupingExpression, 
+  AssignmentExpression, BinaryExpression, GroupExpression, 
   LogicalExpression, MemberExpression, UnaryExpression} from "./ast/ASTNode";
 import { Tokenizer } from "./Tokenizer";
 import { Token } from "./Token";
@@ -123,7 +123,7 @@ export class Parser {
       Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
       Logger.logEnd(`Parsing GROUP at position: ${current}`);
 
-      return new GroupingExpression(expr);
+      return new GroupExpression(expr);
     }
 
     const parseLogicalOr = () => {
