@@ -679,20 +679,6 @@ class ConditionParser {
   constructor(responses) {
     this.responses = responses;
   }
-  static extractQuestionNamesFromCondition(conditionStr) {
-    console.log(`extractQuestionNamesFromCondition`);
-    console.log(`  - conditionStr : ${conditionStr}`);
-    const questionNames = [];
-    const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
-    let match;
-    while (match = regex.exec(conditionStr)) {
-      if (match[1] && !questionNames.includes(match[1])) {
-        questionNames.push(match[1]);
-      }
-    }
-    console.log(`  - references questions: ${questionNames.join(", ")}`);
-    return questionNames;
-  }
   evaluateCondition(conditionStr) {
     const orConditions = conditionStr.split("Or").map((s) => s.trim());
     for (const orCondition of orConditions) {
@@ -733,8 +719,9 @@ class ConditionParser {
 }
 
 // src/SurveyBuilder.ts
+var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
+
 class SurveyBuilder {
-  static RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
   surveyContainer;
   questionsContainer;
   navigationContainer;
@@ -754,6 +741,7 @@ class SurveyBuilder {
     this.surveyTitle = config.surveyTitle;
     this.surveyDescription = config.surveyDescription;
     this.questions = config.questions;
+    console.log("QUESTIONS", this.questions);
     const containerElement = document.getElementById(containerId);
     if (!containerElement) {
       throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
@@ -870,7 +858,6 @@ class SurveyBuilder {
       this.showQuestion(this.currentQuestionIndex);
     } else {
     }
-    this.updateNavigationButtons();
   }
   showNextQuestion() {
     console.log("showNextQuestion");
@@ -890,7 +877,6 @@ class SurveyBuilder {
     } else {
       this.handleEndOfSurvey();
     }
-    this.updateNavigationButtons();
   }
   showQuestion(index) {
     console.log("showQuestion: " + index);
@@ -919,45 +905,27 @@ class SurveyBuilder {
   addQuestionElement(questionDiv) {
     this.questionsContainer.appendChild(questionDiv);
   }
+  extractQuestionNamesFromCondition(conditionStr) {
+    console.log(`extractQuestionNamesFromCondition`);
+    console.log(`  - conditionStr : ${conditionStr}`);
+    const questionNames = [];
+    const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
+    let match;
+    while (match = regex.exec(conditionStr)) {
+      if (match[1] && !questionNames.includes(match[1])) {
+        questionNames.push(match[1]);
+      }
+    }
+    console.log(`  - references questions: ${questionNames.join(", ")}`);
+    return questionNames;
+  }
   storeQuestionDependencies(question) {
     const titleDependencies = this.extractTitleDependency(question.title);
     this.updateQuestionDependencies(question.name, titleDependencies);
     if (question.visible_when) {
-      const conditionDependencies = ConditionParser.extractQuestionNamesFromCondition(question.visible_when);
+      const conditionDependencies = this.extractQuestionNamesFromCondition(question.visible_when);
       this.updateQuestionDependencies(question.name, conditionDependencies);
     }
-  }
-  handleEndOfSurvey() {
-    console.log("handleEndOfSurvey");
-    this.nextButton.style.display = "none";
-  }
-  updateQuestionDependencies(questionName, dependencies) {
-    dependencies.forEach((dependency) => {
-      const currentDependencies = this.questionDependencies.get(dependency) || [];
-      if (!currentDependencies.includes(questionName)) {
-        currentDependencies.push(questionName);
-      }
-      this.questionDependencies.set(dependency, currentDependencies);
-    });
-  }
-  extractTitleDependency(title) {
-    const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
-    const dependencies = matches.map((match) => {
-      const dependency = match[1].trim();
-      console.log(`Dependency '${dependency}' found in title: ${title}`);
-      return dependency;
-    });
-    return dependencies;
-  }
-  constructNewTitle(template, response) {
-    return template.replace(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX, (_, placeholderName) => {
-      return response;
-    });
-  }
-  setResponse(response) {
-    this.responses[response.questionName] = response.response;
-    this.evaluateVisibilityConditions(response);
-    this.updateDependentQuestionTitles(response);
   }
   evaluateVisibilityConditions(response) {
     console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
@@ -981,6 +949,38 @@ class SurveyBuilder {
         }
       });
     }
+  }
+  handleEndOfSurvey() {
+    console.log("handleEndOfSurvey");
+    this.nextButton.style.display = "none";
+  }
+  updateQuestionDependencies(questionName, dependencies) {
+    dependencies.forEach((dependency) => {
+      const currentDependencies = this.questionDependencies.get(dependency) || [];
+      if (!currentDependencies.includes(questionName)) {
+        currentDependencies.push(questionName);
+      }
+      this.questionDependencies.set(dependency, currentDependencies);
+    });
+  }
+  extractTitleDependency(title) {
+    const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
+    const dependencies = matches.map((match) => {
+      const dependency = match[1].trim();
+      console.log(`Dependency '${dependency}' found in title: ${title}`);
+      return dependency;
+    });
+    return dependencies;
+  }
+  constructNewTitle(template, response) {
+    return template.replace(QUESTION_REFERENCE_REGEX, (_, placeholderName) => {
+      return response;
+    });
+  }
+  setResponse(response) {
+    this.responses[response.questionName] = response.response;
+    this.evaluateVisibilityConditions(response);
+    this.updateDependentQuestionTitles(response);
   }
   updateDependentQuestionTitles(response) {
     console.log("updateDependentQuestionTitles dependent on question: " + response.questionName);
