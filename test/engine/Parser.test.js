@@ -5,13 +5,15 @@ import { BinaryExpression } from "../../src/engine/ast/ASTNode";
 
 
 const testCases = [
-  { expression_string: "18",
+  {
+    expression_string: "18",
     expected: {
       type: "Number",
       value: 18
     }
   },
-  { expression_string: "-18",
+  {
+    expression_string: "-18",
     expected: {
       type: "UnaryExpression",
       operator: "-",
@@ -21,7 +23,8 @@ const testCases = [
       },
     }
   },
-  { expression_string: "37.2",
+  {
+    expression_string: "37.2",
     expected: {
       type: "Number",
       value: 37.2
@@ -176,18 +179,19 @@ const testCases = [
   {
     expression_string: "(10-5)*2",
     expected:
-    { type: "BinaryExpression",
+    {
+      type: "BinaryExpression",
       "left": {
         type: "GroupExpression",
         expression: {
           type: "BinaryExpression",
-          left: {  type: "Number",  value: 10  },
+          left: { type: "Number", value: 10 },
           operator: "-",
-          right: {  type: "Number", value: 5   },
+          right: { type: "Number", value: 5 },
         },
       },
       "operator": "*",
-      right: { type: "Number",      value: 2     },
+      right: { type: "Number", value: 2 },
     }
   },
 
@@ -293,13 +297,13 @@ const testCases = [
       expression: {
         type: "GroupExpression",
         expression: {
+          type: "GroupExpression",
+          expression: {
             type: "GroupExpression",
-            expression: {     
-              type: "GroupExpression",
-              expression: {     
-                type: "Number",  value: 10       
-              }
+            expression: {
+              type: "Number", value: 10
             }
+          }
         }
       },
     }
@@ -501,8 +505,8 @@ const testCases = [
     expected: {
       type: "BinaryExpression",
       operator: "contains",
-      left: {   type: "Identifier", name: "List_of_Colors",   },
-      right: {  type: "String",     value: "blue"      },
+      left: { type: "Identifier", name: "List_of_Colors", },
+      right: { type: "String", value: "blue" },
     }
   },
   {
@@ -510,8 +514,8 @@ const testCases = [
     expected: {
       type: "BinaryExpression",
       operator: "in",
-      left: {   type: "String",     value: "blue"    },
-      right: {  type: "Identifier", name:  "List_of_Colors" },
+      left: { type: "String", value: "blue" },
+      right: { type: "Identifier", name: "List_of_Colors" },
     }
   },
   {
@@ -526,12 +530,22 @@ const testCases = [
       right: {
         type: "ArrayLiteral",
         elements: [
-          { type: "String",  value: "blue" }, 
-          { type: "String",  value: "green" }
+          { type: "String", value: "blue" },
+          { type: "String", value: "green" }
         ],
       },
     }
   },
+
+  {
+    expression_string: "has_pet == 'Yes'",
+    expected: {
+      type: "BinaryExpression",
+      left:  { name: "has_pet", type: "Identifier" },
+      operator: "==",
+      right: {  type: "String", value: "Yes"  }
+    }
+  }
 
   // {
   //   expression_string: "class Person{}",
