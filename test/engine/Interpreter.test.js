@@ -43,37 +43,52 @@ createTest("4 in [2, 4]", true);
 createTest("2 in [1, 3]", false);
 
 
-test("Test the expression: 'List_of_Colors contains 'blue''", () => {
-  let environment = new Environment();
-  environment.define("List_of_Colors", ['blue', 'green']);
-  let interpreter = new Interpreter(environment);
-  const parser = new Parser();
-  const expression = parser.parse("List_of_Colors contains 'blue'");
-  const result = interpreter.interpret(expression);
-  expect(result).toBe(true);
+function testExpressionWithEnvironment({ description, setup, expression, expected }) {
+  test(description, () => {
+    const environment = new Environment();
+    // Apply setup to the environment (e.g., defining variables)
+    setup.forEach(({ key, value }) => environment.define(key, value));
+
+    const interpreter = new Interpreter(environment);
+    const parser = new Parser();
+    const parsedExpression = parser.parse(expression);
+    const result = interpreter.interpret(parsedExpression);
+
+    expect(result).toBe(expected);
+  });
+}
+
+
+testExpressionWithEnvironment({
+  description: "Test the expression: 'List_of_Colors contains 'blue''",
+  setup: [{ key: "List_of_Colors", value: ['blue', 'green'] }],
+  expression: "List_of_Colors contains 'blue'",
+  expected: true
 });
 
-test("Test the expression: 'blue' in List_of_Colors'", () => {
-  let environment = new Environment();
-  environment.define("List_of_Colors", ['blue', 'green']);
-  let interpreter = new Interpreter(environment);
-  const parser = new Parser();
-  const expression = parser.parse("'blue' in List_of_Colors");
-  const result = interpreter.interpret(expression);
-  expect(result).toBe(true);
+testExpressionWithEnvironment({
+  description: "Test the expression: 'blue' in List_of_Colors'",
+  setup: [{ key: "List_of_Colors", value: ['blue', 'green'] }],
+  expression: "'blue' in List_of_Colors",
+  expected: true
 });
 
-//✓ Testing 'answer in ['blue', 'green']' [0.06ms]
-
-test("Test the expression '2 in answer_list' with Known variable", () => {
-  let environment = new Environment();
-  environment.define("answer_list", [6, 4, 2]);
-  let interpreter = new Interpreter(environment);
-  const parser = new Parser();
-  const expression = parser.parse("2 in answer_list");
-  const result = interpreter.interpret(expression);
-  expect(result).toBe(true);
+testExpressionWithEnvironment({
+  description: "Test the expression '2 in answer_list' with Known variable",
+  setup: [{ key: "answer_list", value: [6, 4, 2] }],
+  expression: "2 in answer_list",
+  expected: true
 });
+
+testExpressionWithEnvironment({
+  description: "Test the expression 'answer in ['blue', 'green']'",
+  setup: [{ key: "answer", value: "green" }],
+  expression: "answer in ['blue', 'green']",
+  expected: true
+});
+
+
+
 
 
 test("Test the expression 'age > 18' with Unknown variable", () => {
@@ -188,24 +203,53 @@ test("Test Direct Assignment to a Variable with expression: 'x = 10'", () => {
 });
 
 test("Test Member Expression  'person.age' == 18", () => {
-  const parser = new Parser();
-  let expression = parser.parse("person.age = 18");
-
+  // Define the environment and the person
   let environment = new Environment();
   environment.set("person", {});
   let interpreter = new Interpreter(environment);
+
+  // assign a value
+  const parser = new Parser();
+  let assignmentExpression = parser.parse("person.age = 18");
+  // Re
+  let result = interpreter.interpret(assignmentExpression);
+  console.log(`Result: ${result}`);
+
+  let equalityExpression = parser.parse("person.age == 18");
+  result = interpreter.interpret(equalityExpression);
+  console.log(`Result: ${result}`);
+  
+  //console.log(`Environment: `, environment.toString());
   //let json = ASTtoJSON.toJson(expression);
   //console.log("ASTtoJSON.toString   : ", json);
-
-  let result = interpreter.interpret(expression);
-  //console.log(`Result: ${result}`);
-
-  expression = parser.parse("person.age == 18");
-  result = interpreter.interpret(expression);
-  //console.log(`Result: ${result}`);
-  //console.log(`Environment: `, environment.toString());
   expect(result).toBe(true);
 });
+
+function testIdentifierExtraction({ description, input, expected }) {
+  test(description, () => {
+    const parser = new Parser();
+    const expression = parser.parse(input);
+    //let json = ASTtoJSON.toJson(expression);
+    //console.log("ASTtoJSON.toString   : ", json);
+    const identifierList = Interpreter.extractIdentifiers(expression);
+      //console.log("identifierList   : ", identifierList);
+
+    expect(identifierList).toEqual(expect.arrayContaining(expected));
+    expect(identifierList.length).toBe(expected.length);
+  });
+}
+testIdentifierExtraction({
+  description: "Extract identifiers from parsed condition",
+  input: "has_pet == 'Yes'",
+  expected: ["has_pet"],
+});
+
+testIdentifierExtraction({
+  description: "Extract identifiers from complex parsed condition",
+  input: "age > 18 and (has_pet == 'Yes' and pet_type in ['dog', 'cat'])",
+  expected: ["age", "has_pet", "pet_type"],
+});
+
 
 // test("Test Assignment Expression  'person.age' = 18", () => {
 //   console.log("\nEvaluating Assignment 'person.age = 18'");
