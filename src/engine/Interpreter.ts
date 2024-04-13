@@ -1,8 +1,7 @@
 import type { ASTNodeVisitor } from './ast/ASTNodeVisitor';
 import {
-  type ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupingExpression,
-  Identifier, LogicalExpression, NumberNode, StringNode, UnaryExpression, MemberExpression, ArrayLiteral
-} from "./ast/ASTNode";
+  type ASTNode, AssignmentExpression, BinaryExpression, BooleanNode, GroupExpression, Identifier,
+  LogicalExpression, NumberNode, StringNode, UnaryExpression, MemberExpression, ArrayLiteral} from "./ast/ASTNode";
 import { Environment } from './Environment';
 import { Token } from "./Token";
 
@@ -12,6 +11,39 @@ export class Interpreter implements ASTNodeVisitor {
   constructor(environment?: Environment) {
     this.environment = environment ? environment : new Environment();
   }
+
+
+  /**
+   * Extracts unique identifiers from an AST.
+   * @param {ASTNode} node - The root node of the AST.
+   * @returns {string[]} An array of unique identifier names.
+   */
+  public static extractIdentifiers(node: ASTNode): string[] {
+    const identifiers = new Set<string>();
+
+    const traverse = (node: ASTNode | null) => {
+        if (!node) return;
+
+        if (node instanceof Identifier) {
+            identifiers.add(node.name);
+        } else if (node instanceof BinaryExpression || node instanceof LogicalExpression || node instanceof AssignmentExpression) {
+            traverse(node.left);
+            traverse(node.right);
+        } else if (node instanceof MemberExpression) {
+            traverse(node.object);
+        } else if (node instanceof GroupExpression) {
+            // GroupExpression handling to traverse nested expressions
+            traverse(node.expression);
+        }
+        // Check and traverse ArrayLiteral if needed
+        else if (node instanceof ArrayLiteral) {
+            node.elements.forEach(element => traverse(element));
+        }
+    };
+
+    traverse(node);
+    return Array.from(identifiers);
+}
 
 
   visitArrayLiteral(node: ArrayLiteral): any[] {
@@ -124,7 +156,7 @@ export class Interpreter implements ASTNodeVisitor {
     return node.value
   }
 
-  visitGroupingExpression(expr: GroupingExpression): void {
+  visitGroupExpression(expr: GroupExpression): void {
     return this.evaluate(expr.expression);
   }
 
