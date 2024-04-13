@@ -13,9 +13,10 @@ import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { ConditionParser } from './ConditionParser.ts';
 
-class SurveyBuilder implements ISurveyBuilder {
+const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
-    static readonly RESPONSE_PLACEHOLDER_REGEX = /{{\s*(.+?)\s*}}/g;
+
+class SurveyBuilder implements ISurveyBuilder {
 
     private surveyContainer: HTMLElement;
     private questionsContainer: HTMLElement;
@@ -258,20 +259,43 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.appendChild(questionDiv);
     }
 
+    /** Extract question names from a condition*/
+    extractQuestionNamesFromCondition(conditionStr: string): string[] {
+        console.log(`extractQuestionNamesFromCondition`);
+        console.log(`  - conditionStr : ${conditionStr}`);
+
+        const questionNames: string[] = [];
+        // This regex attempts to capture question names more accurately
+        // It assumes question names do not contain the operators or the space around them
+        // This is a simplistic approach and might need adjustments
+        const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
+
+        let match;
+        while ((match = regex.exec(conditionStr))) {
+            if (match[1] && !questionNames.includes(match[1])) {
+                questionNames.push(match[1]);
+            }
+        }
+        console.log(`  - references questions: ${questionNames.join(", ")}`);
+        return questionNames;
+    }
+
     private storeQuestionDependencies(question: IQuestion): void {
         const titleDependencies = this.extractTitleDependency(question.title);
         this.updateQuestionDependencies(question.name, titleDependencies);
 
         if (question.visible_when) {
-            const conditionDependencies = ConditionParser.extractQuestionNamesFromCondition(question.visible_when);
+            const conditionDependencies = this.extractQuestionNamesFromCondition(question.visible_when);
             this.updateQuestionDependencies(question.name, conditionDependencies);
         }
 
     }
 
-/**
- * Evaluate visibility conditions for dependent questions based on the given response.
- */
+
+
+    /**
+     * Evaluate visibility conditions for dependent questions based on the given response.
+     */
     evaluateVisibilityConditions(response: IQuestionResponse): void {
         console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
 
@@ -326,7 +350,7 @@ class SurveyBuilder implements ISurveyBuilder {
      * Ex: "What activity do you like doing during the {{favorite-season}} season :"
     */
     private extractTitleDependency(title: string): string[] {
-        const matches = Array.from(title.matchAll(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX));
+        const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
         const dependencies = matches.map(match => {
             const dependency = match[1].trim();
             console.log(`Dependency '${dependency}' found in title: ${title}`);
@@ -341,7 +365,7 @@ class SurveyBuilder implements ISurveyBuilder {
      * Replace placeholders in the format {{placeholderName}} in the template with the actual response
      */
     private constructNewTitle(template: string, response: any): string {
-        return template.replace(SurveyBuilder.RESPONSE_PLACEHOLDER_REGEX, (_, placeholderName) => {
+        return template.replace(QUESTION_REFERENCE_REGEX, (_, placeholderName) => {
             return response;
         });
     }
