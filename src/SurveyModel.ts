@@ -13,8 +13,8 @@ export class SurveyModel {
     private responseMap: { [key: string]: any };
     private originalTitles: Map<string, string>;
     private compiledConditions: Map<string, any>;
-    private visibilityDependencies: Map<string, string[]> = new Map();
-    private titleDependencies: Map<string, string[]> = new Map();
+    private titleDependencies: Map<string, IQuestion[]> = new Map();
+    private visibilityDependencies: Map<string, IQuestion[]> = new Map();
 
 
     constructor(questionList: IQuestion[]) {
@@ -31,15 +31,38 @@ export class SurveyModel {
 
     private initialize() {
         this.questionList.forEach(question => {
+
             this.originalTitles.set(question.name, question.title);
+
+            // Extract dependencies from the question's title
+            const dependencyList = this.extractTitleDependency(question.title);
+
+            // Update the titleDependencies map
+            dependencyList.forEach(dependencyName => {
+                let dependencies = this.titleDependencies.get(dependencyName) || [];
+                dependencies.push(question);
+                this.titleDependencies.set(dependencyName, dependencies);
+            });
+
             // If a "visible_when" condition is specified, the question should initially be hidden (false).
             // Otherwise, the question is visible by default (true).
             question.isVisible = question.visible_when ? false : true;
 
             if (question.visible_when) {
+                // compile the expression
                 const compiledCondition = this.parser.parse(question.visible_when);
                 this.compiledConditions.set(question.name, compiledCondition);
+
+                // Extract dependencies from the visibility condition
+                const visibilityDependencyList = Interpreter.extractIdentifiers(compiledCondition);
+                visibilityDependencyList.forEach(dependencyName => {
+                    let dependencies = this.visibilityDependencies.get(dependencyName) || [];
+                    dependencies.push(question);
+                    this.visibilityDependencies.set(dependencyName, dependencies);
+                });
             }
+
+
         });
     }
 
@@ -51,12 +74,14 @@ export class SurveyModel {
     public updateResponse(questionName: string, response: any) {
         this.responseMap[questionName] = response;
         this.environment.set(questionName, response);
-        this.evaluateVisibilityConditions();
-        this.updateDynamicTitles();
+        this.updateDynamicTitles(questionName);
+        this.updateVisibility(questionName);
     }
 
-    private evaluateVisibilityConditions() {
-        this.questionList.forEach(question => {
+    private updateVisibility(updatedQuestionName: string) {
+        const dependentQuestions = this.visibilityDependencies.get(updatedQuestionName);
+
+        dependentQuestions?.forEach(question => {
             if (this.compiledConditions.has(question.name)) {
                 const compiledCondition = this.compiledConditions.get(question.name);
                 question.isVisible = this.interpreter.interpret(compiledCondition);
@@ -64,13 +89,17 @@ export class SurveyModel {
         });
     }
 
-    private updateDynamicTitles() {
-        this.questionList.forEach(question => {
+    private updateDynamicTitles(updatedQuestionName: string) {
+        const dependentQuestions = this.titleDependencies.get(updatedQuestionName);
+
+
+        dependentQuestions?.forEach(question => {
             const originalTitle = this.originalTitles.get(question.name);
             if (originalTitle) {
                 question.title = this.constructNewTitle(originalTitle);
             }
         });
+
     }
 
     /**
@@ -83,8 +112,7 @@ export class SurveyModel {
             // `placeholderName` is the captured group from `QUESTION_REFERENCE_REGEX`, representing the placeholder's name.
             // For each placeholder found, this attempts to find its value in `this.responseMap`.
             // If a value is found, it's used to replace the placeholder in the template.
-            // If no value is found (undefined), it falls back to the original placeholder syntax.
-            return this.responseMap[placeholderName.trim()] || `{{${placeholderName.trim()}}}`;
+            return this.responseMap[placeholderName.trim()];
         });
     }
 
@@ -97,7 +125,6 @@ export class SurveyModel {
         const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
         const dependencies = matches.map(match => {
             const dependency = match[1].trim();
-            console.log(`Dependency '${dependency}' found in title: ${title}`);
             return dependency;
         });
         return dependencies;
