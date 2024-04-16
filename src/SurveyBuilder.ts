@@ -1,11 +1,6 @@
 import {
-    FollowUpQuestion,
-    RankingQuestion,
-    SelectQuestion,
-    SingleLineTextQuestion,
-    MultiChoice, OneChoice,
-    MultiLineTextQuestion,
-    YesNoQuestion2
+    FollowUpQuestion, RankingQuestion, SelectQuestion, SingleLineTextQuestion,
+    MultiChoice, OneChoice, MultiLineTextQuestion, YesNoQuestion2
 } from './question-types/index.js';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
@@ -39,7 +34,6 @@ class SurveyBuilder implements ISurveyBuilder {
 
 
     constructor(config: any, containerId: string) {
-        this.validateConfig(config);
 
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
@@ -359,8 +353,6 @@ class SurveyBuilder implements ISurveyBuilder {
         return dependencies;
     }
 
-
-
     /**
      * Replace placeholders in the format {{placeholderName}} in the template with the actual response
      */
@@ -377,8 +369,6 @@ class SurveyBuilder implements ISurveyBuilder {
         this.updateDependentQuestionTitles(response);
 
     }
-
-
 
 
     /**
@@ -399,24 +389,6 @@ class SurveyBuilder implements ISurveyBuilder {
                     dependentQuestionComponent.updateTitle(newTitle);
                 }
             });
-        }
-    }
-
-    private validateConfig(config: any) {
-        if (!config) {
-            throw new Error('Config object is required');
-        }
-        if (typeof config.surveyTitle !== 'string') {
-            throw new Error('Invalid or missing surveyTitle');
-        }
-        if (typeof config.surveyDescription !== 'string') {
-            throw new Error('Invalid or missing surveyDescription');
-        }
-        if (!Array.isArray(config.questions)) {
-            throw new Error('Invalid or missing questions array');
-        }
-        if (config.questions.some((question: any) => typeof question !== 'object')) {
-            throw new Error('All items in questions array must be objects');
         }
     }
 
