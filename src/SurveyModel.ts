@@ -6,19 +6,26 @@ import type { IQuestion } from './IQuestion.ts';
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 export class SurveyModel {
+
+    private surveyTitle: any;
+    private surveyDescription: any;
     private questionList: IQuestion[];
+    private responseMap: { [key: string]: any };
+
     private interpreter: Interpreter;
     private parser: Parser;
     private environment: Environment;
-    private responseMap: { [key: string]: any };
     private originalTitles: Map<string, string>;
     private compiledConditions: Map<string, any>;
     private titleDependencies: Map<string, IQuestion[]> = new Map();
     private visibilityDependencies: Map<string, IQuestion[]> = new Map();
 
+    constructor(config: any) {
+        this.validateSurveySetup(config);
+        this.surveyTitle = config.surveyTitle;
+        this.surveyDescription = config.surveyDescription;
+        this.questionList = config.questions;
 
-    constructor(questionList: IQuestion[]) {
-        this.questionList = questionList;
         this.environment = new Environment();
         this.parser = new Parser();
         this.interpreter = new Interpreter(this.environment);
@@ -129,5 +136,40 @@ export class SurveyModel {
         });
         return dependencies;
     }
+
+    private validateSurveySetup(config: any) {
+        if (!config) throw new Error('Config object is required');
+    
+        if (typeof config.surveyTitle !== 'string') throw new Error('Invalid or missing surveyTitle');
+        if (typeof config.surveyDescription !== 'string') throw new Error('Invalid or missing surveyDescription');
+    
+        if (!Array.isArray(config.questions)) throw new Error('Invalid or missing questions array');
+    
+        const allowedTypes = ['yes-no', 'select', 'one-choice', 'followup', 'multi-choice', 'ranking', 'multi-line-text', 'single-line-text'];
+        
+        config.questions.forEach((question: any, index: number) => {
+            
+            if (typeof question !== 'object') throw new Error(`Question at index ${index} is not an object`);
+            if (typeof question.name !== 'string' || question.name.trim() === '') {
+                throw new Error(`Question at index ${index} is missing a valid name`);
+            }
+            if (typeof question.title !== 'string' || question.title.trim() === '') {
+                throw new Error(`Question at index ${index} is missing a valid title`);
+            }
+            if (!allowedTypes.includes(question.type)) {
+                const allowedTypesString = allowedTypes.join(', '); // Convert the array of allowed types to a string
+                throw new Error(`Question type "${question.type}" at index ${index} is not allowed. Allowed types are: ${allowedTypesString}`);
+            }
+            
+            if ('isRequired' in question && typeof question.isRequired !== 'boolean') throw new Error(`"isRequired" must be boolean at index ${index}`);
+    
+            if (question.options && !Array.isArray(question.options)) throw new Error(`"options" must be an array at index ${index}`);
+            if (question.items && !Array.isArray(question.items)) throw new Error(`"items" must be an array at index ${index}`);
+    
+            if (question.options_source && typeof question.options_source !== 'string') throw new Error(`"options_source" must be a string URL at index ${index}`);
+    
+        });
+    }
+    
 
 }
