@@ -27,7 +27,8 @@ export class FollowUpQuestion extends QuestionType {
 
             const input = document.createElement('input');
             input.type = 'text';
-            input.placeholder = detailQuestion.placeholder;
+            input.placeholder = detailQuestion.placeholder ?? '';
+
             input.addEventListener('input', this.handleInputChange.bind(this, detailQuestion.name));
             inputWrapper.appendChild(input);
 

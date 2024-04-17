@@ -12,9 +12,9 @@ export class SingleLineTextQuestion extends QuestionType {
         const inputField = document.createElement('input');
         inputField.type = 'text';
         inputField.name = question.name;
-        inputField.required = question.isRequired;
+        inputField.required = question.isRequired ?? false;
         inputField.className = 'single-line-text-input';
-        inputField.placeholder = question.placeholder;
+        inputField.placeholder = question.placeholder ?? '';
 
         this.questionDiv.appendChild(inputField);
 

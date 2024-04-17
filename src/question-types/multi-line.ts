@@ -12,7 +12,8 @@ export class MultiLineTextQuestion extends QuestionType {
 
         const textArea = document.createElement('textarea');
         textArea.name = question.name;
-        textArea.required = question.isRequired;
+        textArea.required = question.isRequired ?? false;
+
         textArea.className = 'multi-line-text-input';
         textArea.placeholder = 'Enter your comments here...';
         this.questionDiv.appendChild(textArea);
