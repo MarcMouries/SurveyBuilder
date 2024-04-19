@@ -104,3 +104,26 @@ describe('validateSurveySetup', () => {
   });
 });
 
+test("Handles visibility based on conditions correctly", () => {
+  const questions = [
+    { name: "q1", title: "First Question", type: "yes-no", isVisible: true },
+    // This question is initially not visible, becomes visible based on "q1" response
+    { name: "q2", title: "Second Question", type: "yes-no", isVisible: false, visible_when: "q1 == 'Yes'" },
+    { name: "q3", title: "Third Question", type: "yes-no", isVisible: true }
+  ];
+  surveyConfig.questions = questions;
+  const surveyModel = new SurveyModel(surveyConfig);
+
+  // Initially, q2 is not visible
+  let nextQuestion = surveyModel.nextVisibleQuestion(0);
+  expect(nextQuestion?.name).toBe("q3");
+
+  // Simulate response to q1 that makes q2 visible
+  surveyModel.updateResponse("q1", "Yes");
+  nextQuestion = surveyModel.nextVisibleQuestion(0);
+  expect(nextQuestion?.name).toBe("q2");
+
+  // Check if q2 is correctly identified as the previous question from q3 after becoming visible
+  const prevQuestion = surveyModel.prevVisibleQuestion(2); // Index of q3 after update
+  expect(prevQuestion?.name).toBe("q2");
+});

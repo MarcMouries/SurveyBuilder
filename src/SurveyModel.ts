@@ -68,11 +68,12 @@ export class SurveyModel {
                     this.visibilityDependencies.set(dependencyName, dependencies);
                 });
             }
-
-
         });
     }
 
+    public getQuestions(): IQuestion[] {
+        return this.questionList.slice();
+    }
 
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
@@ -137,18 +138,39 @@ export class SurveyModel {
         return dependencies;
     }
 
+    public nextVisibleQuestion(currentIndex: number): IQuestion | null {
+        for (let i = currentIndex + 1; i < this.questionList.length; i++) {
+            if (this.questionList[i].isVisible) {
+                return this.questionList[i];
+            }
+        }
+        return null;
+    }
+    
+    public prevVisibleQuestion(currentIndex: number): IQuestion | null {
+        for (let i = currentIndex - 1; i >= 0; i--) {
+            if (this.questionList[i].isVisible) {
+                return this.questionList[i];
+            }
+        }
+        return null;
+    }
+    
+    
+    
+
     private validateSurveySetup(config: any) {
         if (!config) throw new Error('Config object is required');
-    
+
         if (typeof config.surveyTitle !== 'string') throw new Error('Invalid or missing surveyTitle');
         if (typeof config.surveyDescription !== 'string') throw new Error('Invalid or missing surveyDescription');
-    
+
         if (!Array.isArray(config.questions)) throw new Error('Invalid or missing questions array');
-    
+
         const allowedTypes = ['yes-no', 'select', 'one-choice', 'followup', 'multi-choice', 'ranking', 'multi-line-text', 'single-line-text'];
-        
+
         config.questions.forEach((question: any, index: number) => {
-            
+
             if (typeof question !== 'object') throw new Error(`Question at index ${index} is not an object`);
             if (typeof question.name !== 'string' || question.name.trim() === '') {
                 throw new Error(`Question at index ${index} is missing a valid name`);
@@ -160,16 +182,16 @@ export class SurveyModel {
                 const allowedTypesString = allowedTypes.join(', '); // Convert the array of allowed types to a string
                 throw new Error(`Question type "${question.type}" at index ${index} is not allowed. Allowed types are: ${allowedTypesString}`);
             }
-            
+
             if ('isRequired' in question && typeof question.isRequired !== 'boolean') throw new Error(`"isRequired" must be boolean at index ${index}`);
-    
+
             if (question.options && !Array.isArray(question.options)) throw new Error(`"options" must be an array at index ${index}`);
             if (question.items && !Array.isArray(question.items)) throw new Error(`"items" must be an array at index ${index}`);
-    
+
             if (question.options_source && typeof question.options_source !== 'string') throw new Error(`"options_source" must be a string URL at index ${index}`);
-    
+
         });
     }
-    
+
 
 }
