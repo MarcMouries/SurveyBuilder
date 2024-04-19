@@ -51,12 +51,13 @@ export class Tokenizer {
 
   isAlpha(char) {
     return (char >= "a" && char <= "z")
-      || (char >= "A" && char <= "Z")
-      || char === "_";
+        || (char >= "A" && char <= "Z");
   }
 
   isAlphaNumeric(char) {
-    return this.isAlpha(char) || this.isDigit(char);
+    return this.isAlpha(char)
+     || this.isDigit(char)
+     || char === "_" || char === "-";
   }
 
   matchToken(input, position, tokenList) {
