@@ -75,6 +75,10 @@ export class SurveyModel {
     public getQuestions(): IQuestion[] {
         return this.questionList.slice();
     }
+    public getNumberOfQuestions(): number {
+        return this.questionList.length;
+    }
+
 
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
