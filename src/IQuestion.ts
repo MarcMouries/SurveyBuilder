@@ -1,5 +1,5 @@
 export interface IQuestion {
-
+    index?: number; 
     title: string;
     name: string;
     isRequired?: boolean;

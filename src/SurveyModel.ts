@@ -37,7 +37,8 @@ export class SurveyModel {
     }
 
     private initialize() {
-        this.questionList.forEach(question => {
+        this.questionList.forEach((question, index) => {
+            question.index = index; 
 
             this.originalTitles.set(question.name, question.title);
 
