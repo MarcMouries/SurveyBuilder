@@ -1,10 +1,10 @@
 import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
-import { QuestionType } from "./QuestionType.ts";
+import { QuestionComponent } from "./QuestionComponent.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
-export class RankingQuestion extends QuestionType {
+export class RankingQuestion extends QuestionComponent {
     placeholder: HTMLDivElement;
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {

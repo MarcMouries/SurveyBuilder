@@ -2,14 +2,14 @@ import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
-import { QuestionType } from "./QuestionType.ts";
+import { QuestionComponent } from "./QuestionComponent.ts";
 
 /**
  * An abstract base class for creating choice-based question elements. 
  * It cannot be instantiated directly but provides common functionality 
  * for its subclasses to generate input elements and their associated labels.
  */
-export abstract class AbstractChoice extends QuestionType {
+export abstract class AbstractChoice extends QuestionComponent {
     protected items: string[] = [];
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {

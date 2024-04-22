@@ -2,7 +2,7 @@ import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
-import { QuestionType } from "./QuestionType.ts";
+import { QuestionComponent } from "./QuestionComponent.ts";
 
 /**
  * A subclass of OneChoice specifically designed for Yes/No questions. 
@@ -10,7 +10,7 @@ import { QuestionType } from "./QuestionType.ts";
  * Example Question: "Do you have any previous experience with our products?"
  * (*) Yes () No
  */
-export class YesNoQuestion extends QuestionType {
+export class YesNoQuestion extends QuestionComponent {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);

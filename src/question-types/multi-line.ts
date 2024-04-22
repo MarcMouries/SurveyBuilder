@@ -1,11 +1,11 @@
 import type { IQuestion } from "../IQuestion.ts";
 import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
-import { QuestionType } from "./QuestionType.ts";
+import { QuestionComponent } from "./QuestionComponent.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
 
-export class MultiLineTextQuestion extends QuestionType {
+export class MultiLineTextQuestion extends QuestionComponent {
 
     constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
         super(surveyBuilder, question, index);
