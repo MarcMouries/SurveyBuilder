@@ -238,10 +238,10 @@ createTest("(age + 10) >= 65", [
 ]);
 
 createTest("use_federal_forms",
-[{  type: "IDENTIFIER", value: "use_federal_forms" }]);
+  [{ type: "IDENTIFIER", value: "use_federal_forms" }]);
 
 createTest("use-federal-forms",
-  [{  type: "IDENTIFIER", value: "use-federal-forms" }]);
+  [{ type: "IDENTIFIER", value: "use-federal-forms" }]);
 
 
 
