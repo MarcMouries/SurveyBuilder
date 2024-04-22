@@ -93,8 +93,10 @@ describe('validateSurveySetup', () => {
   test('should throw an error for invalid question type', () => {
     const invalidTypeConfig = {
       ...surveyConfig,
-      questions: [{ ...surveyConfig.questions[0], 
-        name: "test", title: "title", type: "invalid-type" }]
+      questions: [{
+        ...surveyConfig.questions[0],
+        name: "test", title: "title", type: "invalid-type"
+      }]
     };
     expect(() => new SurveyModel(invalidTypeConfig)).toThrow('Question type "invalid-type" at index 0 is not allowed. Allowed types are: yes-no, select, one-choice, followup, multi-choice, ranking, multi-line-text, single-line-text');
   });
@@ -104,26 +106,38 @@ describe('validateSurveySetup', () => {
   });
 });
 
-test("Handles visibility based on conditions correctly", () => {
+
+describe('Question navigation', () => {
   const questions = [
-    { name: "q1", title: "First Question", type: "yes-no", isVisible: true },
-    // This question is initially not visible, becomes visible based on "q1" response
-    { name: "q2", title: "Second Question", type: "yes-no", isVisible: false, visible_when: "q1 == 'Yes'" },
-    { name: "q3", title: "Third Question", type: "yes-no", isVisible: true }
+    { name: "q1", title: "1st Question", type: "yes-no", isVisible: true },
+    { name: "q2", title: "2nd Question", type: "yes-no", isVisible: false, visible_when: "q1 == 'Yes'" },
+    { name: "q3", title: "3rd Question", type: "yes-no", isVisible: true }
   ];
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
 
-  // Initially, q2 is not visible
-  let nextQuestion = surveyModel.nextVisibleQuestion(0);
-  expect(nextQuestion?.name).toBe("q3");
+  test('The very first question to be fetched', () => {
+    let firstQuestion = surveyModel.getNextVisibleQuestion();
+    expect(firstQuestion?.name).toBe("q1");
+  });
 
-  // Simulate response to q1 that makes q2 visible
-  surveyModel.updateResponse("q1", "Yes");
-  nextQuestion = surveyModel.nextVisibleQuestion(0);
-  expect(nextQuestion?.name).toBe("q2");
+  test('expecting q2 to now be visible', () => {
+    // Simulate response to q1 that makes q2 visible
+    surveyModel.updateResponse("q1", "Yes");
 
-  // Check if q2 is correctly identified as the previous question from q3 after becoming visible
-  const prevQuestion = surveyModel.prevVisibleQuestion(2); // Index of q3 after update
-  expect(prevQuestion?.name).toBe("q2");
+    // Next question after response, expecting q2 to now be visible and returned
+    let secondQuestion = surveyModel.getNextVisibleQuestion();
+    expect(secondQuestion?.name).toBe("q2");
+  });
+
+  test('Next visible question should now be q3', () => {
+    let thirdQuestion = surveyModel.getNextVisibleQuestion();
+    expect(thirdQuestion?.name).toBe("q3");
+  });
+
+  test('Moving back to the previous question, expecting q2, which became visible earlier', () => {
+    let previousQuestion = surveyModel.getPreviousVisibleQuestion();
+    expect(previousQuestion?.name).toBe("q2");
+  });
+
 });
