@@ -545,7 +545,28 @@ const testCases = [
       operator: "==",
       right: {  type: "String", value: "Yes"  }
     }
+  },
+  {
+    expression_string: "use-federal-forms == 'Yes'",
+    expected: {
+      type: "BinaryExpression",
+      left:  { name: "use-federal-forms", type: "Identifier" },
+      operator: "==",
+      right: {  type: "String", value: "Yes"  }
+    }
+  },
+  {
+    expression_string: "use-federal-forms is 'Yes'",
+    expected: {
+      type: "BinaryExpression",
+      left:  { name: "use-federal-forms", type: "Identifier" },
+      operator: "==",
+      right: {  type: "String", value: "Yes"  }
+    }
   }
+
+  
+
 
   // {
   //   expression_string: "class Person{}",
