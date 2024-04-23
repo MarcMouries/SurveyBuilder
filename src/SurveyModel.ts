@@ -2,6 +2,8 @@ import { Parser } from "./engine/Parser";
 import { Interpreter } from "./engine/Interpreter";
 import { Environment } from "./engine/Environment";
 import type { IQuestion } from './IQuestion.ts';
+import { EventEmitter} from './EventEmitter.ts'
+import { TITLE_UPDATED } from './EventTypes';
 
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
@@ -10,6 +12,8 @@ export class SurveyModel {
     private surveyTitle: any;
     private surveyDescription: any;
     private questionList: IQuestion[];
+    private currentQuestionIndex: number = -1;
+
     private responseMap: { [key: string]: any };
 
     private interpreter: Interpreter;
@@ -72,19 +76,18 @@ export class SurveyModel {
         });
     }
 
-    public getQuestions(): IQuestion[] {
-        return this.questionList.slice();
-    }
-    public getNumberOfQuestions(): number {
-        return this.questionList.length;
-    }
-
-
+    public getTitle(): string                     { return this.surveyTitle;}
+    public getDescription(): string               { return this.surveyDescription;}
+    public getQuestions(): IQuestion[]            { return this.questionList.slice();}
+    public getResponses(): { [key: string]: any } { return this.responseMap;}
+    public getNumberOfQuestions(): number         { return this.questionList.length;}
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
     }
-
+    
+    
     public updateResponse(questionName: string, response: any) {
+        console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
         this.responseMap[questionName] = response;
         this.environment.set(questionName, response);
         this.updateDynamicTitles(questionName);
@@ -104,16 +107,18 @@ export class SurveyModel {
 
     private updateDynamicTitles(updatedQuestionName: string) {
         const dependentQuestions = this.titleDependencies.get(updatedQuestionName);
-
-
+        console.log(`SurveyModel.updateDynamicTitles updatedQuestionName='${updatedQuestionName}', dependentQuestions='${dependentQuestions?.map(q => q.name)}'`);
+    
         dependentQuestions?.forEach(question => {
             const originalTitle = this.originalTitles.get(question.name);
             if (originalTitle) {
-                question.title = this.constructNewTitle(originalTitle);
+                const newTitle = this.constructNewTitle(originalTitle);
+                question.title = newTitle;
+                EventEmitter.emit(TITLE_UPDATED, question.index, newTitle);
             }
         });
-
     }
+    
 
     /**
      * Replace placeholders in the format {{placeholderName}} in the template with the actual response.
@@ -132,7 +137,6 @@ export class SurveyModel {
     /**
      * Extracts question names from placeholders within a string, indicating dependencies.
      * Ex: "What activity do you like doing during the {{favorite-season}} season :"
-     * 
      */
     private extractTitleDependency(title: string): string[] {
         const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
@@ -143,26 +147,25 @@ export class SurveyModel {
         return dependencies;
     }
 
-    public nextVisibleQuestion(currentIndex: number): IQuestion | null {
-        for (let i = currentIndex + 1; i < this.questionList.length; i++) {
+    public getNextVisibleQuestion(): IQuestion | null {
+        for (let i = this.currentQuestionIndex + 1; i < this.questionList.length; i++) {
             if (this.questionList[i].isVisible) {
+                this.currentQuestionIndex = i; 
                 return this.questionList[i];
             }
         }
         return null;
     }
-    
-    public prevVisibleQuestion(currentIndex: number): IQuestion | null {
-        for (let i = currentIndex - 1; i >= 0; i--) {
+
+    public getPreviousVisibleQuestion(): IQuestion | null {
+        for (let i = this.currentQuestionIndex - 1; i >= 0; i--) {
             if (this.questionList[i].isVisible) {
+                this.currentQuestionIndex = i; 
                 return this.questionList[i];
             }
         }
         return null;
     }
-    
-    
-    
 
     private validateSurveySetup(config: any) {
         if (!config) throw new Error('Config object is required');
@@ -197,6 +200,4 @@ export class SurveyModel {
 
         });
     }
-
-
 }
