@@ -6,12 +6,13 @@ import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts"
 import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
-import { ConditionParser } from './ConditionParser.ts';
-
-const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
-
+import { SurveyModel } from './SurveyModel.ts';
+import { EventEmitter } from './EventEmitter.ts'
+import { TITLE_UPDATED } from './EventTypes';
 
 class SurveyBuilder implements ISurveyBuilder {
+
+    private surveyModel: SurveyModel;
 
     private surveyContainer: HTMLElement;
     private questionsContainer: HTMLElement;
@@ -22,32 +23,21 @@ class SurveyBuilder implements ISurveyBuilder {
     private completeButton!: HTMLElement;
 
     private questionComponents: any[];
-    private responses: { [key: string]: any };
     private completeCallback: any;
-    private questionDependencies: Map<string, string[]> = new Map();
 
-    private currentQuestionIndex: number = -1;
-
-    private questions: any;
-    private surveyTitle: any;
-    private surveyDescription: any;
+    private currentQuestion: IQuestion | null;
 
 
     constructor(config: any, containerId: string) {
+        this.surveyModel = new SurveyModel(config);
+        EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
 
-        this.surveyTitle = config.surveyTitle;
-        this.surveyDescription = config.surveyDescription;
-        this.questions = config.questions;
-
-        console.log("QUESTIONS", this.questions)
-
-
+        this.currentQuestion = null;
         const containerElement = document.getElementById(containerId);
         if (!containerElement) {
             throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
         }
         this.surveyContainer = containerElement;
-        this.responses = {};
         this.questionComponents = [];
 
         // FIRST PAGE
@@ -64,8 +54,8 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     private createInitialPage(container: HTMLElement) {
-        this.createSurveyTitle(this.surveyTitle, container);
-        this.createSurveyDescription(this.surveyDescription, container);
+        this.createSurveyTitle(this.surveyModel.getTitle(), container);
+        this.createSurveyDescription(this.surveyModel.getDescription(), container);
         this.createStartButton(container);
     }
 
@@ -87,6 +77,7 @@ class SurveyBuilder implements ISurveyBuilder {
         container.appendChild(startButtonWrapper);
     }
 
+    /*
     private shouldShowQuestion(question: IQuestion): boolean {
         // Placeholder: Implement actual condition evaluation logic here
         if (!question.visible_when) {
@@ -96,27 +87,7 @@ class SurveyBuilder implements ISurveyBuilder {
         // Return true if the condition is met, false otherwise
         return true;
     }
-    private getNextQuestion() {
-        for (let i = this.currentQuestionIndex + 1; i < this.questions.length; i++) {
-            if (this.shouldShowQuestion(this.questions[i])) {
-                this.currentQuestionIndex = i;
-                return this.questions[i];
-            }
-        }
-        return null; // No more questions
-    }
-
-    private getPreviousQuestion() {
-        for (let i = this.currentQuestionIndex - 1; i >= 0; i--) {
-            if (this.shouldShowQuestion(this.questions[i])) {
-                this.currentQuestionIndex = i;
-                return this.questions[i];
-            }
-        }
-        return null; // This was the first question
-    }
-
-
+*/
     private startSurvey() {
         this.questionsContainer.style.display = 'block'; // Make questions visible
         this.initializeQuestions();
@@ -125,10 +96,9 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
     private initializeQuestions() {
-        this.questions.forEach((question: IQuestion, index: number) => {
-            this.storeQuestionDependencies(question);
+        this.surveyModel.getQuestions().forEach((question: IQuestion, index: number) => {
             switch (question.type) {
-                case "ranking":
+                case "ranking": 
                     this.questionComponents.push(new RankingQuestion(this, question, index));
                     break;
                 case "single-line-text":
@@ -163,73 +133,60 @@ class SurveyBuilder implements ISurveyBuilder {
 
         // Initially, hide all questions
         this.questionComponents.forEach(component => component.hide());
-
-        // this.addNavigationControls();
     }
-
-    private showPreviousQuestion() {
-        let foundQuestion = false;
-        this.currentQuestionIndex--; // Start checking from the previous question
-        while (this.currentQuestionIndex >= 0) {
-            if (this.shouldShowQuestion(this.questions[this.currentQuestionIndex])) {
-                foundQuestion = true;
-                break;
-            }
-            this.currentQuestionIndex--;
-        }
-
-        if (foundQuestion) {
-            this.showQuestion(this.currentQuestionIndex);
-            // Adjust navigation buttons accordingly
-        } else {
-            // Handle case where we're at the beginning of the survey
-            // This could be resetting to the survey start or hiding the "Previous" button
-        }
-    }
-
 
     private showNextQuestion() {
-        console.log("showNextQuestion");
-        console.log(`  - currentQuestionIndex: ${this.currentQuestionIndex}`);
+        // Use the index if available, otherwise fallback to a default value (e.g., 0)
+        const nextQuestion = this.surveyModel.getNextVisibleQuestion();
+        console.log(`showNextQuestion: ${nextQuestion?.title}`);
 
-        let foundQuestion = false;
-        let nextIndex = this.currentQuestionIndex + 1; // Start from the next question
-        while (nextIndex < this.questions.length) {
-            if (this.shouldShowQuestion(this.questions[nextIndex])) {
-                foundQuestion = true;
-                this.currentQuestionIndex = nextIndex; // Update the current index to the found question
-                break;
-            }
-            nextIndex++;
-        }
-
-        if (foundQuestion) {
-            this.showQuestion(this.currentQuestionIndex);
+        if (nextQuestion) {
+            this.currentQuestion = nextQuestion;
+            this.showQuestion(nextQuestion);
         } else {
             this.handleEndOfSurvey();
         }
     }
 
 
+    private showPreviousQuestion() {
+        const prevQuestion = this.surveyModel.getPreviousVisibleQuestion();
+        if (prevQuestion) {
+            this.currentQuestion = prevQuestion; // Update the currentQuestion reference
+            this.showQuestion(prevQuestion); // Implement showing the question as appropriate
+        } else {
+            // Optionally handle the case if this is the first question or no previous visible question
+        }
+    }
 
-    private showQuestion(index: number) {
-        console.log("showQuestion: " + index);
+    private showQuestion(question: IQuestion) {
+        console.log("showQuestion: " + question.name);
 
         // First, hide all questions to ensure only one is shown at a time
         this.questionComponents.forEach(component => component.hide());
 
         // Then, show the targeted question
-        this.questionComponents[index].show();
+        this.questionComponents[question.index!].show();
 
         // Update navigation buttons based on the new index
         this.updateNavigationButtons();
     }
 
     private updateNavigationButtons() {
-        console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
-        this.prevButton.style.display = this.currentQuestionIndex > 0 ? 'block' : 'none';
-        this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? 'block' : 'none';
-        this.completeButton.style.display = this.currentQuestionIndex == this.questions.length - 1 ? 'block' : 'none';
+        const index = this.currentQuestion!.index;
+        console.log(`Updating buttons for index: ${index}`);
+
+        const numberOfQuestions = this.surveyModel.getNumberOfQuestions();
+
+        // Determine button visibility based on the current index
+        const showPrevButton = index! > 0;
+        const showNextButton = index! < numberOfQuestions - 1;
+        const showCompleteButton = index === numberOfQuestions - 1;
+
+        // Update button displays based on the determined conditions
+        this.prevButton.style.display = showPrevButton ? 'block' : 'none';
+        this.nextButton.style.display = showNextButton ? 'block' : 'none';
+        this.completeButton.style.display = showCompleteButton ? 'block' : 'none';
     }
 
 
@@ -253,143 +210,16 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.appendChild(questionDiv);
     }
 
-    /** Extract question names from a condition*/
-    extractQuestionNamesFromCondition(conditionStr: string): string[] {
-        console.log(`extractQuestionNamesFromCondition`);
-        console.log(`  - conditionStr : ${conditionStr}`);
-
-        const questionNames: string[] = [];
-        // This regex attempts to capture question names more accurately
-        // It assumes question names do not contain the operators or the space around them
-        // This is a simplistic approach and might need adjustments
-        const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
-
-        let match;
-        while ((match = regex.exec(conditionStr))) {
-            if (match[1] && !questionNames.includes(match[1])) {
-                questionNames.push(match[1]);
-            }
-        }
-        console.log(`  - references questions: ${questionNames.join(", ")}`);
-        return questionNames;
-    }
-
-    private storeQuestionDependencies(question: IQuestion): void {
-        const titleDependencies = this.extractTitleDependency(question.title);
-        this.updateQuestionDependencies(question.name, titleDependencies);
-
-        if (question.visible_when) {
-            const conditionDependencies = this.extractQuestionNamesFromCondition(question.visible_when);
-            this.updateQuestionDependencies(question.name, conditionDependencies);
-        }
-
-    }
-
-
-
-    /**
-     * Evaluate visibility conditions for dependent questions based on the given response.
-     */
-    evaluateVisibilityConditions(response: IQuestionResponse): void {
-        console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
-
-        // Get the list of questions whose visibility depends on the question responded to
-        const dependentQuestions = this.questionDependencies.get(response.questionName);
-        console.log("dependentQuestions: ", dependentQuestions);
-
-
-        if (dependentQuestions) {
-            const conditionParser = new ConditionParser(this.responses);
-
-            // Go through each dependent question and determine if it should be shown or hidden
-            dependentQuestions.forEach(dependentQuestionName => {
-                console.log(" - question: " + dependentQuestionName);
-
-                const questionComponent = this.questionComponents.find(qc => qc.questionData.name === dependentQuestionName);
-                if (questionComponent) {
-                    const visible_when = questionComponent.questionData.visible_when;
-                    if (visible_when) {
-                        const shouldShow = conditionParser.evaluateCondition(visible_when);
-                        if (shouldShow) {
-                            questionComponent.show();
-                        } else {
-                            questionComponent.hide();
-
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    private handleEndOfSurvey(): void {
-        console.log("handleEndOfSurvey");
-        this.nextButton.style.display = 'none'; // Hide Next button
-        // Show a Complete or Submit button, or take any action to finalize the survey
-    }
-
-
-    private updateQuestionDependencies(questionName: string, dependencies: string[]): void {
-        dependencies.forEach(dependency => {
-            const currentDependencies = this.questionDependencies.get(dependency) || [];
-            if (!currentDependencies.includes(questionName)) {
-                currentDependencies.push(questionName);
-            }
-            this.questionDependencies.set(dependency, currentDependencies);
-        });
-    }
-
-    /**
-     * Extracts question names from placeholders within a string, indicating dependencies.
-     * Ex: "What activity do you like doing during the {{favorite-season}} season :"
-    */
-    private extractTitleDependency(title: string): string[] {
-        const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
-        const dependencies = matches.map(match => {
-            const dependency = match[1].trim();
-            console.log(`Dependency '${dependency}' found in title: ${title}`);
-            return dependency;
-        });
-        return dependencies;
-    }
-
-    /**
-     * Replace placeholders in the format {{placeholderName}} in the template with the actual response
-     */
-    private constructNewTitle(template: string, response: any): string {
-        return template.replace(QUESTION_REFERENCE_REGEX, (_, placeholderName) => {
-            return response;
-        });
-    }
-
-
     setResponse(response: IQuestionResponse): void {
-        this.responses[response.questionName] = response.response;
-        this.evaluateVisibilityConditions(response);
-        this.updateDependentQuestionTitles(response);
-
+        this.surveyModel.updateResponse(response.questionName, response.response);
     }
 
 
-    /**
-     * Update the question's title if it contains a placeholder with the answer of another question
-     */
-    private updateDependentQuestionTitles(response: IQuestionResponse) {
-        console.log("updateDependentQuestionTitles dependent on question: " + response.questionName);
+    private handleTitleUpdate(index: number, newTitle: string) {
+        console.log("SurveyBuilder.handleTitleUpdate : " + newTitle);
 
-        const dependentQuestions = this.questionDependencies.get(response.questionName);
-        if (dependentQuestions) {
-            dependentQuestions.forEach(dependentQuestionName => {
-                const dependentQuestionComponent = this.questionComponents.find(questionComponent => questionComponent.questionData.name === dependentQuestionName);
-                if (dependentQuestionComponent) {
-                    const questionData = dependentQuestionComponent.questionData;
-                    console.log(" - question: " + response.questionName);
-
-                    const newTitle = this.constructNewTitle(questionData.title, response.response);
-                    dependentQuestionComponent.updateTitle(newTitle);
-                }
-            });
-        }
+        const questionComponent = this.questionComponents.at(index)
+        questionComponent.setTitle(newTitle);
     }
 
     private initNavigationButtons() {
@@ -406,7 +236,6 @@ class SurveyBuilder implements ISurveyBuilder {
         this.nextButton = this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'block');
         this.completeButton = this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none');
     }
-
 
     private createButton(text: string, className: string, onClick: () => void, displayStyle: 'none' | 'block') {
         const button = document.createElement('button');
@@ -428,28 +257,34 @@ class SurveyBuilder implements ISurveyBuilder {
     }
 
 
-
+    private handleEndOfSurvey(): void {
+        console.log("handleEndOfSurvey");
+        this.nextButton.style.display = 'none'; // Hide Next button
+        // Show a Complete or Submit button, or take any action to finalize the survey
+    }
 
 
     finishSurvey() {
-        const responses = this.getResponses();
+        const responses = this.surveyModel.getResponses();
+        console.log("SurveyBuilder.finishSurvey: ", responses)
         if (this.completeCallback) {
-            this.completeCallback(this.responses);
+            this.completeCallback(responses);
         }
         this.displayThankYouPage();
     }
 
-    getResponses() {
-        const surveyData = {
-            responses: []
+    /*
+    __getResponses() {
+        const surveyData = {     responses: []
         };
         return surveyData;
     }
+*/
 
     onComplete(callbackFunction: any) {
         this.completeCallback = callbackFunction;
     }
-
+    
     displayThankYouPage() {
         // Clear the survey container
         this.surveyContainer.innerHTML = '';
