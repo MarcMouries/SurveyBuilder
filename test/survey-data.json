@@ -17,7 +17,7 @@
       "name": "agency_name_1",
       "title": "Name of the federal agency you work for? (static)",
       "isRequired": true,
-      "visible_when": "use-federal-forms = Yes",
+      "visible_when": "use-federal-forms == 'Yes'",
       "options": [
         "CBP - Customs and Border Protection",
         "CDC - Centers for Disease Control and Prevention",
@@ -45,7 +45,7 @@
       "name": "agency_name_2",
       "title": "Name of the federal agency you work for? (dynamic)",
       "isRequired": true,
-      "visible_when": "use-federal-forms = Yes",
+      "visible_when": "use-federal-forms == 'Yes'",
       "options_source": "https://appengine4gov.service-now.com/api/sn_niem/agency?text="
     }
 ,
