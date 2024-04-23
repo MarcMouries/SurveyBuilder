@@ -4,4 +4,5 @@ export interface IQuestionComponent {
     questionData: IQuestion;
     show() : void;
     hide() : void;
+    setTitle(title: string): void;
 }
