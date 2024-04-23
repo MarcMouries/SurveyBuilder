@@ -15,8 +15,8 @@ function createQuestionTitle(questionText) {
   return title;
 }
 
-// src/question-types/QuestionType.ts
-class QuestionType {
+// src/question-types/QuestionComponent.ts
+class QuestionComponent {
   surveyBuilder;
   questionDiv;
   questionData;
@@ -28,9 +28,19 @@ class QuestionType {
     this.questionDiv.dataset.index = index.toString();
     this.questionDiv.dataset.questionName = question.name;
     this.surveyBuilder.addQuestionElement(this.questionDiv);
-    const title = createQuestionTitle(question.title);
-    this.questionDiv.appendChild(title);
+    const titleElement = createQuestionTitle(question.title);
+    titleElement.classList.add("question-title");
+    this.questionDiv.appendChild(titleElement);
     this.setupResponseListener();
+  }
+  setTitle(newTitle) {
+    this.questionData.title = newTitle;
+    const titleElement = this.questionDiv.querySelector(".question-title");
+    if (titleElement) {
+      titleElement.textContent = newTitle;
+    } else {
+      console.error("Title element not found for question:", this.questionData.name);
+    }
   }
   setupResponseListener() {
     this.questionDiv.addEventListener("answerSelected", (event) => {
@@ -45,16 +55,10 @@ class QuestionType {
   hide() {
     this.questionDiv.style.display = "none";
   }
-  updateTitle(newTitle) {
-    const titleElement = document.querySelector(`[data-question-name="${this.questionData.name}"] .question-title`);
-    if (titleElement) {
-      titleElement.textContent = newTitle;
-    }
-  }
 }
 
 // src/question-types/FollowUpQuestion.ts
-class FollowUpQuestion extends QuestionType {
+class FollowUpQuestion extends QuestionComponent {
   detailQuestions;
   detailResponses = {};
   constructor(surveyBuilder, question, index) {
@@ -71,7 +75,7 @@ class FollowUpQuestion extends QuestionType {
       inputWrapper.appendChild(labelElement);
       const input = document.createElement("input");
       input.type = "text";
-      input.placeholder = detailQuestion.placeholder;
+      input.placeholder = detailQuestion.placeholder ?? "";
       input.addEventListener("input", this.handleInputChange.bind(this, detailQuestion.name));
       inputWrapper.appendChild(input);
       this.questionDiv.appendChild(inputWrapper);
@@ -89,12 +93,12 @@ class FollowUpQuestion extends QuestionType {
   }
 }
 // src/question-types/multi-line.ts
-class MultiLineTextQuestion extends QuestionType {
+class MultiLineTextQuestion extends QuestionComponent {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
     const textArea = document.createElement("textarea");
     textArea.name = question.name;
-    textArea.required = question.isRequired;
+    textArea.required = question.isRequired ?? false;
     textArea.className = "multi-line-text-input";
     textArea.placeholder = "Enter your comments here...";
     this.questionDiv.appendChild(textArea);
@@ -108,7 +112,7 @@ class MultiLineTextQuestion extends QuestionType {
   }
 }
 // src/question-types/AbstractChoice.ts
-class AbstractChoice extends QuestionType {
+class AbstractChoice extends QuestionComponent {
   items = [];
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
@@ -247,7 +251,7 @@ class OneChoice extends AbstractChoice {
   }
 }
 // src/question-types/ranking.ts
-class RankingQuestion extends QuestionType {
+class RankingQuestion extends QuestionComponent {
   placeholder;
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
@@ -358,7 +362,7 @@ class RankingQuestion extends QuestionType {
   }
 }
 // src/question-types/select.ts
-class SelectQuestion extends QuestionType {
+class SelectQuestion extends QuestionComponent {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
     const searchComponent = document.createElement("search-input");
@@ -381,15 +385,15 @@ class SelectQuestion extends QuestionType {
   }
 }
 // src/question-types/single-line.ts
-class SingleLineTextQuestion extends QuestionType {
+class SingleLineTextQuestion extends QuestionComponent {
   constructor(surveyBuilder, question, index) {
     super(surveyBuilder, question, index);
     const inputField = document.createElement("input");
     inputField.type = "text";
     inputField.name = question.name;
-    inputField.required = question.isRequired;
+    inputField.required = question.isRequired ?? false;
     inputField.className = "single-line-text-input";
-    inputField.placeholder = question.placeholder;
+    inputField.placeholder = question.placeholder ?? "";
     this.questionDiv.appendChild(inputField);
     inputField.addEventListener("input", () => {
       const response = {
@@ -673,55 +677,969 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
-// src/ConditionParser.ts
-class ConditionParser {
-  responses;
-  constructor(responses) {
-    this.responses = responses;
+// src/engine/ast/ASTNode.ts
+class AssignmentExpression {
+  left;
+  right;
+  constructor(left, right) {
+    this.left = left;
+    this.right = right;
   }
-  evaluateCondition(conditionStr) {
-    const orConditions = conditionStr.split("Or").map((s) => s.trim());
-    for (const orCondition of orConditions) {
-      const andConditions = orCondition.split("And").map((s) => s.trim());
-      if (andConditions.every((cond) => this.evaluateAndCondition(cond))) {
-        return true;
+  accept(visitor) {
+    return visitor.visitAssignmentExpression(this);
+  }
+}
+
+class ArrayLiteral {
+  elements;
+  constructor(elements) {
+    this.elements = elements;
+  }
+  accept(visitor) {
+    return visitor.visitArrayLiteral(this);
+  }
+}
+
+class LogicalExpression {
+  left;
+  operator;
+  right;
+  constructor(left, operator, right) {
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+  accept(visitor) {
+    return visitor.visitLogicalExpression(this);
+  }
+}
+
+class Identifier {
+  name;
+  constructor(name) {
+    this.name = name;
+  }
+  accept(visitor) {
+    return visitor.visitIdentifier(this);
+  }
+}
+
+class NumberNode {
+  value;
+  constructor(value) {
+    this.value = value;
+  }
+  accept(visitor) {
+    return visitor.visitNumberNode(this);
+  }
+}
+
+class StringNode {
+  value;
+  constructor(value) {
+    this.value = value;
+  }
+  accept(visitor) {
+    return visitor.visitStringNode(this);
+  }
+}
+
+class BooleanNode {
+  value;
+  constructor(value) {
+    this.value = value;
+  }
+  accept(visitor) {
+    return visitor.visitBooleanNode(this);
+  }
+}
+
+class BinaryExpression {
+  left;
+  operator;
+  right;
+  constructor(left, operator, right) {
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+  accept(visitor) {
+    return visitor.visitBinaryExpression(this);
+  }
+}
+
+class GroupExpression {
+  expression;
+  constructor(expression) {
+    this.expression = expression;
+  }
+  accept(visitor) {
+    return visitor.visitGroupExpression(this);
+  }
+}
+
+class MemberExpression {
+  object;
+  property;
+  constructor(object, property) {
+    this.object = object;
+    this.property = property;
+  }
+  accept(visitor) {
+    return visitor.visitMemberExpression(this);
+  }
+}
+
+class UnaryExpression {
+  operator;
+  operand;
+  constructor(operator, operand) {
+    this.operator = operator;
+    this.operand = operand;
+  }
+  accept(visitor) {
+    return visitor.visitUnaryExpression(this);
+  }
+}
+
+// src/engine/Token.ts
+var Token = {
+  ASSIGN: "ASSIGN",
+  BOOLEAN: "BOOLEAN",
+  DOT: "DOT",
+  EQUALS: "EQUALS",
+  NUMBER: "NUMBER",
+  STRING: "STRING",
+  IDENTIFIER: "IDENTIFIER",
+  OPERATOR: "OP",
+  NOT: "NOT",
+  NOT_EQUAL: "NOT_EQUAL",
+  AND: "AND",
+  OR: "OR",
+  LPAREN: "LPAREN",
+  RPAREN: "RPAREN",
+  CONTAINS: "CONTAINS",
+  IN: "IN",
+  COMMA: "COMMA",
+  LBRACKET: "LBRACKET",
+  RBRACKET: "RBRACKET"
+};
+
+// src/engine/Tokenizer.js
+class Tokenizer {
+  constructor() {
+    this.compactOperators = [
+      { match: "==", type: Token.EQUALS, value: "==" },
+      { match: "=", type: Token.ASSIGN, value: "=" },
+      { match: "!=", type: Token.NOT_EQUAL, value: "!=" },
+      { match: "!", type: Token.NOT, value: "!" },
+      { match: "+", type: Token.OPERATOR, value: "+" },
+      { match: "-", type: Token.OPERATOR, value: "-" },
+      { match: "*", type: Token.OPERATOR, value: "*" },
+      { match: "/", type: Token.OPERATOR, value: "/" },
+      { match: "^", type: Token.OPERATOR, value: "^" },
+      { match: "(", type: Token.LPAREN, value: "(" },
+      { match: ")", type: Token.RPAREN, value: ")" },
+      { match: ",", type: Token.COMMA, value: "," },
+      { match: ">=", type: Token.OPERATOR, value: ">=" },
+      { match: "<=", type: Token.OPERATOR, value: "<=" },
+      { match: ">", type: Token.OPERATOR, value: ">" },
+      { match: "<", type: Token.OPERATOR, value: "<" },
+      { match: ".", type: Token.DOT, value: "." },
+      { match: "[", type: Token.LBRACKET, value: "[" },
+      { match: "]", type: Token.RBRACKET, value: "]" }
+    ];
+    this.spaceSensitiveKeywords = [
+      { match: "and", type: Token.AND },
+      { match: "contains", type: Token.CONTAINS },
+      { match: "in", type: Token.IN },
+      { match: "or", type: Token.OR },
+      { match: "not", type: Token.NOT },
+      { match: "is between", type: "IS_BETWEEN" },
+      { match: "is not", type: Token.NOT_EQUAL, value: "!=" },
+      { match: "is", type: Token.EQUALS, value: "==" }
+    ];
+    this.booleans = [
+      { match: "true", type: "BOOLEAN", length: 4 },
+      { match: "false", type: "BOOLEAN", length: 5 }
+    ];
+    this.tokens = [];
+  }
+  isDigit(char) {
+    return char >= "0" && char <= "9";
+  }
+  isAlpha(char) {
+    return char >= "a" && char <= "z" || char >= "A" && char <= "Z";
+  }
+  isAlphaNumeric(char) {
+    return this.isAlpha(char) || this.isDigit(char) || char === "_" || char === "-";
+  }
+  matchToken(input, position, tokenList) {
+    for (const token of tokenList) {
+      if (input.startsWith(token.match, position)) {
+        return token;
       }
     }
-    return false;
+    return null;
   }
-  evaluateAndCondition(conditionStr) {
-    const conditions = this.parseConditions(conditionStr);
-    return conditions.every(({ questionName, operator, value }) => {
-      const answer = this.responses[questionName];
-      switch (operator) {
-        case "=":
-          return answer == value;
-        case "<":
-          return answer < value;
-        case ">":
-          return answer > value;
-        default:
-          throw new Error(`Unsupported operator ${operator}`);
+  parseTokens(input) {
+    this.tokens = [];
+    let position = 0;
+    let column = 1;
+    let line = 1;
+    while (position < input.length) {
+      let char = input[position];
+      if (char === "\n") {
+        line++;
+        column = 1;
+      }
+      if (/\s/.test(char)) {
+        position++;
+        column++;
+        continue;
+      }
+      if (char === '"' || char === "'") {
+        let endChar = char;
+        let stringLiteral = "";
+        position++;
+        column++;
+        char = input[position];
+        while (position < input.length && char !== endChar) {
+          stringLiteral += char;
+          position++;
+          column++;
+          char = input[position];
+        }
+        if (char === endChar) {
+          this.tokens.push({ type: Token.STRING, value: stringLiteral, line, column });
+          position++;
+          column++;
+          continue;
+        } else {
+          throw new Error("Syntax error: unclosed string literal");
+        }
+      }
+      if (this.isDigit(char)) {
+        let number = "";
+        let startColumn = column;
+        while (this.isDigit(char) || char === ".") {
+          number += char;
+          position++;
+          column++;
+          char = input[position];
+        }
+        this.tokens.push({ type: Token.NUMBER, value: parseFloat(number), line, column: startColumn });
+        continue;
+      }
+      const compactOp = this.matchToken(input, position, this.compactOperators);
+      if (compactOp) {
+        this.tokens.push({ type: compactOp.type, value: compactOp.match, line, column });
+        position += compactOp.match.length;
+        column += compactOp.match.length;
+        continue;
+      }
+      const boolOp = this.matchToken(input, position, this.booleans);
+      if (boolOp) {
+        this.tokens.push({ type: Token.BOOLEAN, value: boolOp.match === "true", line, column });
+        position += boolOp.match.length;
+        column += boolOp.match.length;
+        continue;
+      }
+      const keyword = this.matchToken(input, position, this.spaceSensitiveKeywords);
+      if (keyword) {
+        const operatorEndPosition = position + keyword.match.length;
+        const charAfterMatch = input[operatorEndPosition];
+        if (charAfterMatch === undefined || !this.isAlphaNumeric(charAfterMatch)) {
+          let tokenValue = keyword.value ? keyword.value : keyword.match;
+          this.tokens.push({ type: keyword.type, value: tokenValue, line, column });
+          position += keyword.match.length;
+          column += keyword.match.length;
+          continue;
+        }
+      }
+      if (this.isAlpha(char)) {
+        let identifier = "";
+        while (this.isAlphaNumeric(char)) {
+          identifier += char;
+          position++;
+          column++;
+          char = input[position];
+        }
+        this.tokens.push({ type: Token.IDENTIFIER, value: identifier, line, column });
+        continue;
+      }
+      position++;
+      column++;
+    }
+    return this.tokens;
+  }
+}
+
+// src/engine/Logger.js
+class Logger {
+  static depth = 0;
+  static isEnabled = true;
+  static enableLogging() {
+    Logger.isEnabled = true;
+  }
+  static disableLogging() {
+    Logger.isEnabled = false;
+  }
+  static logStart(message) {
+    if (!Logger.isEnabled)
+      return;
+    console.log(Logger.generatePrefix() + "\u250C\u2500 START " + message);
+    Logger.depth++;
+  }
+  static log(message) {
+    if (!Logger.isEnabled)
+      return;
+    console.log(Logger.generatePrefix() + "\u251C\u2500 " + message);
+  }
+  static logEnd(message) {
+    if (!Logger.isEnabled)
+      return;
+    Logger.depth--;
+    console.log(Logger.generatePrefix() + "\u2514\u2500 END " + message);
+  }
+  static generatePrefix() {
+    return "\u2502  ".repeat(Logger.depth);
+  }
+}
+
+// src/engine/Parser.js
+class Parser {
+  constructor() {
+  }
+  parse(input) {
+    const tokenizer = new Tokenizer;
+    const tokens = tokenizer.parseTokens(input);
+    let current = 0;
+    Logger.disableLogging();
+    function formatToken(token) {
+      if (!token)
+        return "end of input";
+      return `${token.type}(${token.value})`;
+    }
+    const isAtEnd = () => current >= tokens.length;
+    const peek = () => {
+      if (isAtEnd())
+        return null;
+      return tokens[current];
+    };
+    const previous = () => tokens[current - 1];
+    const advance = () => {
+      if (!isAtEnd()) {
+        const fromToken = current > 0 ? previous() : { type: "START", value: "start of input" };
+        const toToken = peek();
+        Logger.log(`Advance: Next token to process is '${formatToken(toToken)}', moving from '${formatToken(fromToken)}'`);
+        current++;
+      } else {
+        Logger.log(`Advance: At 'end of input', no more tokens to process.`);
+      }
+      return previous();
+    };
+    const check = (...expected) => {
+      if (isAtEnd()) {
+        Logger.log(`Check: Reached 'end of input', cannot match any more tokens.`);
+        return false;
+      }
+      const nextToken = peek();
+      let matchFound = expected.includes(nextToken.type) || expected.includes(nextToken.value);
+      return matchFound;
+    };
+    const match = (...types) => {
+      if (check(...types)) {
+        Logger.log(`Match(): Matched  [${types.join(", ")}] -  and advanced to the next token`);
+        advance();
+        return true;
+      }
+      Logger.log(`Match(): No match found for tokens: '${types.join(", ")}'`);
+      return false;
+    };
+    const consume = (tokenType, message) => {
+      Logger.log(`Attempting to consume a '${tokenType}' token.`);
+      if (check(tokenType)) {
+        const token = advance();
+        Logger.log(`Success: Consumed '${tokenType}' token with value: '${token.value}'.`);
+        return token;
+      } else {
+        const actualToken = peek();
+        Logger.log(`Failure: Expected '${tokenType}', but found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
+        throw new Error(`Error: Expected '${tokenType}', found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
+      }
+    };
+    const error = (token, message) => {
+      const tokenDisplay = formatToken(token);
+      throw new Error(`Error at token ${tokenDisplay}: ${message}`);
+    };
+    const parseNumber = (token) => {
+      Logger.logStart(`parseNumber: token #${current} of type NUMBER with value: ${token.value}`);
+      Logger.logEnd(`Completed parsing token #${current} as NUMBER with value: ${token.value}`);
+      return new NumberNode(token.value);
+    };
+    const parseBoolean = (token) => {
+      Logger.logStart(`Parsing : token #${current} of type BOOLEAN with value: ${token.value}`);
+      Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
+      return new BooleanNode(token.value);
+    };
+    const parseString = (token) => {
+      Logger.logStart(`parseString: token #${current} of type STRING with value: ${token.value}`);
+      Logger.logEnd(`Parsing STRING token at position: ${current}`);
+      return new StringNode(token.value);
+    };
+    const parseIdentifier = (token) => {
+      Logger.logStart(`parseIdentifier: token #${current} of type IDENTIFIER with value: ${token.value}`);
+      Logger.logEnd(`Parsing IDENTIFIER token at position: ${current}`);
+      return new Identifier(token.value);
+    };
+    function parseGroup() {
+      Logger.logStart(`Parsing GROUP at position: ${current}`);
+      let expr = parseExpression();
+      if (expr === null) {
+        throw new Error("Expect expression within parentheses.");
+      }
+      consume("RPAREN", "Expect ')' after expression.");
+      Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
+      Logger.logEnd(`Parsing GROUP at position: ${current}`);
+      return new GroupExpression(expr);
+    }
+    const parseLogicalOr = () => {
+      let expr = parseLogicalAnd();
+      while (match(Token.OR)) {
+        const operator = Token.OR;
+        const right = parseLogicalAnd();
+        expr = new LogicalExpression(expr, operator, right);
+      }
+      return expr;
+    };
+    const parseLogicalAnd = () => {
+      let expr = parseEquality();
+      while (match(Token.AND)) {
+        const operator = Token.AND;
+        const right = parseEquality();
+        expr = new LogicalExpression(expr, operator, right);
+      }
+      return expr;
+    };
+    const parsePrimary = () => {
+      Logger.logStart(`parsePrimary`);
+      let result = null;
+      if (match(Token.NUMBER))
+        result = parseNumber(previous());
+      else if (match(Token.STRING))
+        result = parseString(previous());
+      else if (match(Token.BOOLEAN))
+        result = parseBoolean(previous());
+      else if (match(Token.LPAREN))
+        result = parseGroup();
+      else if (match(Token.LBRACKET))
+        result = parseArrayLiteral();
+      else if (match(Token.IDENTIFIER))
+        result = parseIdentifier(previous());
+      while (match(".")) {
+        consume(Token.IDENTIFIER, "Expect property name after '.'.");
+        const property = previous();
+        result = new MemberExpression(result, new Identifier(property.value));
+      }
+      Logger.logEnd(`parsePrimary`);
+      return result;
+    };
+    const parseTerm = (left) => {
+      Logger.logStart(`Parsing term for potential addition/subtraction operations`);
+      var expr = parseFactor();
+      while (match("+", "-")) {
+        Logger.log(`Matched + or -: ${previous().type}`);
+        const operator = previous().value;
+        const right = parseFactor();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}' `);
+        }
+        expr = new BinaryExpression(expr, operator, right);
+      }
+      Logger.logEnd(`Completed parsing term`);
+      return expr;
+    };
+    const parseExponent = () => {
+      Logger.logStart("Parsing exponentiation operations");
+      let base = parseUnary();
+      while (match("^")) {
+        Logger.log("Found exponentiation operator ^");
+        const operator = previous().value;
+        const exponent = parseExponent();
+        if (exponent === null) {
+          throw new Error(`Missing exponent after '${operator}'`);
+        }
+        base = new BinaryExpression(base, operator, exponent);
+      }
+      Logger.logEnd("Parsed exponentiation operation");
+      return base;
+    };
+    const parseFactor = () => {
+      Logger.logStart("Parsing factors for multiplication/division");
+      let expr = parseExponent();
+      while (match("*", "/")) {
+        const operator = previous().value;
+        const right = parseExponent();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+        }
+        expr = new BinaryExpression(expr, operator, right);
+      }
+      Logger.logEnd("Parsed factor");
+      return expr;
+    };
+    const parseUnary = () => {
+      Logger.logStart("Parsing Unary");
+      while (match("-", "!")) {
+        const operator = previous().value;
+        const right = parseUnary();
+        return new UnaryExpression(operator, right);
+      }
+      Logger.logEnd("Parsed Unary");
+      return parsePrimary();
+    };
+    const parseArrayLiteral = () => {
+      const elements = [];
+      if (!check(Token.RBRACKET)) {
+        do {
+          const element = parseExpression();
+          elements.push(element);
+        } while (match(Token.COMMA));
+      }
+      consume(Token.RBRACKET, "Expect ']' after array elements.");
+      return new ArrayLiteral(elements);
+    };
+    const parseEquality = () => {
+      Logger.logStart(`Parsing equality/non-equality operators between expressions`);
+      var expr = parseComparison();
+      while (match("==", "!=")) {
+        const operator = previous().value;
+        const right = parseComparison();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+        }
+        expr = new BinaryExpression(expr, operator, right);
+      }
+      Logger.logEnd(`parseEquality`);
+      return expr;
+    };
+    const parseAssignment = () => {
+      Logger.logStart(`parseAssignment`);
+      let expr = parseLogicalOr();
+      if (match("=")) {
+        const equals = previous();
+        const value = parseAssignment();
+        if (value === null) {
+          throw new Error(`Missing expression after '='`);
+        }
+        if (expr instanceof Identifier) {
+          return new AssignmentExpression(expr, value);
+        }
+        if (expr instanceof MemberExpression) {
+          return new AssignmentExpression(expr, value);
+        }
+        error(equals, "Invalid assignment target.");
+      }
+      Logger.logEnd(`parseAssignment`);
+      return expr;
+    };
+    const parseExpression = () => {
+      Logger.logStart(`parseExpression: '${input}'`);
+      const result = parseAssignment();
+      Logger.logEnd(`parseExpression`);
+      return result;
+    };
+    const parseComparison = () => {
+      Logger.logStart(`Parsing comparison operators between expressions`);
+      var expr = parseTerm();
+      while (match(">", ">=", "<", "<=", "contains", "in")) {
+        const operator = previous().value;
+        const right = parseTerm();
+        if (right === null) {
+          throw new Error(`Missing expression after '${operator}'`);
+        }
+        expr = new BinaryExpression(expr, operator, right);
+      }
+      Logger.logEnd(`parseComparison`);
+      return expr;
+    };
+    return parseExpression();
+  }
+}
+
+// src/engine/Environment.ts
+class Environment {
+  values = new Map;
+  define(name, value) {
+    this.values.set(name, value);
+  }
+  set(name, value) {
+    this.values.set(name, value);
+  }
+  get(name) {
+    if (this.values.has(name)) {
+      return this.values.get(name);
+    }
+    throw new Error(`Undefined variable name '${name}'`);
+  }
+  toString() {
+    let result = "Environment {";
+    if (this.values.size > 0) {
+      const entries = Array.from(this.values).map(([key, value]) => `\n    "${key}": ${JSON.stringify(value, null, 4).replace(/\n/g, "\n    ")}`);
+      result += entries.join(",") + "\n";
+    }
+    result += "}";
+    return result;
+  }
+}
+
+// src/engine/Interpreter.ts
+class Interpreter {
+  environment;
+  constructor(environment) {
+    this.environment = environment ? environment : new Environment;
+  }
+  static extractIdentifiers(node) {
+    const identifiers = new Set;
+    const traverse = (node2) => {
+      if (!node2)
+        return;
+      if (node2 instanceof Identifier) {
+        identifiers.add(node2.name);
+      } else if (node2 instanceof BinaryExpression || node2 instanceof LogicalExpression || node2 instanceof AssignmentExpression) {
+        traverse(node2.left);
+        traverse(node2.right);
+      } else if (node2 instanceof MemberExpression) {
+        traverse(node2.object);
+      } else if (node2 instanceof GroupExpression) {
+        traverse(node2.expression);
+      } else if (node2 instanceof ArrayLiteral) {
+        node2.elements.forEach((element) => traverse(element));
+      }
+    };
+    traverse(node);
+    return Array.from(identifiers);
+  }
+  visitArrayLiteral(node) {
+    return node.elements.map((element) => this.evaluate(element));
+  }
+  visitAssignmentExpression(expr) {
+    const value = this.evaluate(expr.right);
+    if (expr.left instanceof Identifier) {
+      this.environment.set(expr.left.name, value);
+      return value;
+    }
+    if (expr.left instanceof MemberExpression) {
+      const objectExpr = expr.left.object;
+      const propertyExpr = expr.left.property;
+      if (!(propertyExpr instanceof Identifier)) {
+        throw new Error("Only simple identifiers are supported for property names in assignments.");
+      }
+      if (objectExpr instanceof Identifier) {
+        const objectName = objectExpr.name;
+        const object = this.environment.get(objectName);
+        if (object && typeof object === "object") {
+          object[propertyExpr.name] = value;
+          this.environment.set(objectName, object);
+          return value;
+        } else {
+          throw new Error(`Object '${objectName}' not found or not an object`);
+        }
+      }
+    }
+  }
+  visitMemberExpression(expr) {
+    const object = this.evaluate(expr.object);
+    if (!(expr.property instanceof Identifier)) {
+      throw new Error("Only simple identifiers are supported for property names.");
+    }
+    const propertyName = expr.property.name;
+    if (object && typeof object === "object" && propertyName in object) {
+      return object[propertyName];
+    }
+    throw new Error(`Property '${propertyName}' not found`);
+  }
+  interpret(expression) {
+    const value = this.evaluate(expression);
+    return value;
+  }
+  evaluate(expression) {
+    return expression.accept(this);
+  }
+  visitBinaryExpression(expr) {
+    const leftVal = this.evaluate(expr.left);
+    const rightVal = this.evaluate(expr.right);
+    switch (expr.operator) {
+      case "+":
+        return leftVal + rightVal;
+      case "-":
+        return leftVal - rightVal;
+      case "*":
+        return leftVal * rightVal;
+      case "/":
+        if (rightVal === 0)
+          throw new Error("Division by zero");
+        return leftVal / rightVal;
+      case ">":
+        return leftVal > rightVal;
+      case "<":
+        return leftVal < rightVal;
+      case ">=":
+        return leftVal >= rightVal;
+      case "<=":
+        return leftVal <= rightVal;
+      case "==":
+        return leftVal == rightVal;
+      case "^":
+        return Math.pow(leftVal, rightVal);
+      case "contains":
+        if (!Array.isArray(leftVal)) {
+          throw new Error("Operator 'contains' requires an array on the left side");
+        }
+        return leftVal.includes(rightVal);
+      case "in":
+        if (!Array.isArray(rightVal)) {
+          throw new Error("Operator 'in' requires an array on the right side");
+        }
+        return rightVal.includes(leftVal);
+      default:
+        throw new Error(`Unsupported operator '${expr.operator}'`);
+    }
+  }
+  visitBooleanNode(node) {
+    return node.value;
+  }
+  visitGroupExpression(expr) {
+    return this.evaluate(expr.expression);
+  }
+  visitLogicalExpression(expr) {
+    const left = this.evaluate(expr.left);
+    if (expr.operator === Token.OR) {
+      if (left === true)
+        return true;
+    } else if (expr.operator === Token.AND) {
+      if (left === false)
+        return false;
+    }
+    return this.evaluate(expr.right);
+  }
+  visitNumberNode(node) {
+    return node.value;
+  }
+  visitStringNode(node) {
+    return node.value;
+  }
+  visitUnaryExpression(expr) {
+    const right = this.evaluate(expr.operand);
+    if (expr.operator == "-")
+      return -right;
+    if (expr.operator == "!")
+      return !right;
+  }
+  visitIdentifier(node) {
+    return this.environment.get(node.name);
+  }
+}
+
+// src/EventEmitter.ts
+class EventEmitter {
+  static listeners = new Map;
+  static on(event, listener) {
+    if (!EventEmitter.listeners.has(event)) {
+      EventEmitter.listeners.set(event, []);
+    }
+    EventEmitter.listeners.get(event)?.push(listener);
+  }
+  static off(event, listener) {
+    const listeners = EventEmitter.listeners.get(event);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+  static emit(event, ...args) {
+    const listeners = EventEmitter.listeners.get(event);
+    if (listeners) {
+      listeners.forEach((listener) => {
+        listener(...args);
+      });
+    }
+  }
+}
+
+// src/EventTypes.ts
+var TITLE_UPDATED = "titleUpdated";
+
+// src/SurveyModel.ts
+var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
+
+class SurveyModel {
+  surveyTitle;
+  surveyDescription;
+  questionList;
+  currentQuestionIndex = -1;
+  responseMap;
+  interpreter;
+  parser;
+  environment;
+  originalTitles;
+  compiledConditions;
+  titleDependencies = new Map;
+  visibilityDependencies = new Map;
+  constructor(config) {
+    this.validateSurveySetup(config);
+    this.surveyTitle = config.surveyTitle;
+    this.surveyDescription = config.surveyDescription;
+    this.questionList = config.questions;
+    this.environment = new Environment;
+    this.parser = new Parser;
+    this.interpreter = new Interpreter(this.environment);
+    this.responseMap = {};
+    this.originalTitles = new Map;
+    this.compiledConditions = new Map;
+    this.initialize();
+  }
+  initialize() {
+    this.questionList.forEach((question, index) => {
+      question.index = index;
+      this.originalTitles.set(question.name, question.title);
+      const dependencyList = this.extractTitleDependency(question.title);
+      dependencyList.forEach((dependencyName) => {
+        let dependencies = this.titleDependencies.get(dependencyName) || [];
+        dependencies.push(question);
+        this.titleDependencies.set(dependencyName, dependencies);
+      });
+      question.isVisible = question.visible_when ? false : true;
+      if (question.visible_when) {
+        const compiledCondition = this.parser.parse(question.visible_when);
+        this.compiledConditions.set(question.name, compiledCondition);
+        const visibilityDependencyList = Interpreter.extractIdentifiers(compiledCondition);
+        visibilityDependencyList.forEach((dependencyName) => {
+          let dependencies = this.visibilityDependencies.get(dependencyName) || [];
+          dependencies.push(question);
+          this.visibilityDependencies.set(dependencyName, dependencies);
+        });
       }
     });
   }
-  parseConditions(conditionStr) {
-    return conditionStr.split("And").map((condStr) => {
-      const [questionName, operator, valueStr] = condStr.split(/\s*(=|<)\s*/).map((s) => s.trim());
-      const value = isNaN(Number(valueStr)) ? valueStr : Number(valueStr);
-      return {
-        questionName,
-        operator,
-        value
-      };
+  getTitle() {
+    return this.surveyTitle;
+  }
+  getDescription() {
+    return this.surveyDescription;
+  }
+  getQuestions() {
+    return this.questionList.slice();
+  }
+  getResponses() {
+    return this.responseMap;
+  }
+  getNumberOfQuestions() {
+    return this.questionList.length;
+  }
+  getQuestionByName(questionName) {
+    return this.questionList.find((question) => question.name === questionName);
+  }
+  updateResponse(questionName, response) {
+    console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`);
+    this.responseMap[questionName] = response;
+    this.environment.set(questionName, response);
+    this.updateDynamicTitles(questionName);
+    this.updateVisibility(questionName);
+  }
+  updateVisibility(updatedQuestionName) {
+    const dependentQuestions = this.visibilityDependencies.get(updatedQuestionName);
+    dependentQuestions?.forEach((question) => {
+      if (this.compiledConditions.has(question.name)) {
+        const compiledCondition = this.compiledConditions.get(question.name);
+        question.isVisible = this.interpreter.interpret(compiledCondition);
+      }
+    });
+  }
+  updateDynamicTitles(updatedQuestionName) {
+    const dependentQuestions = this.titleDependencies.get(updatedQuestionName);
+    console.log(`SurveyModel.updateDynamicTitles updatedQuestionName='${updatedQuestionName}', dependentQuestions='${dependentQuestions?.map((q) => q.name)}'`);
+    dependentQuestions?.forEach((question) => {
+      const originalTitle = this.originalTitles.get(question.name);
+      if (originalTitle) {
+        const newTitle = this.constructNewTitle(originalTitle);
+        question.title = newTitle;
+        EventEmitter.emit(TITLE_UPDATED, question.index, newTitle);
+      }
+    });
+  }
+  constructNewTitle(template) {
+    return template.replace(QUESTION_REFERENCE_REGEX, (_, placeholderName) => {
+      return this.responseMap[placeholderName.trim()];
+    });
+  }
+  extractTitleDependency(title) {
+    const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
+    const dependencies = matches.map((match) => {
+      const dependency = match[1].trim();
+      return dependency;
+    });
+    return dependencies;
+  }
+  getNextVisibleQuestion() {
+    for (let i = this.currentQuestionIndex + 1;i < this.questionList.length; i++) {
+      if (this.questionList[i].isVisible) {
+        this.currentQuestionIndex = i;
+        return this.questionList[i];
+      }
+    }
+    return null;
+  }
+  getPreviousVisibleQuestion() {
+    for (let i = this.currentQuestionIndex - 1;i >= 0; i--) {
+      if (this.questionList[i].isVisible) {
+        this.currentQuestionIndex = i;
+        return this.questionList[i];
+      }
+    }
+    return null;
+  }
+  validateSurveySetup(config) {
+    if (!config)
+      throw new Error("Config object is required");
+    if (typeof config.surveyTitle !== "string")
+      throw new Error("Invalid or missing surveyTitle");
+    if (typeof config.surveyDescription !== "string")
+      throw new Error("Invalid or missing surveyDescription");
+    if (!Array.isArray(config.questions))
+      throw new Error("Invalid or missing questions array");
+    const allowedTypes = ["yes-no", "select", "one-choice", "followup", "multi-choice", "ranking", "multi-line-text", "single-line-text"];
+    config.questions.forEach((question, index) => {
+      if (typeof question !== "object")
+        throw new Error(`Question at index ${index} is not an object`);
+      if (typeof question.name !== "string" || question.name.trim() === "") {
+        throw new Error(`Question at index ${index} is missing a valid name`);
+      }
+      if (typeof question.title !== "string" || question.title.trim() === "") {
+        throw new Error(`Question at index ${index} is missing a valid title`);
+      }
+      if (!allowedTypes.includes(question.type)) {
+        const allowedTypesString = allowedTypes.join(", ");
+        throw new Error(`Question type "${question.type}" at index ${index} is not allowed. Allowed types are: ${allowedTypesString}`);
+      }
+      if ("isRequired" in question && typeof question.isRequired !== "boolean")
+        throw new Error(`"isRequired" must be boolean at index ${index}`);
+      if (question.options && !Array.isArray(question.options))
+        throw new Error(`"options" must be an array at index ${index}`);
+      if (question.items && !Array.isArray(question.items))
+        throw new Error(`"items" must be an array at index ${index}`);
+      if (question.options_source && typeof question.options_source !== "string")
+        throw new Error(`"options_source" must be a string URL at index ${index}`);
     });
   }
 }
 
 // src/SurveyBuilder.ts
-var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
-
 class SurveyBuilder {
+  surveyModel;
   surveyContainer;
   questionsContainer;
   navigationContainer;
@@ -729,25 +1647,17 @@ class SurveyBuilder {
   prevButton;
   completeButton;
   questionComponents;
-  responses;
   completeCallback;
-  questionDependencies = new Map;
-  currentQuestionIndex = -1;
-  questions;
-  surveyTitle;
-  surveyDescription;
+  currentQuestion;
   constructor(config, containerId) {
-    this.validateConfig(config);
-    this.surveyTitle = config.surveyTitle;
-    this.surveyDescription = config.surveyDescription;
-    this.questions = config.questions;
-    console.log("QUESTIONS", this.questions);
+    this.surveyModel = new SurveyModel(config);
+    EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
+    this.currentQuestion = null;
     const containerElement = document.getElementById(containerId);
     if (!containerElement) {
       throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
     }
     this.surveyContainer = containerElement;
-    this.responses = {};
     this.questionComponents = [];
     const initialPage = document.createElement("div");
     initialPage.id = "initial-page";
@@ -759,8 +1669,8 @@ class SurveyBuilder {
     this.surveyContainer.appendChild(this.questionsContainer);
   }
   createInitialPage(container) {
-    this.createSurveyTitle(this.surveyTitle, container);
-    this.createSurveyDescription(this.surveyDescription, container);
+    this.createSurveyTitle(this.surveyModel.getTitle(), container);
+    this.createSurveyDescription(this.surveyModel.getDescription(), container);
     this.createStartButton(container);
   }
   createStartButton(container) {
@@ -777,30 +1687,6 @@ class SurveyBuilder {
     startButtonWrapper.appendChild(startButton);
     container.appendChild(startButtonWrapper);
   }
-  shouldShowQuestion(question) {
-    if (!question.visible_when) {
-      return true;
-    }
-    return true;
-  }
-  getNextQuestion() {
-    for (let i = this.currentQuestionIndex + 1;i < this.questions.length; i++) {
-      if (this.shouldShowQuestion(this.questions[i])) {
-        this.currentQuestionIndex = i;
-        return this.questions[i];
-      }
-    }
-    return null;
-  }
-  getPreviousQuestion() {
-    for (let i = this.currentQuestionIndex - 1;i >= 0; i--) {
-      if (this.shouldShowQuestion(this.questions[i])) {
-        this.currentQuestionIndex = i;
-        return this.questions[i];
-      }
-    }
-    return null;
-  }
   startSurvey() {
     this.questionsContainer.style.display = "block";
     this.initializeQuestions();
@@ -808,8 +1694,7 @@ class SurveyBuilder {
     this.showNextQuestion();
   }
   initializeQuestions() {
-    this.questions.forEach((question, index) => {
-      this.storeQuestionDependencies(question);
+    this.surveyModel.getQuestions().forEach((question, index) => {
       switch (question.type) {
         case "ranking":
           this.questionComponents.push(new RankingQuestion(this, question, index));
@@ -844,51 +1729,40 @@ class SurveyBuilder {
     });
     this.questionComponents.forEach((component) => component.hide());
   }
-  showPreviousQuestion() {
-    let foundQuestion = false;
-    this.currentQuestionIndex--;
-    while (this.currentQuestionIndex >= 0) {
-      if (this.shouldShowQuestion(this.questions[this.currentQuestionIndex])) {
-        foundQuestion = true;
-        break;
-      }
-      this.currentQuestionIndex--;
-    }
-    if (foundQuestion) {
-      this.showQuestion(this.currentQuestionIndex);
-    } else {
-    }
-  }
   showNextQuestion() {
-    console.log("showNextQuestion");
-    console.log(`  - currentQuestionIndex: ${this.currentQuestionIndex}`);
-    let foundQuestion = false;
-    let nextIndex = this.currentQuestionIndex + 1;
-    while (nextIndex < this.questions.length) {
-      if (this.shouldShowQuestion(this.questions[nextIndex])) {
-        foundQuestion = true;
-        this.currentQuestionIndex = nextIndex;
-        break;
-      }
-      nextIndex++;
-    }
-    if (foundQuestion) {
-      this.showQuestion(this.currentQuestionIndex);
+    const nextQuestion = this.surveyModel.getNextVisibleQuestion();
+    console.log(`showNextQuestion: ${nextQuestion?.title}`);
+    if (nextQuestion) {
+      this.currentQuestion = nextQuestion;
+      this.showQuestion(nextQuestion);
     } else {
       this.handleEndOfSurvey();
     }
   }
-  showQuestion(index) {
-    console.log("showQuestion: " + index);
+  showPreviousQuestion() {
+    const prevQuestion = this.surveyModel.getPreviousVisibleQuestion();
+    if (prevQuestion) {
+      this.currentQuestion = prevQuestion;
+      this.showQuestion(prevQuestion);
+    } else {
+    }
+  }
+  showQuestion(question) {
+    console.log("showQuestion: " + question.name);
     this.questionComponents.forEach((component) => component.hide());
-    this.questionComponents[index].show();
+    this.questionComponents[question.index].show();
     this.updateNavigationButtons();
   }
   updateNavigationButtons() {
-    console.log(`Updating buttons for index: ${this.currentQuestionIndex}`);
-    this.prevButton.style.display = this.currentQuestionIndex > 0 ? "block" : "none";
-    this.nextButton.style.display = this.currentQuestionIndex < this.questions.length - 1 ? "block" : "none";
-    this.completeButton.style.display = this.currentQuestionIndex == this.questions.length - 1 ? "block" : "none";
+    const index = this.currentQuestion.index;
+    console.log(`Updating buttons for index: ${index}`);
+    const numberOfQuestions = this.surveyModel.getNumberOfQuestions();
+    const showPrevButton = index > 0;
+    const showNextButton = index < numberOfQuestions - 1;
+    const showCompleteButton = index === numberOfQuestions - 1;
+    this.prevButton.style.display = showPrevButton ? "block" : "none";
+    this.nextButton.style.display = showNextButton ? "block" : "none";
+    this.completeButton.style.display = showCompleteButton ? "block" : "none";
   }
   createSurveyTitle(surveyTitle, container) {
     const title = document.createElement("h3");
@@ -905,114 +1779,13 @@ class SurveyBuilder {
   addQuestionElement(questionDiv) {
     this.questionsContainer.appendChild(questionDiv);
   }
-  extractQuestionNamesFromCondition(conditionStr) {
-    console.log(`extractQuestionNamesFromCondition`);
-    console.log(`  - conditionStr : ${conditionStr}`);
-    const questionNames = [];
-    const regex = /([^\s=<>!]+)\s*(=|<=|>=|<|>|!=)/g;
-    let match;
-    while (match = regex.exec(conditionStr)) {
-      if (match[1] && !questionNames.includes(match[1])) {
-        questionNames.push(match[1]);
-      }
-    }
-    console.log(`  - references questions: ${questionNames.join(", ")}`);
-    return questionNames;
-  }
-  storeQuestionDependencies(question) {
-    const titleDependencies = this.extractTitleDependency(question.title);
-    this.updateQuestionDependencies(question.name, titleDependencies);
-    if (question.visible_when) {
-      const conditionDependencies = this.extractQuestionNamesFromCondition(question.visible_when);
-      this.updateQuestionDependencies(question.name, conditionDependencies);
-    }
-  }
-  evaluateVisibilityConditions(response) {
-    console.log("Evaluating visibility conditions based on response to question: ", response.questionName);
-    const dependentQuestions = this.questionDependencies.get(response.questionName);
-    console.log("dependentQuestions: ", dependentQuestions);
-    if (dependentQuestions) {
-      const conditionParser = new ConditionParser(this.responses);
-      dependentQuestions.forEach((dependentQuestionName) => {
-        console.log(" - question: " + dependentQuestionName);
-        const questionComponent = this.questionComponents.find((qc) => qc.questionData.name === dependentQuestionName);
-        if (questionComponent) {
-          const visible_when = questionComponent.questionData.visible_when;
-          if (visible_when) {
-            const shouldShow = conditionParser.evaluateCondition(visible_when);
-            if (shouldShow) {
-              questionComponent.show();
-            } else {
-              questionComponent.hide();
-            }
-          }
-        }
-      });
-    }
-  }
-  handleEndOfSurvey() {
-    console.log("handleEndOfSurvey");
-    this.nextButton.style.display = "none";
-  }
-  updateQuestionDependencies(questionName, dependencies) {
-    dependencies.forEach((dependency) => {
-      const currentDependencies = this.questionDependencies.get(dependency) || [];
-      if (!currentDependencies.includes(questionName)) {
-        currentDependencies.push(questionName);
-      }
-      this.questionDependencies.set(dependency, currentDependencies);
-    });
-  }
-  extractTitleDependency(title) {
-    const matches = Array.from(title.matchAll(QUESTION_REFERENCE_REGEX));
-    const dependencies = matches.map((match) => {
-      const dependency = match[1].trim();
-      console.log(`Dependency '${dependency}' found in title: ${title}`);
-      return dependency;
-    });
-    return dependencies;
-  }
-  constructNewTitle(template, response) {
-    return template.replace(QUESTION_REFERENCE_REGEX, (_, placeholderName) => {
-      return response;
-    });
-  }
   setResponse(response) {
-    this.responses[response.questionName] = response.response;
-    this.evaluateVisibilityConditions(response);
-    this.updateDependentQuestionTitles(response);
+    this.surveyModel.updateResponse(response.questionName, response.response);
   }
-  updateDependentQuestionTitles(response) {
-    console.log("updateDependentQuestionTitles dependent on question: " + response.questionName);
-    const dependentQuestions = this.questionDependencies.get(response.questionName);
-    if (dependentQuestions) {
-      dependentQuestions.forEach((dependentQuestionName) => {
-        const dependentQuestionComponent = this.questionComponents.find((questionComponent) => questionComponent.questionData.name === dependentQuestionName);
-        if (dependentQuestionComponent) {
-          const questionData = dependentQuestionComponent.questionData;
-          console.log(" - question: " + response.questionName);
-          const newTitle = this.constructNewTitle(questionData.title, response.response);
-          dependentQuestionComponent.updateTitle(newTitle);
-        }
-      });
-    }
-  }
-  validateConfig(config) {
-    if (!config) {
-      throw new Error("Config object is required");
-    }
-    if (typeof config.surveyTitle !== "string") {
-      throw new Error("Invalid or missing surveyTitle");
-    }
-    if (typeof config.surveyDescription !== "string") {
-      throw new Error("Invalid or missing surveyDescription");
-    }
-    if (!Array.isArray(config.questions)) {
-      throw new Error("Invalid or missing questions array");
-    }
-    if (config.questions.some((question) => typeof question !== "object")) {
-      throw new Error("All items in questions array must be objects");
-    }
+  handleTitleUpdate(index, newTitle) {
+    console.log("SurveyBuilder.handleTitleUpdate : " + newTitle);
+    const questionComponent = this.questionComponents.at(index);
+    questionComponent.setTitle(newTitle);
   }
   initNavigationButtons() {
     if (!this.navigationContainer) {
@@ -1042,18 +1815,17 @@ class SurveyBuilder {
     console.log(allQuestionElements.length);
     return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
   }
+  handleEndOfSurvey() {
+    console.log("handleEndOfSurvey");
+    this.nextButton.style.display = "none";
+  }
   finishSurvey() {
-    const responses = this.getResponses();
+    const responses = this.surveyModel.getResponses();
+    console.log("SurveyBuilder.finishSurvey: ", responses);
     if (this.completeCallback) {
-      this.completeCallback(this.responses);
+      this.completeCallback(responses);
     }
     this.displayThankYouPage();
-  }
-  getResponses() {
-    const surveyData = {
-      responses: []
-    };
-    return surveyData;
   }
   onComplete(callbackFunction) {
     this.completeCallback = callbackFunction;
