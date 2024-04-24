@@ -7,8 +7,8 @@ import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 export class RankingQuestion extends QuestionComponent {
     placeholder: HTMLDivElement;
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
 
         const rankingList = document.createElement('div');
         rankingList.className = `ranking-list ${question.name}`;

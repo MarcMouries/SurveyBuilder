@@ -12,8 +12,8 @@ import { QuestionComponent } from "./QuestionComponent.ts";
  */
 export class YesNoQuestion extends QuestionComponent {
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
 
         // Create the radio container
         const yesNoField = document.createElement('div');

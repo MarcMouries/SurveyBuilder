@@ -7,8 +7,8 @@ import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
 export class SelectQuestion extends QuestionComponent {
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
         //this.questionDiv.className += ' select-question';
 
         // Specific implementation for select question

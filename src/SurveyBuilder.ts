@@ -8,9 +8,9 @@ import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { SurveyModel } from './SurveyModel.ts';
 import { EventEmitter } from './EventEmitter.ts'
-import { TITLE_UPDATED } from './EventTypes';
+import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 
-class SurveyBuilder implements ISurveyBuilder {
+class SurveyBuilder {
 
     private surveyModel: SurveyModel;
 
@@ -31,6 +31,7 @@ class SurveyBuilder implements ISurveyBuilder {
     constructor(config: any, containerId: string) {
         this.surveyModel = new SurveyModel(config);
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
+        EventEmitter.on(ANSWER_SELECTED, (response: IQuestionResponse) => this.handleResponse(response));
 
         this.currentQuestion = null;
         const containerElement = document.getElementById(containerId);
@@ -77,17 +78,6 @@ class SurveyBuilder implements ISurveyBuilder {
         container.appendChild(startButtonWrapper);
     }
 
-    /*
-    private shouldShowQuestion(question: IQuestion): boolean {
-        // Placeholder: Implement actual condition evaluation logic here
-        if (!question.visible_when) {
-            return true;
-        }
-        // Evaluate the condition based on the current responses
-        // Return true if the condition is met, false otherwise
-        return true;
-    }
-*/
     private startSurvey() {
         this.questionsContainer.style.display = 'block'; // Make questions visible
         this.initializeQuestions();
@@ -97,42 +87,28 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private initializeQuestions() {
         this.surveyModel.getQuestions().forEach((question: IQuestion, index: number) => {
-            switch (question.type) {
-                case "ranking": 
-                    this.questionComponents.push(new RankingQuestion(this, question, index));
-                    break;
-                case "single-line-text":
-                    this.questionComponents.push(new SingleLineTextQuestion(this, question, index));
-                    break;
-                case "multi-line-text":
-                    this.questionComponents.push(new MultiLineTextQuestion(this, question, index));
-                    break;
-                case "yes-no":
-                    //this.questions.push(new YesNoQuestion(this, question, index));
-                    this.questionComponents.push(new YesNoQuestion2(this, question, index));
-                    break;
-                case "YesNoQuestion2":
-                    this.questionComponents.push(new YesNoQuestion2(this, question, index));
-                    break;
-                case "one-choice":
-                    this.questionComponents.push(new OneChoice(this, question, index));
-                    break;
-                case "multi-choice":
-                    this.questionComponents.push(new MultiChoice(this, question, index));
-                    break;
-                case "select":
-                    this.questionComponents.push(new SelectQuestion(this, question, index));
-                    break;
-                case "followup":
-                    this.questionComponents.push(new FollowUpQuestion(this, question, index));
-                    break;
-                default:
-                    console.error("Unsupported question type: " + question.type);
-            }
+            const questionComponent = this.createQuestionComponent(question, index);
+            // Initially, hide all questions
+            questionComponent.hide();
+            this.addQuestionElement(questionComponent.getQuestionDiv())
+            this.questionComponents.push(questionComponent);
         });
+    }
 
-        // Initially, hide all questions
-        this.questionComponents.forEach(component => component.hide());
+    createQuestionComponent(question: IQuestion, index: number): IQuestionComponent {
+        switch (question.type) {
+            case "ranking": return new RankingQuestion(question, index);
+            case "single-line-text": return new SingleLineTextQuestion(question, index);
+            case "multi-line-text": return new MultiLineTextQuestion(question, index);
+            case "yes-no": return new YesNoQuestion2(question, index);
+            case "YesNoQuestion2": return new YesNoQuestion2(question, index);
+            case "one-choice": return new OneChoice(question, index);
+            case "multi-choice": return new MultiChoice(question, index);
+            case "select": return new SelectQuestion(question, index);
+            case "followup": return new FollowUpQuestion(question, index);
+            default: console.error("Unsupported question type: " + question.type);
+        }
+        return null!;
     }
 
     private showNextQuestion() {
@@ -161,7 +137,8 @@ class SurveyBuilder implements ISurveyBuilder {
 
     private showQuestion(question: IQuestion) {
         console.log("showQuestion: " + question.name);
-
+        console.log("showQuestion: ", question);
+        console.log("showQuestion: ", this.questionComponents);
         // First, hide all questions to ensure only one is shown at a time
         this.questionComponents.forEach(component => component.hide());
 
@@ -210,7 +187,8 @@ class SurveyBuilder implements ISurveyBuilder {
         this.questionsContainer.appendChild(questionDiv);
     }
 
-    setResponse(response: IQuestionResponse): void {
+    handleResponse(response: IQuestionResponse): void {
+        console.log("SurveyBuilder.handleResponse: ", response);
         this.surveyModel.updateResponse(response.questionName, response.response);
     }
 
@@ -284,7 +262,7 @@ class SurveyBuilder implements ISurveyBuilder {
     onComplete(callbackFunction: any) {
         this.completeCallback = callbackFunction;
     }
-    
+
     displayThankYouPage() {
         // Clear the survey container
         this.surveyContainer.innerHTML = '';

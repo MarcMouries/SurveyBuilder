@@ -1,6 +1,5 @@
 
 import { OneChoice } from "./OneChoice.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestion } from "../IQuestion.ts";
 
 /**
@@ -10,9 +9,9 @@ import type { IQuestion } from "../IQuestion.ts";
  * (*) Yes () No
  */
 export class YesNoQuestion2 extends OneChoice {
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
+    constructor(question: IQuestion, index: number) {
         // Temporarily adjust the items for Yes/No questions
         const modifiedQuestion = { ...question, items: ['Yes', 'No'] };
-        super(surveyBuilder, modifiedQuestion, index);
+        super(modifiedQuestion, index);
     }
 }

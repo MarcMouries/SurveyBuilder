@@ -1,7 +1,6 @@
 import { AbstractChoice } from "./AbstractChoice.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 
 /**
@@ -12,8 +11,8 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
  * [] Cherries   [] Dates
  */
 export class MultiChoice extends AbstractChoice {
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
     }
 
     protected renderChoices() {

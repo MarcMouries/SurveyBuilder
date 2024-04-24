@@ -15,19 +15,48 @@ function createQuestionTitle(questionText) {
   return title;
 }
 
+// src/EventEmitter.ts
+class EventEmitter {
+  static listeners = new Map;
+  static on(event, listener) {
+    if (!EventEmitter.listeners.has(event)) {
+      EventEmitter.listeners.set(event, []);
+    }
+    EventEmitter.listeners.get(event)?.push(listener);
+  }
+  static off(event, listener) {
+    const listeners = EventEmitter.listeners.get(event);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+  static emit(event, ...args) {
+    const listeners = EventEmitter.listeners.get(event);
+    if (listeners) {
+      listeners.forEach((listener) => {
+        listener(...args);
+      });
+    }
+  }
+}
+
+// src/EventTypes.ts
+var TITLE_UPDATED = "titleUpdated";
+var ANSWER_SELECTED = "answerSelected";
+
 // src/question-types/QuestionComponent.ts
 class QuestionComponent {
-  surveyBuilder;
   questionDiv;
   questionData;
-  constructor(surveyBuilder, question, index) {
-    this.surveyBuilder = surveyBuilder;
+  constructor(question, index) {
     this.questionData = question;
     this.questionDiv = document.createElement("div");
     this.questionDiv.className = `question ${question.type}-question`;
     this.questionDiv.dataset.index = index.toString();
     this.questionDiv.dataset.questionName = question.name;
-    this.surveyBuilder.addQuestionElement(this.questionDiv);
     const titleElement = createQuestionTitle(question.title);
     titleElement.classList.add("question-title");
     this.questionDiv.appendChild(titleElement);
@@ -44,9 +73,8 @@ class QuestionComponent {
   }
   setupResponseListener() {
     this.questionDiv.addEventListener("answerSelected", (event) => {
-      const customEvent = event;
-      const response = customEvent.detail;
-      this.surveyBuilder.setResponse(response);
+      const responseEvent = event;
+      EventEmitter.emit(ANSWER_SELECTED, responseEvent.detail);
     });
   }
   show() {
@@ -55,14 +83,17 @@ class QuestionComponent {
   hide() {
     this.questionDiv.style.display = "none";
   }
+  getQuestionDiv() {
+    return this.questionDiv;
+  }
 }
 
 // src/question-types/FollowUpQuestion.ts
 class FollowUpQuestion extends QuestionComponent {
   detailQuestions;
   detailResponses = {};
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     this.detailQuestions = question.detailQuestions || [];
     this.renderDetailQuestions();
   }
@@ -94,8 +125,8 @@ class FollowUpQuestion extends QuestionComponent {
 }
 // src/question-types/multi-line.ts
 class MultiLineTextQuestion extends QuestionComponent {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     const textArea = document.createElement("textarea");
     textArea.name = question.name;
     textArea.required = question.isRequired ?? false;
@@ -114,8 +145,8 @@ class MultiLineTextQuestion extends QuestionComponent {
 // src/question-types/AbstractChoice.ts
 class AbstractChoice extends QuestionComponent {
   items = [];
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     this.items = question.items;
     this.renderChoices();
   }
@@ -130,8 +161,8 @@ class AbstractChoice extends QuestionComponent {
 
 // src/question-types/MultiChoice.ts
 class MultiChoice extends AbstractChoice {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
   }
   renderChoices() {
     const choiceContainer = document.createElement("div");
@@ -211,8 +242,8 @@ class MultiChoice extends AbstractChoice {
 }
 // src/question-types/OneChoice.ts
 class OneChoice extends AbstractChoice {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
   }
   renderChoices() {
     const choiceContainer = document.createElement("div");
@@ -253,8 +284,8 @@ class OneChoice extends AbstractChoice {
 // src/question-types/ranking.ts
 class RankingQuestion extends QuestionComponent {
   placeholder;
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     const rankingList = document.createElement("div");
     rankingList.className = `ranking-list ${question.name}`;
     this.placeholder = document.createElement("div");
@@ -363,8 +394,8 @@ class RankingQuestion extends QuestionComponent {
 }
 // src/question-types/select.ts
 class SelectQuestion extends QuestionComponent {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     const searchComponent = document.createElement("search-input");
     this.questionDiv.appendChild(searchComponent);
     const config = {
@@ -386,8 +417,8 @@ class SelectQuestion extends QuestionComponent {
 }
 // src/question-types/single-line.ts
 class SingleLineTextQuestion extends QuestionComponent {
-  constructor(surveyBuilder, question, index) {
-    super(surveyBuilder, question, index);
+  constructor(question, index) {
+    super(question, index);
     const inputField = document.createElement("input");
     inputField.type = "text";
     inputField.name = question.name;
@@ -406,9 +437,9 @@ class SingleLineTextQuestion extends QuestionComponent {
 }
 // src/question-types/YesNoQuestion.ts
 class YesNoQuestion2 extends OneChoice {
-  constructor(surveyBuilder, question, index) {
+  constructor(question, index) {
     const modifiedQuestion = { ...question, items: ["Yes", "No"] };
-    super(surveyBuilder, modifiedQuestion, index);
+    super(modifiedQuestion, index);
   }
 }
 // src/component/SearchInput.ts
@@ -1442,37 +1473,6 @@ class Interpreter {
   }
 }
 
-// src/EventEmitter.ts
-class EventEmitter {
-  static listeners = new Map;
-  static on(event, listener) {
-    if (!EventEmitter.listeners.has(event)) {
-      EventEmitter.listeners.set(event, []);
-    }
-    EventEmitter.listeners.get(event)?.push(listener);
-  }
-  static off(event, listener) {
-    const listeners = EventEmitter.listeners.get(event);
-    if (listeners) {
-      const index = listeners.indexOf(listener);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    }
-  }
-  static emit(event, ...args) {
-    const listeners = EventEmitter.listeners.get(event);
-    if (listeners) {
-      listeners.forEach((listener) => {
-        listener(...args);
-      });
-    }
-  }
-}
-
-// src/EventTypes.ts
-var TITLE_UPDATED = "titleUpdated";
-
 // src/SurveyModel.ts
 var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
@@ -1652,6 +1652,7 @@ class SurveyBuilder {
   constructor(config, containerId) {
     this.surveyModel = new SurveyModel(config);
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
+    EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
     this.currentQuestion = null;
     const containerElement = document.getElementById(containerId);
     if (!containerElement) {
@@ -1695,39 +1696,36 @@ class SurveyBuilder {
   }
   initializeQuestions() {
     this.surveyModel.getQuestions().forEach((question, index) => {
-      switch (question.type) {
-        case "ranking":
-          this.questionComponents.push(new RankingQuestion(this, question, index));
-          break;
-        case "single-line-text":
-          this.questionComponents.push(new SingleLineTextQuestion(this, question, index));
-          break;
-        case "multi-line-text":
-          this.questionComponents.push(new MultiLineTextQuestion(this, question, index));
-          break;
-        case "yes-no":
-          this.questionComponents.push(new YesNoQuestion2(this, question, index));
-          break;
-        case "YesNoQuestion2":
-          this.questionComponents.push(new YesNoQuestion2(this, question, index));
-          break;
-        case "one-choice":
-          this.questionComponents.push(new OneChoice(this, question, index));
-          break;
-        case "multi-choice":
-          this.questionComponents.push(new MultiChoice(this, question, index));
-          break;
-        case "select":
-          this.questionComponents.push(new SelectQuestion(this, question, index));
-          break;
-        case "followup":
-          this.questionComponents.push(new FollowUpQuestion(this, question, index));
-          break;
-        default:
-          console.error("Unsupported question type: " + question.type);
-      }
+      const questionComponent = this.createQuestionComponent(question, index);
+      questionComponent.hide();
+      this.addQuestionElement(questionComponent.getQuestionDiv());
+      this.questionComponents.push(questionComponent);
     });
-    this.questionComponents.forEach((component) => component.hide());
+  }
+  createQuestionComponent(question, index) {
+    switch (question.type) {
+      case "ranking":
+        return new RankingQuestion(question, index);
+      case "single-line-text":
+        return new SingleLineTextQuestion(question, index);
+      case "multi-line-text":
+        return new MultiLineTextQuestion(question, index);
+      case "yes-no":
+        return new YesNoQuestion2(question, index);
+      case "YesNoQuestion2":
+        return new YesNoQuestion2(question, index);
+      case "one-choice":
+        return new OneChoice(question, index);
+      case "multi-choice":
+        return new MultiChoice(question, index);
+      case "select":
+        return new SelectQuestion(question, index);
+      case "followup":
+        return new FollowUpQuestion(question, index);
+      default:
+        console.error("Unsupported question type: " + question.type);
+    }
+    return null;
   }
   showNextQuestion() {
     const nextQuestion = this.surveyModel.getNextVisibleQuestion();
@@ -1749,6 +1747,8 @@ class SurveyBuilder {
   }
   showQuestion(question) {
     console.log("showQuestion: " + question.name);
+    console.log("showQuestion: ", question);
+    console.log("showQuestion: ", this.questionComponents);
     this.questionComponents.forEach((component) => component.hide());
     this.questionComponents[question.index].show();
     this.updateNavigationButtons();
@@ -1779,7 +1779,8 @@ class SurveyBuilder {
   addQuestionElement(questionDiv) {
     this.questionsContainer.appendChild(questionDiv);
   }
-  setResponse(response) {
+  handleResponse(response) {
+    console.log("SurveyBuilder.handleResponse: ", response);
     this.surveyModel.updateResponse(response.questionName, response.response);
   }
   handleTitleUpdate(index, newTitle) {

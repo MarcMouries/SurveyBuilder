@@ -17,8 +17,8 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
  **/
 export class OneChoice extends AbstractChoice {
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
     }
 
     protected renderChoices() {

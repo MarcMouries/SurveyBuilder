@@ -1,7 +1,5 @@
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
-import type { IQuestionResponse } from "./IQuestionResponse.ts";
-import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
+
 import { QuestionComponent } from "./QuestionComponent.ts";
 
 /**
@@ -12,8 +10,8 @@ import { QuestionComponent } from "./QuestionComponent.ts";
 export abstract class AbstractChoice extends QuestionComponent {
     protected items: string[] = [];
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
         this.items = question.items;
         this.renderChoices();
     }

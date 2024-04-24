@@ -1,7 +1,6 @@
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 import { QuestionComponent } from "./QuestionComponent.ts";
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 /**
  * Represents a question that collects detailed information based on a previous question's answer.
@@ -10,8 +9,8 @@ export class FollowUpQuestion extends QuestionComponent {
     private detailQuestions: IQuestion[];
     private detailResponses: { [key: string]: string } = {};
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
         this.detailQuestions = question.detailQuestions || [];
         this.renderDetailQuestions();
     }

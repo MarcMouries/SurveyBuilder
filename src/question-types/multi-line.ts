@@ -1,5 +1,4 @@
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { QuestionComponent } from "./QuestionComponent.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
@@ -7,8 +6,8 @@ import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 
 export class MultiLineTextQuestion extends QuestionComponent {
 
-    constructor(surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
-        super(surveyBuilder, question, index);
+    constructor(question: IQuestion, index: number) {
+        super(question, index);
 
         const textArea = document.createElement('textarea');
         textArea.name = question.name;

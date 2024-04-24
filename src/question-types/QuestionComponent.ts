@@ -1,23 +1,21 @@
 import { createQuestionTitle } from './common.js';
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionComponent } from "./IQuestionComponent.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
+import { EventEmitter} from '../EventEmitter.ts'
+import { ANSWER_SELECTED } from '../EventTypes';
 
 
 export abstract class QuestionComponent implements IQuestionComponent {
     protected questionDiv: HTMLDivElement;
     public questionData: IQuestion;
 
-    constructor(protected surveyBuilder: ISurveyBuilder, question: IQuestion, index: number) {
+    constructor(question: IQuestion, index: number) {
         this.questionData = question;
         this.questionDiv = document.createElement('div');
         this.questionDiv.className = `question ${question.type}-question`;
         this.questionDiv.dataset.index = index.toString();
         this.questionDiv.dataset.questionName = question.name;
-
-        // Append the question to the survey
-        this.surveyBuilder.addQuestionElement(this.questionDiv);
 
         // Create and append the question title
         const titleElement = createQuestionTitle(question.title);
@@ -41,9 +39,8 @@ export abstract class QuestionComponent implements IQuestionComponent {
 
     protected setupResponseListener() {
         this.questionDiv.addEventListener("answerSelected", (event: Event) => {
-            const customEvent = event as CustomEvent<IQuestionResponse>;
-            const response = customEvent.detail;
-            this.surveyBuilder.setResponse(response);
+            const responseEvent = event as CustomEvent<IQuestionResponse>;
+            EventEmitter.emit(ANSWER_SELECTED, responseEvent.detail);
         });
     }
 
@@ -53,5 +50,9 @@ export abstract class QuestionComponent implements IQuestionComponent {
 
     public hide() {
         this.questionDiv.style.display = 'none';
+    }
+
+    public getQuestionDiv () : HTMLDivElement {
+        return this.questionDiv;
     }
 }
