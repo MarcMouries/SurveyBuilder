@@ -56,6 +56,32 @@ test("Dynamic title is correctly updated based on multiple responses", () => {
 });
 
 
+test("Dynamic title updates based on conditionally influenced responses", () => {
+  const questions = [
+    {
+      name: "favorite_season",
+      title: "What is your favorite season?",
+      type: "one-choice",
+      options: ["Spring", "Summer", "Fall", "Winter"]
+    },
+    {
+      name: "activity_desired",
+      title: "What activity do you like doing during the {{favorite_season}} season?",
+      type: "single-line-text"
+    }
+  ];
+
+  surveyConfig.questions = questions;
+  const surveyModel = new SurveyModel(surveyConfig);
+
+  surveyModel.updateResponse("favorite_season", "Winter");
+  let activityTitle = surveyModel.getQuestionByName("activity_desired")?.title;
+
+  expect(activityTitle).toBe("What activity do you like doing during the Winter season?");
+});
+
+
+
 test("Question visibility is updated based on condition", () => {
   const questions = [
     {
@@ -83,6 +109,70 @@ test("Question visibility is updated based on condition", () => {
 
   expect(questionAfterUpdate?.isVisible).toBe(true);
 });
+
+test("Dynamic response updates visibility and re-evaluation", () => {
+  const questions = [
+    {
+      name: "attending_status",
+      title: "Will you be attending the event in-person or virtually?",
+      type: "one-choice",
+      options: ["In-Person", "Virtually"]
+    },
+    {
+      name: "dietary_restrictions",
+      title: "Do you have any dietary restrictions?",
+      type: "yes-no",
+      visible_when: "attending_status == 'In-Person'"
+    }
+  ];
+
+  surveyConfig.questions = questions;
+  const surveyModel = new SurveyModel(surveyConfig);
+  let dietaryVisibilityBefore = surveyModel.getQuestionByName("dietary_restrictions")?.isVisible;
+
+  // Update attending status to 'In-Person'
+  surveyModel.updateResponse("attending_status", "In-Person");
+  let dietaryVisibilityAfter = surveyModel.getQuestionByName("dietary_restrictions")?.isVisible;
+
+  expect(dietaryVisibilityBefore).toBe(false);
+  expect(dietaryVisibilityAfter).toBe(true);
+});
+
+
+test("Complex condition evaluation affects multiple dependent questions", () => {
+  const questions = [
+    {
+      name: "attending_status",
+      title: "Will you be attending the event in-person or virtually?",
+      type: "one-choice",
+      options: ["In-Person", "Virtually"]
+    },
+    {
+      name: "has_dietary_restrictions",
+      title: "Do you have any dietary restrictions?",
+      type: "yes-no",
+      visible_when: "attending_status == 'In-Person'"
+    },
+    {
+      name: "specify_dietary_restrictions",
+      title: "Please specify your dietary restrictions.",
+      type: "single-line-text",
+      visible_when: "attending_status == 'In-Person' && has_dietary_restrictions == 'Yes'"
+    }
+  ];
+
+  surveyConfig.questions = questions;
+  const surveyModel = new SurveyModel(surveyConfig);
+  
+  // Initial visibility and response checks
+  surveyModel.updateResponse("attending_status", "In-Person");
+  surveyModel.updateResponse("has_dietary_restrictions", "Yes");
+
+  let specifyVisibility = surveyModel.getQuestionByName("specify_dietary_restrictions")?.isVisible;
+
+  expect(specifyVisibility).toBe(true);
+});
+
 
 
 describe('validateSurveySetup', () => {
