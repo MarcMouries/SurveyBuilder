@@ -1639,6 +1639,7 @@ class SurveyModel {
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
+  VERSION = "0.04.25";
   surveyModel;
   surveyContainer;
   questionsContainer;
@@ -1650,6 +1651,7 @@ class SurveyBuilder {
   completeCallback;
   currentQuestion;
   constructor(config, containerId) {
+    console.log("SurveyBuilder: " + this.VERSION);
     this.surveyModel = new SurveyModel(config);
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
@@ -1733,8 +1735,6 @@ class SurveyBuilder {
     if (nextQuestion) {
       this.currentQuestion = nextQuestion;
       this.showQuestion(nextQuestion);
-    } else {
-      this.handleEndOfSurvey();
     }
   }
   showPreviousQuestion() {
@@ -1815,10 +1815,6 @@ class SurveyBuilder {
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
     return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
-  }
-  handleEndOfSurvey() {
-    console.log("handleEndOfSurvey");
-    this.nextButton.style.display = "none";
   }
   finishSurvey() {
     const responses = this.surveyModel.getResponses();

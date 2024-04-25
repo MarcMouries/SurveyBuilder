@@ -11,6 +11,7 @@ import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 
 class SurveyBuilder {
+    private VERSION: String = "0.04.25";
 
     private surveyModel: SurveyModel;
 
@@ -29,6 +30,8 @@ class SurveyBuilder {
 
 
     constructor(config: any, containerId: string) {
+        console.log("SurveyBuilder: " + this.VERSION);
+
         this.surveyModel = new SurveyModel(config);
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
         EventEmitter.on(ANSWER_SELECTED, (response: IQuestionResponse) => this.handleResponse(response));
@@ -119,8 +122,6 @@ class SurveyBuilder {
         if (nextQuestion) {
             this.currentQuestion = nextQuestion;
             this.showQuestion(nextQuestion);
-        } else {
-            this.handleEndOfSurvey();
         }
     }
 
@@ -235,13 +236,6 @@ class SurveyBuilder {
     }
 
 
-    private handleEndOfSurvey(): void {
-        console.log("handleEndOfSurvey");
-        this.nextButton.style.display = 'none'; // Hide Next button
-        // Show a Complete or Submit button, or take any action to finalize the survey
-    }
-
-
     finishSurvey() {
         const responses = this.surveyModel.getResponses();
         console.log("SurveyBuilder.finishSurvey: ", responses)
@@ -250,14 +244,6 @@ class SurveyBuilder {
         }
         this.displayThankYouPage();
     }
-
-    /*
-    __getResponses() {
-        const surveyData = {     responses: []
-        };
-        return surveyData;
-    }
-*/
 
     onComplete(callbackFunction: any) {
         this.completeCallback = callbackFunction;
