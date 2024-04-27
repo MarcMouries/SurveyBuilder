@@ -1,8 +1,9 @@
 {
   "surveyTitle": "Fed forms - Creator Workflows",
-  "surveyDescription": "Your feedback from this survey will influence how ServiceNow Creator Workflows will invest their energy and resources in 2024 to support you!<br>\n &nbsp;<br>\n<strong>In 2024, it’s time to improve the way Federal works. <br>Your responses will be kept confidential. </strong>&nbsp;<br>\n &nbsp;<br>\nThanks.",
+  "surveyDescription": 
+  "<p style='text-align: center; margin: 20px; font-size: 1.1rem'>Your feedback from this survey will influence how ServiceNow Creator Workflows will invest their energy and resources in 2024 to support you!<br>\n &nbsp;<br>\n<strong>In 2024, it’s time to improve the way Federal works. <br>Your responses will be kept confidential. </strong>&nbsp;<br>\n &nbsp;<br>\nThanks.",
   "questions": [
-    {
+   {
       "type": "yes-no",
       "name": "use-federal-forms",
       "title": "0 Do you regularly fill in or approve federal forms?"
