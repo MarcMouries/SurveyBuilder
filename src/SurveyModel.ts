@@ -96,28 +96,39 @@ export class SurveyModel {
 
     private updateVisibility(updatedQuestionName: string) {
         const dependentQuestions = this.visibilityDependencies.get(updatedQuestionName);
-
-        dependentQuestions?.forEach(question => {
-            if (this.compiledConditions.has(question.name)) {
-                const compiledCondition = this.compiledConditions.get(question.name);
-                question.isVisible = this.interpreter.interpret(compiledCondition);
-            }
-        });
+        
+        if (dependentQuestions && dependentQuestions.length > 0) {
+            console.log(`Updating visibility for question: '${updatedQuestionName}'. List of dependent questions: ${dependentQuestions.map(q => q.name).join(', ')}`);
+            dependentQuestions.forEach(question => {
+                if (this.compiledConditions.has(question.name)) {
+                    const compiledCondition = this.compiledConditions.get(question.name);
+                    question.isVisible = this.interpreter.interpret(compiledCondition);
+                }
+            });
+        } else {
+            console.log(`Updating visibility for question: '${updatedQuestionName}'. No dependent questions found.`);
+        }
     }
-
+    
     private updateDynamicTitles(updatedQuestionName: string) {
         const dependentQuestions = this.titleDependencies.get(updatedQuestionName);
-        console.log(`SurveyModel.updateDynamicTitles updatedQuestionName='${updatedQuestionName}', dependentQuestions='${dependentQuestions?.map(q => q.name)}'`);
     
-        dependentQuestions?.forEach(question => {
-            const originalTitle = this.originalTitles.get(question.name);
-            if (originalTitle) {
-                const newTitle = this.constructNewTitle(originalTitle);
-                question.title = newTitle;
-                EventEmitter.emit(TITLE_UPDATED, question.index, newTitle);
-            }
-        });
+        if (dependentQuestions && dependentQuestions.length > 0) {
+            console.log(`Updating dynamic titles for question: '${updatedQuestionName}'. List of dependent questions: ${dependentQuestions.map(q => q.name).join(', ')}`);
+            dependentQuestions.forEach(question => {
+                const originalTitle = this.originalTitles.get(question.name);
+                if (originalTitle) {
+                    const newTitle = this.constructNewTitle(originalTitle);
+                    question.title = newTitle;
+                    EventEmitter.emit(TITLE_UPDATED, question.index, newTitle);
+                }
+            });
+        } else {
+            console.log(`Updating dynamic titles for question: '${updatedQuestionName}'. No dependent questions found.`);
+        }
     }
+    
+    
     
 
     /**
