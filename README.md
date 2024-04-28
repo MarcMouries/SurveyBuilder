@@ -128,7 +128,7 @@ In this example, {{favorite-season}} is a placeholder within the title of the fo
 
 ## Demonstration
 
-[Demonstration](https://marcmouries.github.io/SurveyBuilder/test/)
+[Demonstration](https://marcmouries.github.io/SurveyBuilder/demonstration/)
 
 ## Development
 
