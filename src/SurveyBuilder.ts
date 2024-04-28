@@ -9,83 +9,142 @@ import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { SurveyModel } from './SurveyModel.ts';
 import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
+import { SurveyPage } from "./SurveyPage";
 
 class SurveyBuilder {
-    private VERSION: String = "0.04.25";
+    private VERSION: String = "0.04.28";
 
     private surveyModel: SurveyModel;
 
     private surveyContainer: HTMLElement;
-    private questionsContainer: HTMLElement;
-    private navigationContainer!: HTMLElement;
 
-    private nextButton!: HTMLElement;
-    private prevButton!: HTMLElement;
-    private completeButton!: HTMLElement;
+    // PAGES
+    private landingPage: SurveyPage;
+    private questionsPage: SurveyPage;
+    private thankYouPage: SurveyPage;
+
+    // NAVIGATION
+    private buttonsContainer!: HTMLElement;
+    // private startButton!: HTMLElement;
+    // private nextButton!: HTMLElement;
+    // private prevButton!: HTMLElement;
+    // private completeButton!: HTMLElement;
+    private buttons: Map<string, HTMLElement> = new Map();
+
 
     private questionComponents: any[];
     private completeCallback: any;
-
-    private currentQuestion: IQuestion | null;
-
 
     constructor(config: any, containerId: string) {
         console.log("SurveyBuilder: " + this.VERSION);
 
         this.surveyModel = new SurveyModel(config);
+        this.questionComponents = [];
+
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
         EventEmitter.on(ANSWER_SELECTED, (response: IQuestionResponse) => this.handleResponse(response));
 
-        this.currentQuestion = null;
         const containerElement = document.getElementById(containerId);
         if (!containerElement) {
             throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
         }
         this.surveyContainer = containerElement;
-        this.questionComponents = [];
 
-        // FIRST PAGE
-        const initialPage = document.createElement('div');
-        initialPage.id = 'initial-page';
-        this.surveyContainer.appendChild(initialPage);
-        this.createInitialPage(initialPage);
+        // LANDING PAGE
+        this.landingPage = new SurveyPage('landing-page');
+        this.landingPage.setTitle(this.surveyModel.getTitle());
+        this.landingPage.setContent(this.surveyModel.getDescription());
+        this.surveyContainer.appendChild(this.landingPage.pageContainer);
 
-        // SURVEY DIV
-        this.questionsContainer = document.createElement('div');
-        this.questionsContainer.id = 'survey-questions';
-        this.questionsContainer.style.display = 'none'; // Hide until the survey starts
-        this.surveyContainer.appendChild(this.questionsContainer);
+        // Setup Questions Page
+        this.questionsPage = new SurveyPage('survey-questions');
+        this.questionsPage.hide();
+        this.surveyContainer.appendChild(this.questionsPage.pageContainer);
+
+        // Setup Thank You Page
+        this.thankYouPage = new SurveyPage('thank-you-page');
+        this.thankYouPage.setTitle("Thank you for your input");
+        this.thankYouPage.setContent(
+            `<p style="text-align: center; margin: 20px; font-size: 1.3rem;">
+            You can safely close this page.</p>
+            <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
+            If you wish to discover how ServiceNow Creator Workflows 
+            can streamline your business processes and enhance automation,  
+            please follow this link to learn more about 
+            <a href=http://URL_TO_SERVICE_NOW_CREATOR_WORKFLOWS>ServiceNow Creator Workflows</a>.</p>`);
+        this.thankYouPage.hide();
+        this.surveyContainer.appendChild(this.thankYouPage.pageContainer);
+
+        // NAVIGATION
+        this.buttonsContainer = document.createElement('div');
+        this.buttonsContainer.className = 'survey-nav';
+        this.buttonsContainer.role = 'navigation';
+        this.surveyContainer.appendChild(this.buttonsContainer);
+
+        this.buttons.set('start', this.createButton('Start Survey', 'survey-button', () => this.startSurvey(), 'block'));
+        this.buttons.set('prev', this.createButton('Previous', 'survey-button', () => this.showPreviousQuestion(), 'none'));
+        this.buttons.set('next', this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'none'));
+        this.buttons.set('complete', this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none'));
     }
 
-    private createInitialPage(container: HTMLElement) {
-        this.createSurveyTitle(this.surveyModel.getTitle(), container);
-        this.createSurveyDescription(this.surveyModel.getDescription(), container);
-        this.createStartButton(container);
+    displayPage(page: SurveyPage) {
+        this.surveyContainer.innerHTML = '';
+        this.surveyContainer.appendChild(page.pageContainer);
     }
 
-    private createStartButton(container: HTMLElement) {
-        const startButtonWrapper = document.createElement('div');
-        startButtonWrapper.className = 'start-button-wrapper';
+    displayThankYouPage() {
+        this.questionsPage.hide();
+        this.thankYouPage.show();
+    }
 
-        const startButton = document.createElement('button');
-        startButton.textContent = 'Start Survey';
-        startButton.className = 'survey-button';
-        startButton.addEventListener('click', () => {
-            // Hide initial content and show questions
-            container.style.display = 'none';
-            this.questionsContainer.style.display = 'block';
-            this.startSurvey();
-        });
+    showButton(id: string): void {
+        const button = this.buttons.get(id);
+        if (button) {
+            button.style.display = 'block';
+        }
+    }
 
-        startButtonWrapper.appendChild(startButton);
-        container.appendChild(startButtonWrapper);
+    hideButton(id: string): void {
+        const button = this.buttons.get(id);
+        if (button) {
+            button.style.display = 'none';
+        }
+    }
+
+    // Logic to show/hide buttons based on the state of the survey
+    private updateButtonsVisibility() {
+        console.log(`Updating buttons for current question`);
+
+        if (this.surveyModel.isFirstQuestion() && !this.surveyModel.isStarted()) {
+            this.showButton('start');
+        } else {
+            this.hideButton('start');
+        }
+
+        if (this.surveyModel.isFirstQuestion()) {
+            this.hideButton('prev');
+        } else {
+            this.showButton('prev');
+        }
+
+        if (this.surveyModel.isLastQuestion()) {
+            this.hideButton('next');
+            this.showButton('complete');
+        } else {
+            this.showButton('next');
+            this.hideButton('complete');
+        }
     }
 
     private startSurvey() {
-        this.questionsContainer.style.display = 'block'; // Make questions visible
+        console.log(`START SURVEY`);
+
+        this.surveyModel.startSurvey();
+        this.landingPage.hide();
+        this.questionsPage.show();
+
         this.initializeQuestions();
-        this.initNavigationButtons();
-        this.showNextQuestion();
+        this.showQuestion(this.surveyModel.getCurrentQuestion());
     }
 
     private initializeQuestions() {
@@ -115,24 +174,22 @@ class SurveyBuilder {
     }
 
     private showNextQuestion() {
-        // Use the index if available, otherwise fallback to a default value (e.g., 0)
         const nextQuestion = this.surveyModel.getNextVisibleQuestion();
         console.log(`showNextQuestion: ${nextQuestion?.title}`);
 
         if (nextQuestion) {
-            this.currentQuestion = nextQuestion;
             this.showQuestion(nextQuestion);
+        } else {
+            console.log("No more questions available or end of survey.");
         }
     }
-
 
     private showPreviousQuestion() {
         const prevQuestion = this.surveyModel.getPreviousVisibleQuestion();
         if (prevQuestion) {
-            this.currentQuestion = prevQuestion; // Update the currentQuestion reference
-            this.showQuestion(prevQuestion); // Implement showing the question as appropriate
+            this.showQuestion(prevQuestion);
         } else {
-            // Optionally handle the case if this is the first question or no previous visible question
+            console.log("This is the first question, no previous question available.");
         }
     }
 
@@ -147,52 +204,17 @@ class SurveyBuilder {
         this.questionComponents[question.index!].show();
 
         // Update navigation buttons based on the new index
-        this.updateNavigationButtons();
-    }
-
-    private updateNavigationButtons() {
-        const index = this.currentQuestion!.index;
-        console.log(`Updating buttons for index: ${index}`);
-
-        const numberOfQuestions = this.surveyModel.getNumberOfQuestions();
-
-        // Determine button visibility based on the current index
-        const showPrevButton = index! > 0;
-        const showNextButton = index! < numberOfQuestions - 1;
-        const showCompleteButton = index === numberOfQuestions - 1;
-
-        // Update button displays based on the determined conditions
-        this.prevButton.style.display = showPrevButton ? 'block' : 'none';
-        this.nextButton.style.display = showNextButton ? 'block' : 'none';
-        this.completeButton.style.display = showCompleteButton ? 'block' : 'none';
-    }
-
-
-    private createSurveyTitle(surveyTitle: string, container: HTMLElement) {
-        const title = document.createElement('h3');
-        title.className = 'survey-title';
-        title.textContent = surveyTitle;
-
-        container.appendChild(title);
-    }
-
-    private createSurveyDescription(surveyDescription: string, container: HTMLElement) {
-        const description = document.createElement('p');
-        description.className = 'survey-description';
-        description.innerHTML = surveyDescription;
-
-        container.appendChild(description);
+        this.updateButtonsVisibility();
     }
 
     public addQuestionElement(questionDiv: HTMLDivElement) {
-        this.questionsContainer.appendChild(questionDiv);
+        this.questionsPage.pageContainer.appendChild(questionDiv);
     }
 
     handleResponse(response: IQuestionResponse): void {
         console.log("SurveyBuilder.handleResponse: ", response);
         this.surveyModel.updateResponse(response.questionName, response.response);
     }
-
 
     private handleTitleUpdate(index: number, newTitle: string) {
         console.log("SurveyBuilder.handleTitleUpdate : " + newTitle);
@@ -201,38 +223,24 @@ class SurveyBuilder {
         questionComponent.setTitle(newTitle);
     }
 
-    private initNavigationButtons() {
-        if (!this.navigationContainer) {
-            this.navigationContainer = document.createElement('div');
-            this.navigationContainer.id = 'navigation-buttons';
-            this.navigationContainer.role = 'navigation';
-            this.surveyContainer.appendChild(this.navigationContainer);
-        } else {
-            this.navigationContainer.innerHTML = '';
-        }
-
-        this.prevButton = this.createButton('Previous', 'survey-button', () => this.showPreviousQuestion(), 'none');
-        this.nextButton = this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'block');
-        this.completeButton = this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none');
-    }
-
     private createButton(text: string, className: string, onClick: () => void, displayStyle: 'none' | 'block') {
         const button = document.createElement('button');
         button.textContent = text;
         button.className = className;
         button.addEventListener('click', onClick);
         button.style.display = displayStyle;
-        this.navigationContainer.appendChild(button);
+        this.buttonsContainer.appendChild(button);
         return button;
     }
 
 
     getQuestionElement(index: number): any {
-        let allQuestionElements = this.questionsContainer.getElementsByClassName(".question");
+        let allQuestionElements = this.questionsPage.pageContainer.getElementsByClassName(".question");
+
         console.log("allQuestionElements", allQuestionElements);
         console.log(allQuestionElements.length);
 
-        return this.questionsContainer.querySelector(`.question[data-index="${index}"]`);
+        return this.questionsPage.pageContainer.querySelector(`.question[data-index="${index}"]`);
     }
 
 
@@ -247,27 +255,6 @@ class SurveyBuilder {
 
     onComplete(callbackFunction: any) {
         this.completeCallback = callbackFunction;
-    }
-
-    displayThankYouPage() {
-        // Clear the survey container
-        this.surveyContainer.innerHTML = '';
-        // Create the thank you message container
-        const thankYouContainer = document.createElement('div');
-        thankYouContainer.className = 'thank-you-container';
-
-        // Add content to the thank you container
-        thankYouContainer.innerHTML = `
-        <h2>Thank you for your input.</h2>
-        <p>You can close this page. </p>
-        <p>Learn more about <a href="https://servicenow.com">Creator Workflows</a>.</>
-        <div class="button-container">
-            <button class="secondary-button">Prev</button>
-            <button class="primary-button">Done</button>
-        </div>
-    `;
-        // Append the thank you container to the survey container
-        this.surveyContainer.appendChild(thankYouContainer);
     }
 }
 
