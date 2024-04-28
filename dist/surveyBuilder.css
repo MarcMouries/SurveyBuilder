@@ -76,8 +76,11 @@ html, body {
     /* Space for 'Complete' button */
 }
 
-/* INITIAL PAGE */
-.survey-title {
+.survey-page {
+    margin-bottom: 20px;
+}
+
+.survey-page-title {
     text-align: center;
     font-size: 1.6rem;
 }
@@ -514,7 +517,7 @@ textarea {
 
 /* Complete Button Container and Button Styles */
 
-#navigation-buttons {
+.survey-nav {
     background-color: #f7f7f7;
     display: flex;
     justify-content: center;
