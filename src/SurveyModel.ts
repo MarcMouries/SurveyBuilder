@@ -2,7 +2,7 @@ import { Parser } from "./engine/Parser";
 import { Interpreter } from "./engine/Interpreter";
 import { Environment } from "./engine/Environment";
 import type { IQuestion } from './IQuestion.ts';
-import { EventEmitter} from './EventEmitter.ts'
+import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED } from './EventTypes';
 
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
@@ -12,7 +12,7 @@ export class SurveyModel {
     private surveyTitle: any;
     private surveyDescription: any;
     private questionList: IQuestion[];
-    private currentQuestionIndex: number = -1;
+    private currentQuestion!: IQuestion;
 
     private responseMap: { [key: string]: any };
 
@@ -29,20 +29,23 @@ export class SurveyModel {
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
         this.questionList = config.questions;
+        this.currentQuestion = this.questionList[0];
+
 
         this.environment = new Environment();
         this.parser = new Parser();
         this.interpreter = new Interpreter(this.environment);
+
         this.responseMap = {};
         this.originalTitles = new Map();
         this.compiledConditions = new Map();
 
-        this.initialize();
+        this.initializeDynamicContent();
     }
 
-    private initialize() {
+    private initializeDynamicContent() {
         this.questionList.forEach((question, index) => {
-            question.index = index; 
+            question.index = index;
 
             this.originalTitles.set(question.name, question.title);
 
@@ -76,16 +79,15 @@ export class SurveyModel {
         });
     }
 
-    public getTitle(): string                     { return this.surveyTitle;}
-    public getDescription(): string               { return this.surveyDescription;}
-    public getQuestions(): IQuestion[]            { return this.questionList.slice();}
-    public getResponses(): { [key: string]: any } { return this.responseMap;}
-    public getNumberOfQuestions(): number         { return this.questionList.length;}
+    public getTitle(): string { return this.surveyTitle; }
+    public getDescription(): string { return this.surveyDescription; }
+    public getQuestions(): IQuestion[] { return this.questionList.slice(); }
+    public getResponses(): { [key: string]: any } { return this.responseMap; }
+    public getNumberOfQuestions(): number { return this.questionList.length; }
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
     }
-    
-    
+
     public updateResponse(questionName: string, response: any) {
         console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
         this.responseMap[questionName] = response;
@@ -96,7 +98,7 @@ export class SurveyModel {
 
     private updateVisibility(updatedQuestionName: string) {
         const dependentQuestions = this.visibilityDependencies.get(updatedQuestionName);
-        
+
         if (dependentQuestions && dependentQuestions.length > 0) {
             console.log(`Updating visibility for question: '${updatedQuestionName}'. List of dependent questions: ${dependentQuestions.map(q => q.name).join(', ')}`);
             dependentQuestions.forEach(question => {
@@ -109,10 +111,10 @@ export class SurveyModel {
             console.log(`Updating visibility for question: '${updatedQuestionName}'. No dependent questions found.`);
         }
     }
-    
+
     private updateDynamicTitles(updatedQuestionName: string) {
         const dependentQuestions = this.titleDependencies.get(updatedQuestionName);
-    
+
         if (dependentQuestions && dependentQuestions.length > 0) {
             console.log(`Updating dynamic titles for question: '${updatedQuestionName}'. List of dependent questions: ${dependentQuestions.map(q => q.name).join(', ')}`);
             dependentQuestions.forEach(question => {
@@ -127,9 +129,6 @@ export class SurveyModel {
             console.log(`Updating dynamic titles for question: '${updatedQuestionName}'. No dependent questions found.`);
         }
     }
-    
-    
-    
 
     /**
      * Replace placeholders in the format {{placeholderName}} in the template with the actual response.
@@ -158,21 +157,33 @@ export class SurveyModel {
         return dependencies;
     }
 
+    // Check if the current question is the first one
+    public isFirstQuestion(): boolean {
+        return this.currentQuestion.index === 0;
+    }
+
+    // Check if the current question is the last one
+    public isLastQuestion(): boolean {
+        return this.currentQuestion.index === this.questionList.length - 1;
+    }
+
     public getNextVisibleQuestion(): IQuestion | null {
-        for (let i = this.currentQuestionIndex + 1; i < this.questionList.length; i++) {
+        // Start looking from the question immediately after the current question
+        for (let i = this.currentQuestion.index + 1; i < this.questionList.length; i++) {
             if (this.questionList[i].isVisible) {
-                this.currentQuestionIndex = i; 
-                return this.questionList[i];
+                this.currentQuestion = this.questionList[i];
+                return this.currentQuestion;
             }
         }
         return null;
     }
 
     public getPreviousVisibleQuestion(): IQuestion | null {
-        for (let i = this.currentQuestionIndex - 1; i >= 0; i--) {
+        // Start looking from the question immediately before the current question
+        for (let i = this.currentQuestion.index - 1; i >= 0; i--) {
             if (this.questionList[i].isVisible) {
-                this.currentQuestionIndex = i; 
-                return this.questionList[i];
+                this.currentQuestion = this.questionList[i];
+                return this.currentQuestion;
             }
         }
         return null;
