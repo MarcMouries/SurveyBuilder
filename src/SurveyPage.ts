@@ -1,14 +1,17 @@
+const BUTTON_CLASS = 'survey-button';
+
 export class SurveyPage {
-    public container: HTMLElement;
+    public pageContainer: HTMLElement;
     public title: HTMLElement;
     public content: HTMLElement;
     public buttonContainer: HTMLElement;
     private buttons: Map<string, HTMLElement>;
 
+
     constructor(pageId: string) {
-        this.container = document.createElement('div');
-        this.container.className = 'survey-page';
-        this.container.id = pageId;
+        this.pageContainer = document.createElement('div');
+        this.pageContainer.className = 'survey-page';
+        this.pageContainer.id = pageId;
 
         this.title = document.createElement('h2');
         this.title.className = 'survey-page-title';
@@ -18,9 +21,9 @@ export class SurveyPage {
 
         this.buttonContainer = document.createElement('div');
         this.buttonContainer.className = 'button-container';
-        this.container.appendChild(this.title);
-        this.container.appendChild(this.content);
-        this.container.appendChild(this.buttonContainer);
+        this.pageContainer.appendChild(this.title);
+        this.pageContainer.appendChild(this.content);
+        this.pageContainer.appendChild(this.buttonContainer);
 
         this.buttons = new Map();
     }
@@ -33,11 +36,11 @@ export class SurveyPage {
         this.content.innerHTML = html;
     }
 
-    addButton(id: string, text: string, className: string, onClick: () => void): void {
+    addButton(id: string, text: string, onClick: () => void): void {
         const button = document.createElement('button');
         button.id = id;
         button.textContent = text;
-        button.className = className;
+        button.className = BUTTON_CLASS;
         button.addEventListener('click', onClick);
         this.buttonContainer.appendChild(button);
         this.buttons.set(id, button);
@@ -59,10 +62,10 @@ export class SurveyPage {
     }
 
     show(): void {
-        this.container.style.display = 'block';
+        this.pageContainer.style.display = 'block';
     }
 
     hide(): void {
-        this.container.style.display = 'none';
+        this.pageContainer.style.display = 'none';
     }
 }
