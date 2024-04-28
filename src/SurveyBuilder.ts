@@ -25,12 +25,7 @@ class SurveyBuilder {
 
     // NAVIGATION
     private buttonsContainer!: HTMLElement;
-    // private startButton!: HTMLElement;
-    // private nextButton!: HTMLElement;
-    // private prevButton!: HTMLElement;
-    // private completeButton!: HTMLElement;
     private buttons: Map<string, HTMLElement> = new Map();
-
 
     private questionComponents: any[];
     private completeCallback: any;
@@ -111,30 +106,44 @@ class SurveyBuilder {
         }
     }
 
-    // Logic to show/hide buttons based on the state of the survey
     private updateButtonsVisibility() {
         console.log(`Updating buttons for current question`);
+        console.log(this.surveyModel.getStateDetails());
 
-        if (this.surveyModel.isFirstQuestion() && !this.surveyModel.isStarted()) {
+        // Show 'Start' only if the survey hasn't started
+        if (!this.surveyModel.isStarted()) {
             this.showButton('start');
-        } else {
+            this.hideButton('prev');
+            this.hideButton('next');
+            this.hideButton('complete');
+            return;
+        }
+        else {
             this.hideButton('start');
         }
 
+        this.showButton('prev');
+        this.showButton('next');
+
         if (this.surveyModel.isFirstQuestion()) {
             this.hideButton('prev');
-        } else {
-            this.showButton('prev');
-        }
+         } 
 
         if (this.surveyModel.isLastQuestion()) {
             this.hideButton('next');
             this.showButton('complete');
-        } else {
-            this.showButton('next');
-            this.hideButton('complete');
+        }
+
+        // Hide all buttons if the survey is completed
+        if (this.surveyModel.isCompleted()) {
+            this.buttonsContainer.style.display = 'none';
+            // this.hideButton('start');
+            // this.hideButton('prev');
+            // this.hideButton('next');
+            // this.hideButton('complete');
         }
     }
+
 
     private startSurvey() {
         console.log(`START SURVEY`);
@@ -245,11 +254,17 @@ class SurveyBuilder {
 
 
     finishSurvey() {
+        this.surveyModel.completeSurvey();
+
+        this.updateButtonsVisibility();
+
         const responses = this.surveyModel.getResponses();
         console.log("SurveyBuilder.finishSurvey: ", responses)
+
         if (this.completeCallback) {
             this.completeCallback(responses);
         }
+
         this.displayThankYouPage();
     }
 

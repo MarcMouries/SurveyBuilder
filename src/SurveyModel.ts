@@ -9,6 +9,7 @@ const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 export class SurveyModel {
     private started: boolean = false;
+    private completed: boolean = false;
 
     private surveyTitle: any;
     private surveyDescription: any;
@@ -84,6 +85,10 @@ export class SurveyModel {
         this.currentQuestion = this.questionList[0];
         EventEmitter.emit(SURVEY_STARTED);
     }
+    public completeSurvey(): void {
+        this.completed = true;
+    }
+
     public getCurrentQuestion(): IQuestion {  return this.currentQuestion;  }
     public getDescription(): string { return this.surveyDescription; }
     public getNumberOfQuestions(): number { return this.questionList.length; }
@@ -93,6 +98,7 @@ export class SurveyModel {
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
     }
+    public isCompleted(): boolean {         return this.completed;    }
     public isStarted(): boolean {    return this.started; }
     public updateResponse(questionName: string, response: any) {
         console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
@@ -227,5 +233,17 @@ export class SurveyModel {
             if (question.options_source && typeof question.options_source !== 'string') throw new Error(`"options_source" must be a string URL at index ${index}`);
 
         });
+    }
+
+    
+    public getStateDetails(): string {
+        let state = `Survey State: ${this.started ? "Started" : "Not Started"}, `;
+        state += `Completed: ${this.completed ? "Yes" : "No"}, `;
+        if (this.started) {
+            state += `Current Question Index: ${this.currentQuestion ? this.currentQuestion.index : "None"}`;
+        } else {
+            state += "Current Question Index: None";
+        }
+        return state;
     }
 }
