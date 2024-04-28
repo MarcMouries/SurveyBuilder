@@ -3,11 +3,12 @@ import { Interpreter } from "./engine/Interpreter";
 import { Environment } from "./engine/Environment";
 import type { IQuestion } from './IQuestion.ts';
 import { EventEmitter } from './EventEmitter.ts'
-import { TITLE_UPDATED } from './EventTypes';
+import { SURVEY_STARTED, TITLE_UPDATED } from './EventTypes';
 
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 export class SurveyModel {
+    private started: boolean = false;
 
     private surveyTitle: any;
     private surveyDescription: any;
@@ -29,7 +30,6 @@ export class SurveyModel {
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
         this.questionList = config.questions;
-        this.currentQuestion = this.questionList[0];
 
 
         this.environment = new Environment();
@@ -79,15 +79,21 @@ export class SurveyModel {
         });
     }
 
-    public getTitle(): string { return this.surveyTitle; }
+    public startSurvey(): void {
+        this.started = true;
+        this.currentQuestion = this.questionList[0];
+        EventEmitter.emit(SURVEY_STARTED);
+    }
+    public getCurrentQuestion(): IQuestion {  return this.currentQuestion;  }
     public getDescription(): string { return this.surveyDescription; }
+    public getNumberOfQuestions(): number { return this.questionList.length; }
     public getQuestions(): IQuestion[] { return this.questionList.slice(); }
     public getResponses(): { [key: string]: any } { return this.responseMap; }
-    public getNumberOfQuestions(): number { return this.questionList.length; }
+    public getTitle(): string { return this.surveyTitle; }
     public getQuestionByName(questionName: string): IQuestion | undefined {
         return this.questionList.find(question => question.name === questionName);
     }
-
+    public isStarted(): boolean {    return this.started; }
     public updateResponse(questionName: string, response: any) {
         console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
         this.responseMap[questionName] = response;
