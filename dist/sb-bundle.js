@@ -44,8 +44,9 @@ class EventEmitter {
 }
 
 // src/EventTypes.ts
-var TITLE_UPDATED = "titleUpdated";
-var ANSWER_SELECTED = "answerSelected";
+var TITLE_UPDATED = "title-updated";
+var ANSWER_SELECTED = "answer-selected";
+var SURVEY_STARTED = "survey-started";
 
 // src/question-types/QuestionComponent.ts
 class QuestionComponent {
@@ -1477,10 +1478,12 @@ class Interpreter {
 var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 class SurveyModel {
+  started = false;
+  completed = false;
   surveyTitle;
   surveyDescription;
   questionList;
-  currentQuestionIndex = -1;
+  currentQuestion;
   responseMap;
   interpreter;
   parser;
@@ -1500,9 +1503,9 @@ class SurveyModel {
     this.responseMap = {};
     this.originalTitles = new Map;
     this.compiledConditions = new Map;
-    this.initialize();
+    this.initializeDynamicContent();
   }
-  initialize() {
+  initializeDynamicContent() {
     this.questionList.forEach((question, index) => {
       question.index = index;
       this.originalTitles.set(question.name, question.title);
@@ -1525,11 +1528,22 @@ class SurveyModel {
       }
     });
   }
-  getTitle() {
-    return this.surveyTitle;
+  startSurvey() {
+    this.started = true;
+    this.currentQuestion = this.questionList[0];
+    EventEmitter.emit(SURVEY_STARTED);
+  }
+  completeSurvey() {
+    this.completed = true;
+  }
+  getCurrentQuestion() {
+    return this.currentQuestion;
   }
   getDescription() {
     return this.surveyDescription;
+  }
+  getNumberOfQuestions() {
+    return this.questionList.length;
   }
   getQuestions() {
     return this.questionList.slice();
@@ -1537,11 +1551,17 @@ class SurveyModel {
   getResponses() {
     return this.responseMap;
   }
-  getNumberOfQuestions() {
-    return this.questionList.length;
+  getTitle() {
+    return this.surveyTitle;
   }
   getQuestionByName(questionName) {
     return this.questionList.find((question) => question.name === questionName);
+  }
+  isCompleted() {
+    return this.completed;
+  }
+  isStarted() {
+    return this.started;
   }
   updateResponse(questionName, response) {
     console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`);
@@ -1593,20 +1613,26 @@ class SurveyModel {
     });
     return dependencies;
   }
+  isFirstQuestion() {
+    return this.currentQuestion.index === 0;
+  }
+  isLastQuestion() {
+    return this.currentQuestion.index === this.questionList.length - 1;
+  }
   getNextVisibleQuestion() {
-    for (let i = this.currentQuestionIndex + 1;i < this.questionList.length; i++) {
+    for (let i = this.currentQuestion.index + 1;i < this.questionList.length; i++) {
       if (this.questionList[i].isVisible) {
-        this.currentQuestionIndex = i;
-        return this.questionList[i];
+        this.currentQuestion = this.questionList[i];
+        return this.currentQuestion;
       }
     }
     return null;
   }
   getPreviousVisibleQuestion() {
-    for (let i = this.currentQuestionIndex - 1;i >= 0; i--) {
+    for (let i = this.currentQuestion.index - 1;i >= 0; i--) {
       if (this.questionList[i].isVisible) {
-        this.currentQuestionIndex = i;
-        return this.questionList[i];
+        this.currentQuestion = this.questionList[i];
+        return this.currentQuestion;
       }
     }
     return null;
@@ -1644,28 +1670,40 @@ class SurveyModel {
         throw new Error(`"options_source" must be a string URL at index ${index}`);
     });
   }
+  getStateDetails() {
+    let state = `Survey State: ${this.started ? "Started" : "Not Started"}, `;
+    state += `Completed: ${this.completed ? "Yes" : "No"}, `;
+    if (this.started) {
+      state += `Current Question Index: ${this.currentQuestion ? this.currentQuestion.index : "None"}`;
+    } else {
+      state += "Current Question Index: None";
+    }
+    return state;
+  }
 }
 
 // src/SurveyPage.ts
+var BUTTON_CLASS = "survey-button";
+
 class SurveyPage {
-  container;
+  pageContainer;
   title;
   content;
   buttonContainer;
   buttons;
   constructor(pageId) {
-    this.container = document.createElement("div");
-    this.container.className = "survey-page";
-    this.container.id = pageId;
+    this.pageContainer = document.createElement("div");
+    this.pageContainer.className = "survey-page";
+    this.pageContainer.id = pageId;
     this.title = document.createElement("h2");
     this.title.className = "survey-page-title";
     this.content = document.createElement("p");
     this.content.className = "survey-page-content";
     this.buttonContainer = document.createElement("div");
     this.buttonContainer.className = "button-container";
-    this.container.appendChild(this.title);
-    this.container.appendChild(this.content);
-    this.container.appendChild(this.buttonContainer);
+    this.pageContainer.appendChild(this.title);
+    this.pageContainer.appendChild(this.content);
+    this.pageContainer.appendChild(this.buttonContainer);
     this.buttons = new Map;
   }
   setTitle(text) {
@@ -1674,11 +1712,11 @@ class SurveyPage {
   setContent(html) {
     this.content.innerHTML = html;
   }
-  addButton(id, text, className, onClick) {
+  addButton(id, text, onClick) {
     const button = document.createElement("button");
     button.id = id;
     button.textContent = text;
-    button.className = className;
+    button.className = BUTTON_CLASS;
     button.addEventListener("click", onClick);
     this.buttonContainer.appendChild(button);
     this.buttons.set(id, button);
@@ -1697,10 +1735,10 @@ class SurveyPage {
     }
   }
   show() {
-    this.container.style.display = "block";
+    this.pageContainer.style.display = "block";
   }
   hide() {
-    this.container.style.display = "none";
+    this.pageContainer.style.display = "none";
   }
 }
 
@@ -1712,17 +1750,14 @@ class SurveyBuilder {
   landingPage;
   questionsPage;
   thankYouPage;
-  navigationContainer;
-  startButton;
-  nextButton;
-  prevButton;
-  completeButton;
+  buttonsContainer;
+  buttons = new Map;
   questionComponents;
   completeCallback;
-  currentQuestion;
   constructor(config, containerId) {
     console.log("SurveyBuilder: " + this.VERSION);
     this.surveyModel = new SurveyModel(config);
+    this.questionComponents = [];
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
     const containerElement = document.getElementById(containerId);
@@ -1730,14 +1765,13 @@ class SurveyBuilder {
       throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
     }
     this.surveyContainer = containerElement;
-    this.questionComponents = [];
     this.landingPage = new SurveyPage("landing-page");
     this.landingPage.setTitle(this.surveyModel.getTitle());
     this.landingPage.setContent(this.surveyModel.getDescription());
-    this.surveyContainer.appendChild(this.landingPage.container);
+    this.surveyContainer.appendChild(this.landingPage.pageContainer);
     this.questionsPage = new SurveyPage("survey-questions");
     this.questionsPage.hide();
-    this.surveyContainer.appendChild(this.questionsPage.container);
+    this.surveyContainer.appendChild(this.questionsPage.pageContainer);
     this.thankYouPage = new SurveyPage("thank-you-page");
     this.thankYouPage.setTitle("Thank you for your input");
     this.thankYouPage.setContent(`<p style="text-align: center; margin: 20px; font-size: 1.3rem;">
@@ -1748,67 +1782,68 @@ class SurveyBuilder {
             please follow this link to learn more about 
             <a href=http://URL_TO_SERVICE_NOW_CREATOR_WORKFLOWS>ServiceNow Creator Workflows</a>.</p>`);
     this.thankYouPage.hide();
-    this.surveyContainer.appendChild(this.thankYouPage.container);
-    this.initNavigationButtons();
+    this.surveyContainer.appendChild(this.thankYouPage.pageContainer);
+    this.buttonsContainer = document.createElement("div");
+    this.buttonsContainer.className = "survey-nav";
+    this.buttonsContainer.role = "navigation";
+    this.surveyContainer.appendChild(this.buttonsContainer);
+    this.buttons.set("start", this.createButton("Start Survey", "survey-button", () => this.startSurvey(), "block"));
+    this.buttons.set("prev", this.createButton("Previous", "survey-button", () => this.showPreviousQuestion(), "none"));
+    this.buttons.set("next", this.createButton("Next", "survey-button", () => this.showNextQuestion(), "none"));
+    this.buttons.set("complete", this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none"));
   }
   displayPage(page) {
     this.surveyContainer.innerHTML = "";
-    this.surveyContainer.appendChild(page.container);
-  }
-  createPageTitle(surveyTitle, container) {
-    const title = document.createElement("h3");
-    title.className = "survey-page-title";
-    title.textContent = surveyTitle;
-    container.appendChild(title);
-  }
-  createPageContent(content, container) {
-    const contentEl = document.createElement("p");
-    contentEl.className = "survey-page-content";
-    contentEl.innerHTML = content;
-    container.appendChild(contentEl);
+    this.surveyContainer.appendChild(page.pageContainer);
   }
   displayThankYouPage() {
     this.questionsPage.hide();
     this.thankYouPage.show();
   }
-  initNavigationButtons() {
-    if (!this.navigationContainer) {
-      this.navigationContainer = document.createElement("div");
-      this.navigationContainer.className = "survey-navigation";
-      this.navigationContainer.role = "navigation";
-      this.surveyContainer.appendChild(this.navigationContainer);
-    } else {
-      this.navigationContainer.innerHTML = "";
+  showButton(id) {
+    const button = this.buttons.get(id);
+    if (button) {
+      button.style.display = "block";
     }
-    this.startButton = this.createButton("Start ", "survey-button", () => this.startSurvey(), "block");
-    this.prevButton = this.createButton("Previous", "survey-button", () => this.showPreviousQuestion(), "none");
-    this.nextButton = this.createButton("Next", "survey-button", () => this.showNextQuestion(), "none");
-    this.completeButton = this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none");
   }
-  isFirstQuestion() {
-    return this.currentQuestion && this.currentQuestion.index === 0;
+  hideButton(id) {
+    const button = this.buttons.get(id);
+    if (button) {
+      button.style.display = "none";
+    }
   }
-  isLastQuestion() {
-    const numberOfQuestions = this.surveyModel.getNumberOfQuestions();
-    return this.currentQuestion && this.currentQuestion.index === numberOfQuestions - 1;
-  }
-  updateNavigationButtons() {
-    const index = this.currentQuestion.index;
-    console.log(`Updating buttons for index: ${index}`);
-    const numberOfQuestions = this.surveyModel.getNumberOfQuestions();
-    const showPrevButton = index > 0;
-    const showNextButton = index < numberOfQuestions - 1;
-    const showCompleteButton = index === numberOfQuestions - 1;
-    this.prevButton.style.display = showPrevButton ? "block" : "none";
-    this.nextButton.style.display = showNextButton ? "block" : "none";
-    this.completeButton.style.display = showCompleteButton ? "block" : "none";
+  updateButtonsVisibility() {
+    console.log(`Updating buttons for current question`);
+    console.log(this.surveyModel.getStateDetails());
+    if (!this.surveyModel.isStarted()) {
+      this.showButton("start");
+      this.hideButton("prev");
+      this.hideButton("next");
+      this.hideButton("complete");
+      return;
+    } else {
+      this.hideButton("start");
+    }
+    this.showButton("prev");
+    this.showButton("next");
+    if (this.surveyModel.isFirstQuestion()) {
+      this.hideButton("prev");
+    }
+    if (this.surveyModel.isLastQuestion()) {
+      this.hideButton("next");
+      this.showButton("complete");
+    }
+    if (this.surveyModel.isCompleted()) {
+      this.buttonsContainer.style.display = "none";
+    }
   }
   startSurvey() {
     console.log(`START SURVEY`);
+    this.surveyModel.startSurvey();
     this.landingPage.hide();
     this.questionsPage.show();
     this.initializeQuestions();
-    this.showNextQuestion();
+    this.showQuestion(this.surveyModel.getCurrentQuestion());
   }
   initializeQuestions() {
     this.surveyModel.getQuestions().forEach((question, index) => {
@@ -1847,15 +1882,17 @@ class SurveyBuilder {
     const nextQuestion = this.surveyModel.getNextVisibleQuestion();
     console.log(`showNextQuestion: ${nextQuestion?.title}`);
     if (nextQuestion) {
-      this.currentQuestion = nextQuestion;
       this.showQuestion(nextQuestion);
+    } else {
+      console.log("No more questions available or end of survey.");
     }
   }
   showPreviousQuestion() {
     const prevQuestion = this.surveyModel.getPreviousVisibleQuestion();
     if (prevQuestion) {
-      this.currentQuestion = prevQuestion;
       this.showQuestion(prevQuestion);
+    } else {
+      console.log("This is the first question, no previous question available.");
     }
   }
   showQuestion(question) {
@@ -1864,10 +1901,10 @@ class SurveyBuilder {
     console.log("showQuestion: ", this.questionComponents);
     this.questionComponents.forEach((component) => component.hide());
     this.questionComponents[question.index].show();
-    this.updateNavigationButtons();
+    this.updateButtonsVisibility();
   }
   addQuestionElement(questionDiv) {
-    this.questionsPage.container.appendChild(questionDiv);
+    this.questionsPage.pageContainer.appendChild(questionDiv);
   }
   handleResponse(response) {
     console.log("SurveyBuilder.handleResponse: ", response);
@@ -1884,16 +1921,18 @@ class SurveyBuilder {
     button.className = className;
     button.addEventListener("click", onClick);
     button.style.display = displayStyle;
-    this.navigationContainer.appendChild(button);
+    this.buttonsContainer.appendChild(button);
     return button;
   }
   getQuestionElement(index) {
-    let allQuestionElements = this.questionsPage.container.getElementsByClassName(".question");
+    let allQuestionElements = this.questionsPage.pageContainer.getElementsByClassName(".question");
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
-    return this.questionsPage.container.querySelector(`.question[data-index="${index}"]`);
+    return this.questionsPage.pageContainer.querySelector(`.question[data-index="${index}"]`);
   }
   finishSurvey() {
+    this.surveyModel.completeSurvey();
+    this.updateButtonsVisibility();
     const responses = this.surveyModel.getResponses();
     console.log("SurveyBuilder.finishSurvey: ", responses);
     if (this.completeCallback) {
