@@ -1,7 +1,7 @@
 import { Parser } from "./engine/Parser";
 import { Interpreter } from "./engine/Interpreter";
 import { Environment } from "./engine/Environment";
-import type { IQuestion } from './IQuestion.ts';
+import { Question } from './Question.ts';
 import { EventEmitter } from './EventEmitter.ts'
 import { SURVEY_STARTED, TITLE_UPDATED } from './EventTypes';
 
@@ -13,8 +13,8 @@ export class SurveyModel {
 
     private surveyTitle: any;
     private surveyDescription: any;
-    private questionList: IQuestion[];
-    private currentQuestion!: IQuestion;
+    private questionList: Question[];
+    private currentQuestion!: Question;
 
     private responseMap: { [key: string]: any };
 
@@ -23,14 +23,14 @@ export class SurveyModel {
     private environment: Environment;
     private originalTitles: Map<string, string>;
     private compiledConditions: Map<string, any>;
-    private titleDependencies: Map<string, IQuestion[]> = new Map();
-    private visibilityDependencies: Map<string, IQuestion[]> = new Map();
+    private titleDependencies: Map<string, Question[]> = new Map();
+    private visibilityDependencies: Map<string, Question[]> = new Map();
 
     constructor(config: any) {
         this.validateSurveySetup(config);
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
-        this.questionList = config.questions;
+        this.questionList = this.initializeQuestions(config.questions);
 
 
         this.environment = new Environment();
@@ -44,10 +44,13 @@ export class SurveyModel {
         this.initializeDynamicContent();
     }
 
+    private initializeQuestions(questionsData: any[]): Question[] {
+        return questionsData.map(questionData => new Question(questionData));
+    }
+
+
     private initializeDynamicContent() {
         this.questionList.forEach((question, index) => {
-            question.index = index;
-
             this.originalTitles.set(question.name, question.title);
 
             // Extract dependencies from the question's title
@@ -89,17 +92,17 @@ export class SurveyModel {
         this.completed = true;
     }
 
-    public getCurrentQuestion(): IQuestion {  return this.currentQuestion;  }
+    public getCurrentQuestion(): Question { return this.currentQuestion; }
     public getDescription(): string { return this.surveyDescription; }
     public getNumberOfQuestions(): number { return this.questionList.length; }
-    public getQuestions(): IQuestion[] { return this.questionList.slice(); }
+    public getQuestions(): Question[] { return this.questionList.slice(); }
     public getResponses(): { [key: string]: any } { return this.responseMap; }
     public getTitle(): string { return this.surveyTitle; }
-    public getQuestionByName(questionName: string): IQuestion | undefined {
+    public getQuestionByName(questionName: string): Question | undefined {
         return this.questionList.find(question => question.name === questionName);
     }
-    public isCompleted(): boolean {         return this.completed;    }
-    public isStarted(): boolean {    return this.started; }
+    public isCompleted(): boolean { return this.completed; }
+    public isStarted(): boolean { return this.started; }
     public updateResponse(questionName: string, response: any) {
         console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
         this.responseMap[questionName] = response;
@@ -179,8 +182,7 @@ export class SurveyModel {
         return this.currentQuestion.index === this.questionList.length - 1;
     }
 
-    public getNextVisibleQuestion(): IQuestion | null {
-        // Start looking from the question immediately after the current question
+    public getNextVisibleQuestion(): Question | null {
         for (let i = this.currentQuestion.index + 1; i < this.questionList.length; i++) {
             if (this.questionList[i].isVisible) {
                 this.currentQuestion = this.questionList[i];
@@ -190,7 +192,7 @@ export class SurveyModel {
         return null;
     }
 
-    public getPreviousVisibleQuestion(): IQuestion | null {
+    public getPreviousVisibleQuestion(): Question | null {
         // Start looking from the question immediately before the current question
         for (let i = this.currentQuestion.index - 1; i >= 0; i--) {
             if (this.questionList[i].isVisible) {
@@ -235,7 +237,7 @@ export class SurveyModel {
         });
     }
 
-    
+
     public getStateDetails(): string {
         let state = `Survey State: ${this.started ? "Started" : "Not Started"}, `;
         state += `Completed: ${this.completed ? "Yes" : "No"}, `;
