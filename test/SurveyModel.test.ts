@@ -25,6 +25,7 @@ test("Dynamic title is correctly updated based on response", () => {
   ];
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
+  surveyModel.startSurvey();
   let question = surveyModel.getQuestionByName("color_reason");
   console.log("Question Before: ", question?.title);
   surveyModel.updateResponse("favorite_color", "blue");
@@ -43,6 +44,7 @@ test("Dynamic title is correctly updated based on multiple responses", () => {
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
+  surveyModel.startSurvey();
   let question = surveyModel.getQuestionByName("greeting");
   console.log("Question Before: ", question?.title);
 
@@ -73,7 +75,7 @@ test("Dynamic title updates based on conditionally influenced responses", () => 
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
-
+  surveyModel.startSurvey();
   surveyModel.updateResponse("favorite_season", "Winter");
   let activityTitle = surveyModel.getQuestionByName("activity_desired")?.title;
 
@@ -99,6 +101,7 @@ test("Question visibility is updated based on condition", () => {
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
+  surveyModel.startSurvey();
   let questionBeforeUpdate = surveyModel.getQuestionByName("pet_name");
   console.log("Question visibility before: ", questionBeforeUpdate?.isVisible);
 
@@ -128,6 +131,7 @@ test("Dynamic response updates visibility and re-evaluation", () => {
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
+  surveyModel.startSurvey();
   let dietaryVisibilityBefore = surveyModel.getQuestionByName("dietary_restrictions")?.isVisible;
 
   // Update attending status to 'In-Person'
@@ -163,7 +167,7 @@ test("Complex condition evaluation affects multiple dependent questions", () => 
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
-  
+  surveyModel.startSurvey();  
   // Initial visibility and response checks
   surveyModel.updateResponse("attending_status", "In-Person");
   surveyModel.updateResponse("has_dietary_restrictions", "Yes");
@@ -205,17 +209,22 @@ describe('Question navigation', () => {
   ];
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
-
-  test('The very first question to be fetched', () => {
-    let firstQuestion = surveyModel.getNextVisibleQuestion();
+  surveyModel.startSurvey();
+  test('The next visible question to be fetched', () => {
+    let firstQuestion = surveyModel.getCurrentQuestion();
     expect(firstQuestion?.name).toBe("q1");
   });
 
-  test('expecting q2 to now be visible', () => {
-    // Simulate response to q1 that makes q2 visible
-    surveyModel.updateResponse("q1", "Yes");
+  test('expecting q2 to not be visible when q1 is answered "No"', () => {
+    surveyModel.updateResponse("q1", "No");
+    let secondQuestion = surveyModel.getNextVisibleQuestion();
+    expect(secondQuestion?.name).toBe("q3");
+  });
 
-    // Next question after response, expecting q2 to now be visible and returned
+
+  test('expecting q2 to now be visible', () => {
+    surveyModel.startSurvey();
+    surveyModel.updateResponse("q1", "Yes");
     let secondQuestion = surveyModel.getNextVisibleQuestion();
     expect(secondQuestion?.name).toBe("q2");
   });
