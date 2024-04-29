@@ -1,7 +1,7 @@
-import type { IQuestion } from './IQuestion';
+import { Question } from './Question';
 
 export interface ISurveyConfig {
   surveyTitle: string;
   surveyDescription: string;
-  questions: IQuestion[];
+  questions: any[];
 }
