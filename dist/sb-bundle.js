@@ -1474,6 +1474,42 @@ class Interpreter {
   }
 }
 
+// src/Question.ts
+class Question {
+  static currentQuestionNumber = 0;
+  index;
+  title;
+  name;
+  isRequired;
+  isVisible;
+  type;
+  items;
+  options;
+  options_source;
+  visible_when;
+  includeOtherOption;
+  placeholder;
+  detailQuestions;
+  constructor(data) {
+    this.index = Question.currentQuestionNumber++;
+    this.title = data.title;
+    this.name = data.name;
+    this.type = data.type;
+    this.isRequired = data.isRequired !== undefined ? data.isRequired : false;
+    this.isVisible = typeof data.isVisible === "boolean" ? data.isVisible : true;
+    this.items = data.items;
+    this.options = data.options;
+    this.options_source = data.options_source;
+    this.visible_when = data.visible_when;
+    this.includeOtherOption = data.includeOtherOption;
+    this.placeholder = data.placeholder;
+    this.detailQuestions = data.detailQuestions;
+  }
+  addItem(item) {
+    this.items?.push(item);
+  }
+}
+
 // src/SurveyModel.ts
 var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
@@ -1496,7 +1532,7 @@ class SurveyModel {
     this.validateSurveySetup(config);
     this.surveyTitle = config.surveyTitle;
     this.surveyDescription = config.surveyDescription;
-    this.questionList = config.questions;
+    this.questionList = this.initializeQuestions(config.questions);
     this.environment = new Environment;
     this.parser = new Parser;
     this.interpreter = new Interpreter(this.environment);
@@ -1505,9 +1541,11 @@ class SurveyModel {
     this.compiledConditions = new Map;
     this.initializeDynamicContent();
   }
+  initializeQuestions(questionsData) {
+    return questionsData.map((questionData) => new Question(questionData));
+  }
   initializeDynamicContent() {
     this.questionList.forEach((question, index) => {
-      question.index = index;
       this.originalTitles.set(question.name, question.title);
       const dependencyList = this.extractTitleDependency(question.title);
       dependencyList.forEach((dependencyName) => {
@@ -1646,7 +1684,7 @@ class SurveyModel {
       throw new Error("Invalid or missing surveyDescription");
     if (!Array.isArray(config.questions))
       throw new Error("Invalid or missing questions array");
-    const allowedTypes = ["yes-no", "select", "one-choice", "followup", "multi-choice", "ranking", "multi-line-text", "single-line-text"];
+    const allowedTypes = ["yes-no", "select", "single-choice", "followup", "multi-choice", "ranking", "multi-line-text", "single-line-text"];
     config.questions.forEach((question, index) => {
       if (typeof question !== "object")
         throw new Error(`Question at index ${index} is not an object`);
@@ -1865,7 +1903,7 @@ class SurveyBuilder {
         return new YesNoQuestion2(question, index);
       case "YesNoQuestion2":
         return new YesNoQuestion2(question, index);
-      case "one-choice":
+      case "single-choice":
         return new OneChoice(question, index);
       case "multi-choice":
         return new MultiChoice(question, index);
