@@ -15,7 +15,7 @@ test("Dynamic title is correctly updated based on response", () => {
     {
       name: "favorite_color",
       title: "What is your favorite color?",
-      type: "one-choice",
+      type: "single-choice",
     },
     {
       name: "color_reason",
@@ -63,7 +63,7 @@ test("Dynamic title updates based on conditionally influenced responses", () => 
     {
       name: "favorite_season",
       title: "What is your favorite season?",
-      type: "one-choice",
+      type: "single-choice",
       options: ["Spring", "Summer", "Fall", "Winter"]
     },
     {
@@ -118,7 +118,7 @@ test("Dynamic response updates visibility and re-evaluation", () => {
     {
       name: "attending_status",
       title: "Will you be attending the event in-person or virtually?",
-      type: "one-choice",
+      type: "single-choice",
       options: ["In-Person", "Virtually"]
     },
     {
@@ -148,7 +148,7 @@ test("Complex condition evaluation affects multiple dependent questions", () => 
     {
       name: "attending_status",
       title: "Will you be attending the event in-person or virtually?",
-      type: "one-choice",
+      type: "single-choice",
       options: ["In-Person", "Virtually"]
     },
     {
@@ -192,7 +192,7 @@ describe('validateSurveySetup', () => {
         name: "test", title: "title", type: "invalid-type"
       }]
     };
-    expect(() => new SurveyModel(invalidTypeConfig)).toThrow('Question type "invalid-type" at index 0 is not allowed. Allowed types are: yes-no, select, one-choice, followup, multi-choice, ranking, multi-line-text, single-line-text');
+    expect(() => new SurveyModel(invalidTypeConfig)).toThrow('Question type "invalid-type" at index 0 is not allowed. Allowed types are: yes-no, select, single-choice, followup, multi-choice, ranking, multi-line-text, single-line-text');
   });
 
   test('should validate successfully for a correct config', () => {

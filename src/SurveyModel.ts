@@ -211,7 +211,7 @@ export class SurveyModel {
 
         if (!Array.isArray(config.questions)) throw new Error('Invalid or missing questions array');
 
-        const allowedTypes = ['yes-no', 'select', 'one-choice', 'followup', 'multi-choice', 'ranking', 'multi-line-text', 'single-line-text'];
+        const allowedTypes = ['yes-no', 'select', 'single-choice', 'followup', 'multi-choice', 'ranking', 'multi-line-text', 'single-line-text'];
 
         config.questions.forEach((question: any, index: number) => {
 

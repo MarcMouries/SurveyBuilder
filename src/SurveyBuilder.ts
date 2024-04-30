@@ -173,7 +173,7 @@ class SurveyBuilder {
             case "multi-line-text": return new MultiLineTextQuestion(question, index);
             case "yes-no": return new YesNoQuestion2(question, index);
             case "YesNoQuestion2": return new YesNoQuestion2(question, index);
-            case "one-choice": return new OneChoice(question, index);
+            case "single-choice": return new OneChoice(question, index);
             case "multi-choice": return new MultiChoice(question, index);
             case "select": return new SelectQuestion(question, index);
             case "followup": return new FollowUpQuestion(question, index);

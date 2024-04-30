@@ -128,7 +128,7 @@ _font-size: 16px;
     background-color: #f7f7f7;
 }
 
-.one-choice-question .item label, .multi-choice-question .item label {
+.single-choice-question .item label, .multi-choice-question .item label {
     position: relative;
     cursor: pointer;
     display: inline-block;
@@ -203,24 +203,24 @@ _font-size: 16px;
 
 
 /** One Choice */
-.one-choice-question .items {
+.single-choice-question .items {
     flex-direction: column;
 }
 
-.one-choice-question  .item {
+.single-choice-question  .item {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
 }
 
 /* Hide the actual radio and checkbox */
-.one-choice-question .item input[type="radio"],
+.single-choice-question .item input[type="radio"],
 .multi-choice-question .item input[type="checkbox"] { 
     display: none;
 }
 
 /* Create a custom control appearance for both radio and checkbox */
-.one-choice-question .item label:before {
+.single-choice-question .item label:before {
     content: '';
     position: absolute;
     left: var(--custom-control-left-position);
@@ -235,7 +235,7 @@ _font-size: 16px;
     box-shadow: 0 1px 2px var(--shadow-color);
 }
 /* Filled circle for checked radio */
-.one-choice-question .item input[type="radio"]:checked + label:after {
+.single-choice-question .item input[type="radio"]:checked + label:after {
     content: '';
     position: absolute;
     width: var(--custom-control-selected-size);
@@ -277,7 +277,7 @@ _font-size: 16px;
 
 
 /* Additional styles for label when control is checked */
-.one-choice-question .item input[type="radio"]:checked + label,
+.single-choice-question .item input[type="radio"]:checked + label,
 .multi-choice-question .item input[type="checkbox"]:checked + label {
     font-weight: bold;
 }
@@ -501,14 +501,14 @@ textarea {
     font-style: italic;
 }
 
-.one-choice-question .item label:hover, .multi-choice-question .item label:hover {
+.single-choice-question .item label:hover, .multi-choice-question .item label:hover {
     background-color: #f0f0f0b0; 
     color: #333; 
     cursor: pointer; 
 }
 
 /* transition for smooth color change */
-.one-choice-question .item {
+.single-choice-question .item {
     transition: background-color 0.3s, color 0.3s;
 }
 

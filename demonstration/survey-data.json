@@ -51,7 +51,7 @@
     }
 ,
     {
-      "type": "one-choice",
+      "type": "single-choice",
       "name": "favorite-season",
       "title": "What is your favorite season?",
       "items": [
