@@ -1,0 +1,40 @@
+Attendee confirmation survey
+
+1. Which date can you attend? *
+(In the event your chosen date isn't available, you'll be contacted with alternative dates.)
+Please select a date (M/d/yYYY)
+
+2. Full name
+Enter your answer
+
+3. Your department
+Enter your answer
+
+4. Phone number
+The value must be a number
+
+5. Email address
+Enter your answer
+
+6. How would you like your appointment confirmation to be sent? *
+A. Email
+B. exTI
+C. Phone call
+
+7. How would you prefer to attend the event? *
+A. Join remotely online
+B. Join in person
+
+8. Purpose of joining this event. *
+(Select all that apply)
+A. Get better understanding of latest status from team
+B. Share status progress to keep team updated
+C. Brainstorm new direction for project
+D. Other
+
+9. Any additional questions for the organizer?
+Enter your answer
+
+10. May we contact you to participate in discussions that will help us better organize future events?
+• Yes
+• No
