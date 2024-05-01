@@ -1544,6 +1544,15 @@ class SurveyModel {
     this.compiledConditions = new Map;
     this.initializeDynamicContent();
   }
+  static fromJSON(jsonString) {
+    let config;
+    try {
+      config = JSON.parse(jsonString);
+    } catch (error) {
+      throw new Error(`Invalid JSON string provided. Details: ${error.message}`);
+    }
+    return new SurveyModel(config);
+  }
   initializeQuestions(questionsData) {
     return questionsData.map((questionData) => new Question(questionData));
   }
@@ -1785,7 +1794,7 @@ class SurveyPage {
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
-  VERSION = "0.04.28";
+  VERSION = "0.05.01";
   surveyModel;
   surveyContainer;
   landingPage;
@@ -1797,7 +1806,7 @@ class SurveyBuilder {
   completeCallback;
   constructor(config, containerId) {
     console.log("SurveyBuilder: " + this.VERSION);
-    this.surveyModel = new SurveyModel(config);
+    this.setUpSurveyModel(config);
     this.questionComponents = [];
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
@@ -1832,6 +1841,19 @@ class SurveyBuilder {
     this.buttons.set("prev", this.createButton("Previous", "survey-button", () => this.showPreviousQuestion(), "none"));
     this.buttons.set("next", this.createButton("Next", "survey-button", () => this.showNextQuestion(), "none"));
     this.buttons.set("complete", this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none"));
+  }
+  setUpSurveyModel(config) {
+    this.surveyModel = new SurveyModel(config);
+    if (typeof config === "string") {
+      try {
+        this.surveyModel = SurveyModel.fromJSON(config);
+      } catch (error) {
+        console.error("Failed to initialize from configuration:", error.message);
+        throw error;
+      }
+    } else {
+      this.surveyModel = new SurveyModel(config);
+    }
   }
   displayPage(page) {
     this.surveyContainer.innerHTML = "";
