@@ -1843,7 +1843,6 @@ class SurveyBuilder {
     this.buttons.set("complete", this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none"));
   }
   setUpSurveyModel(config) {
-    this.surveyModel = new SurveyModel(config);
     if (typeof config === "string") {
       try {
         this.surveyModel = SurveyModel.fromJSON(config);

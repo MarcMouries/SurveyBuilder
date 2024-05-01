@@ -12,7 +12,7 @@ import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
 
 class SurveyBuilder {
-    private VERSION: String = "0.05.01";
+    private VERSION: String = "0.05.01.1";
 
     private surveyModel!: SurveyModel;
 
@@ -84,7 +84,6 @@ class SurveyBuilder {
     }
 
     setUpSurveyModel(config: any) {
-        this.surveyModel = new SurveyModel(config);
         // Check if the config is a string and parse it as JSON
         if (typeof config === 'string') {
             try {
