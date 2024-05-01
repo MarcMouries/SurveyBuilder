@@ -12,9 +12,9 @@ import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
 
 class SurveyBuilder {
-    private VERSION: String = "0.04.28";
+    private VERSION: String = "0.05.01";
 
-    private surveyModel: SurveyModel;
+    private surveyModel!: SurveyModel;
 
     private surveyContainer: HTMLElement;
 
@@ -33,7 +33,8 @@ class SurveyBuilder {
     constructor(config: any, containerId: string) {
         console.log("SurveyBuilder: " + this.VERSION);
 
-        this.surveyModel = new SurveyModel(config);
+        this.setUpSurveyModel(config);
+
         this.questionComponents = [];
 
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
@@ -82,6 +83,21 @@ class SurveyBuilder {
         this.buttons.set('complete', this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none'));
     }
 
+    setUpSurveyModel(config: any) {
+        this.surveyModel = new SurveyModel(config);
+        // Check if the config is a string and parse it as JSON
+        if (typeof config === 'string') {
+            try {
+                this.surveyModel = SurveyModel.fromJSON(config);
+            } catch (error) {
+                console.error("Failed to initialize from configuration:", (error as Error).message);
+                throw error;
+            }
+        } else {
+            this.surveyModel = new SurveyModel(config);
+        }
+    }
+
     displayPage(page: SurveyPage) {
         this.surveyContainer.innerHTML = '';
         this.surveyContainer.appendChild(page.pageContainer);
@@ -127,7 +143,7 @@ class SurveyBuilder {
 
         if (this.surveyModel.isFirstQuestion()) {
             this.hideButton('prev');
-         } 
+        }
 
         if (this.surveyModel.isLastQuestion()) {
             this.hideButton('next');

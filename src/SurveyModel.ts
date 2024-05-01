@@ -45,6 +45,16 @@ export class SurveyModel {
         this.initializeDynamicContent();
     }
 
+    static fromJSON(jsonString: string): SurveyModel {
+        let config;
+        try {
+            config = JSON.parse(jsonString);
+        } catch (error) {
+            throw new Error(`Invalid JSON string provided. Details: ${(error as Error).message}`);
+        }
+        return new SurveyModel(config);
+    }
+
     private initializeQuestions(questionsData: any[]): Question[] {
         return questionsData.map(questionData => new Question(questionData));
     }
