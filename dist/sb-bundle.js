@@ -1478,8 +1478,9 @@ class Interpreter {
 class Question {
   static currentQuestionNumber = 0;
   index;
-  title;
   name;
+  title;
+  description;
   isRequired;
   isVisible;
   type;
@@ -1494,6 +1495,7 @@ class Question {
     this.index = Question.currentQuestionNumber++;
     this.title = data.title;
     this.name = data.name;
+    this.description = data.description !== undefined ? data.description : "";
     this.type = data.type;
     this.isRequired = data.isRequired !== undefined ? data.isRequired : false;
     this.isVisible = typeof data.isVisible === "boolean" ? data.isVisible : true;
@@ -1529,6 +1531,7 @@ class SurveyModel {
   titleDependencies = new Map;
   visibilityDependencies = new Map;
   constructor(config) {
+    console.log("SurveyModel: building for config = ", config);
     this.validateSurveySetup(config);
     this.surveyTitle = config.surveyTitle;
     this.surveyDescription = config.surveyDescription;
@@ -1679,7 +1682,7 @@ class SurveyModel {
     if (!config)
       throw new Error("Config object is required");
     if (typeof config.surveyTitle !== "string")
-      throw new Error("Invalid or missing surveyTitle");
+      throw new Error(`Invalid or missing surveyTitle: ${config.surveyTitle}`);
     if (typeof config.surveyDescription !== "string")
       throw new Error("Invalid or missing surveyDescription");
     if (!Array.isArray(config.questions))
