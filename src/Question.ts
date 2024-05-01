@@ -4,8 +4,9 @@ export class Question implements IQuestion {
   static currentQuestionNumber: number = 0;
 
   index: number;
-  title: string;
   name: string;
+  title: string;
+  description: string;
   isRequired?: boolean | undefined;
   isVisible?: boolean | undefined;
   type: string;
@@ -21,6 +22,7 @@ export class Question implements IQuestion {
     this.index = Question.currentQuestionNumber++;
     this.title = data.title;
     this.name = data.name;
+    this.description = data.description !== undefined ? data.description : "";
     this.type = data.type;
     this.isRequired = data.isRequired !== undefined ? data.isRequired : false;
     this.isVisible = typeof data.isVisible === 'boolean' ? data.isVisible : true;

@@ -1,6 +1,7 @@
 export interface IQuestion {
     index: number; 
     title: string;
+    description?: string;
     name: string;
     isRequired?: boolean;
     isVisible? : boolean;
