@@ -27,6 +27,7 @@ export class SurveyModel {
     private visibilityDependencies: Map<string, Question[]> = new Map();
 
     constructor(config: any) {
+        console.log("SurveyModel: building for config = ", config);
         this.validateSurveySetup(config);
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
@@ -206,7 +207,9 @@ export class SurveyModel {
     private validateSurveySetup(config: any) {
         if (!config) throw new Error('Config object is required');
 
-        if (typeof config.surveyTitle !== 'string') throw new Error('Invalid or missing surveyTitle');
+        if (typeof config.surveyTitle !== 'string')
+             throw new Error(`Invalid or missing surveyTitle: ${config.surveyTitle}`);
+
         if (typeof config.surveyDescription !== 'string') throw new Error('Invalid or missing surveyDescription');
 
         if (!Array.isArray(config.questions)) throw new Error('Invalid or missing questions array');
