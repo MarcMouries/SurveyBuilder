@@ -1794,7 +1794,7 @@ class SurveyPage {
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
-  VERSION = "0.05.01";
+  VERSION = "0.05.02.1";
   surveyModel;
   surveyContainer;
   landingPage;
@@ -1802,19 +1802,24 @@ class SurveyBuilder {
   thankYouPage;
   buttonsContainer;
   buttons = new Map;
-  questionComponents;
+  questionComponents = [];
   completeCallback;
   constructor(config, containerId) {
     console.log("SurveyBuilder: " + this.VERSION);
-    this.setUpSurveyModel(config);
-    this.questionComponents = [];
-    EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
-    EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
     const containerElement = document.getElementById(containerId);
     if (!containerElement) {
       throw new Error(`SurveyBuilder: Element with ID '${containerId}' not found.`);
     }
     this.surveyContainer = containerElement;
+    if (!this.setUpSurveyModel(config)) {
+      return;
+    }
+    this.initializeSurveyPages();
+    this.questionComponents = [];
+    EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
+    EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
+  }
+  initializeSurveyPages() {
     this.landingPage = new SurveyPage("landing-page");
     this.landingPage.setTitle(this.surveyModel.getTitle());
     this.landingPage.setContent(this.surveyModel.getDescription());
@@ -1843,20 +1848,41 @@ class SurveyBuilder {
     this.buttons.set("complete", this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none"));
   }
   setUpSurveyModel(config) {
-    if (typeof config === "string") {
-      try {
+    try {
+      if (typeof config === "string" && config.trim() === "") {
+        this.displayErrorMessage("empty");
+        console.error("SurveyModel config is empty!");
+        return false;
+      } else if (typeof config === "string") {
         this.surveyModel = SurveyModel.fromJSON(config);
-      } catch (error) {
-        console.error("Failed to initialize from configuration:", error.message);
-        throw error;
+      } else {
+        this.surveyModel = new SurveyModel(config);
       }
-    } else {
-      this.surveyModel = new SurveyModel(config);
+      return true;
+    } catch (error) {
+      const errorType = error.message.includes("JSON") ? "invalid" : "empty";
+      this.displayErrorMessage(errorType);
+      return false;
     }
   }
   displayPage(page) {
     this.surveyContainer.innerHTML = "";
     this.surveyContainer.appendChild(page.pageContainer);
+  }
+  displayErrorMessage(errorType) {
+    const errorMessage = errorType === "empty" ? "The survey configuration is missing. Please ensure it is provided." : "The survey configuration is invalid. Please check the format and try again.";
+    const errorIcon = errorType === "empty" ? "\u2757" : "\u26A0\uFE0F";
+    const errorPage = new SurveyPage("error-page");
+    errorPage.setContent(`
+            <div id="error-message" class="error-container">
+                <div class="error-icon">${errorIcon}</div>
+                <h1>Error!</h1>
+                <p>Oh no, something went wrong.</p>
+                <p>${errorMessage}</p>
+                <button onclick="location.reload()"><h1 class="red">try again</h1></button>
+            </div>
+        `);
+    this.surveyContainer.appendChild(errorPage.pageContainer);
   }
   displayThankYouPage() {
     this.questionsPage.hide();
@@ -1975,7 +2001,7 @@ class SurveyBuilder {
   handleTitleUpdate(index, newTitle) {
     console.log("SurveyBuilder.handleTitleUpdate : " + newTitle);
     const questionComponent = this.questionComponents.at(index);
-    questionComponent.setTitle(newTitle);
+    questionComponent?.setTitle(newTitle);
   }
   createButton(text, className, onClick, displayStyle) {
     const button = document.createElement("button");
