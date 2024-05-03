@@ -1,40 +1,45 @@
-/* Basic Reset and Box Sizing */
-*, *:before, *:after {
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
+body {
+    font-family: 'Arial', sans-serif;
+    padding: 20px;
+    background-color: #032d42;
+    color: white;
 }
 
-/* Body and HTML Basic Styles */
-html, body {
-    margin: 0;
+.menu {
+    list-style: none;
     padding: 0;
-    width: 100%;
-    font-family: 'Open Sans', sans-serif !important;
-    font-size: 10px;;
-    background-color: #f4f4f4;
-    overflow: auto;
+    background: #FFF;
+    border-radius: 4px;
+    margin: 0; /* Added to remove default margin */
+    width: 100%; /* Ensures the menu uses full width if needed */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional: adds subtle shadow for depth */
 }
 
-/* Header Styles */
-header {
-    background-color: white;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.menu li {
+    cursor: pointer;
+    padding: 15px;
+    color: #4D4D4D;
+    font-size: 14px;
+    font-weight: 700;
+    border-bottom: 1px solid #CCC;
+    transition: background-color 0.4s ease, color 0.4s ease; /* Updated for better readability */
 }
 
-.logo-container {
-    margin-right: 15px;
+.menu li:last-child {
+    border-bottom: none; /* Removes border from the last item */
 }
 
-.logo-container img {
-    max-width: 200px;
-    height: auto;
+.menu li a {
+    text-decoration: none;
+    color: inherit; /* Ensures links use the same color as the li element */
+    display: block; /* Makes the entire list item clickable */
 }
 
-.header-title {
-    font-size: 1.5em;
+.menu li:hover {
+    background-color: #f0f0f0; /* Light grey background on hover */
+    color: #000; /* Changes text color on hover */
+}
+
+.menu li a:hover {
+    color: blue; /* Changes the color of the text when hovered */
 }

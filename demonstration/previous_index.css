@@ -1,0 +1,40 @@
+/* Basic Reset and Box Sizing */
+*, *:before, *:after {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+/* Body and HTML Basic Styles */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 10px;;
+    background-color: #f4f4f4;
+    overflow: auto;
+}
+
+/* Header Styles */
+header {
+    background-color: white;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-container {
+    margin-right: 15px;
+}
+
+.logo-container img {
+    max-width: 200px;
+    height: auto;
+}
+
+.header-title {
+    font-size: 1.5em;
+}
