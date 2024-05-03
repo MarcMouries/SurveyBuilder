@@ -1870,18 +1870,20 @@ class SurveyBuilder {
     this.surveyContainer.appendChild(page.pageContainer);
   }
   displayErrorMessage(errorType) {
-    const errorMessage = errorType === "empty" ? "The survey configuration is missing. Please ensure it is provided." : "The survey configuration is invalid. Please check the format and try again.";
+    const errorMessage = errorType === "empty" ? "The survey configuration is missing. <br>Please ensure it is provided." : "The survey configuration is invalid. <br>Please check the format and try again.";
     const errorIcon = errorType === "empty" ? "\u2757" : "\u26A0\uFE0F";
     const errorPage = new SurveyPage("error-page");
     errorPage.setContent(`
-            <div id="error-message" class="error-container">
-                <div class="error-icon">${errorIcon}</div>
-                <h1>Error!</h1>
-                <p>Oh no, something went wrong.</p>
-                <p>${errorMessage}</p>
-                <button onclick="location.reload()"><h1 class="red">try again</h1></button>
-            </div>
-        `);
+        <div id="error-message" class="error-container">
+            <div class="error-icon">${errorIcon}</div>
+            <div class="text error-title">Error!</div>
+            <div class="text">Oh no, something went wrong.</div>
+            <div class="text">${errorMessage}</div>
+            <button onclick="location.reload()">
+                <div class="button-label">Try Again</div>
+            </button>
+        </div>
+    `);
     this.surveyContainer.appendChild(errorPage.pageContainer);
   }
   displayThankYouPage() {
