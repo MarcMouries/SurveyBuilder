@@ -10,6 +10,7 @@ import { SurveyModel } from './SurveyModel.ts';
 import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
+import {GreenCheck } from '../src/icons';
 
 class SurveyBuilder {
     private VERSION: String = "0.05.02.1";
@@ -50,6 +51,10 @@ class SurveyBuilder {
 
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
         EventEmitter.on(ANSWER_SELECTED, (response: IQuestionResponse) => this.handleResponse(response));
+
+
+        console.log(GreenCheck)
+
     }
     private initializeSurveyPages() {
 
@@ -68,8 +73,9 @@ class SurveyBuilder {
         this.thankYouPage = new SurveyPage('thank-you-page');
         this.thankYouPage.setTitle("Thank you for your input");
         this.thankYouPage.setContent(
-            `<p style="text-align: center; margin: 20px; font-size: 1.3rem;">
-            You can safely close this page.</p>
+            `<div style="text-align: center; margin: 20px; font-size: 1.3rem;">` 
+            +  GreenCheck + 
+            `<div>You can safely close this page.</div>
             <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
             If you wish to discover how ServiceNow Creator Workflows 
             can streamline your business processes and enhance automation,  
