@@ -13,7 +13,7 @@ export class SurveyPage {
         this.pageContainer.className = 'survey-page';
         this.pageContainer.id = pageId;
 
-        this.title = document.createElement('h2');
+        this.title = document.createElement('div');
         this.title.className = 'survey-page-title';
 
         this.content = document.createElement('p');
