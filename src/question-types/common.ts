@@ -5,7 +5,7 @@ import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 export function     createQuestionTitle(
        questionText: string): HTMLElement {
     
-    const title = document.createElement('h3');
+    const title = document.createElement('div');
     title.className = 'question-title';
 
     const questionNumberSpan = document.createElement('span');
@@ -14,8 +14,5 @@ export function     createQuestionTitle(
     //title.appendChild(questionNumberSpan);
 
     title.append(questionText);
-
-    //this.questionNumber++;
-
     return title;
 }
