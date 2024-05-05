@@ -7,7 +7,7 @@ class AnswerSelectedEvent extends CustomEvent {
 
 // src/question-types/common.ts
 function createQuestionTitle(questionText) {
-  const title = document.createElement("h3");
+  const title = document.createElement("div");
   title.className = "question-title";
   const questionNumberSpan = document.createElement("span");
   questionNumberSpan.className = "question-number";
@@ -1745,7 +1745,7 @@ class SurveyPage {
     this.pageContainer = document.createElement("div");
     this.pageContainer.className = "survey-page";
     this.pageContainer.id = pageId;
-    this.title = document.createElement("h2");
+    this.title = document.createElement("div");
     this.title.className = "survey-page-title";
     this.content = document.createElement("p");
     this.content.className = "survey-page-content";
@@ -1792,6 +1792,9 @@ class SurveyPage {
   }
 }
 
+// src/icons/index.ts
+var GreenCheck = '<svg width="80" height="81" viewBox="0 0 80 81" fill="none" xmlns="http://www.w3.org/2000/svg">  <mask id="mask-background" maskUnits="userSpaceOnUse" x="0" y="0" width="80" height="81" style="mask-type: alpha;">    <path fill-rule="evenodd" clip-rule="evenodd" d="M40 80.5C62.0914 80.5 80 62.5914 80 40.5C80 18.4086 62.0914 0.5 40 0.5C17.9086 0.5 0 18.4086 0 40.5C0 62.5914 17.9086 80.5 40 80.5ZM61.9816 27.0241C62.8234 25.9297 62.6187 24.3601 61.5243 23.5183C60.4299 22.6764 58.8603 22.8812 58.0184 23.9755L34.7544 54.2187L21.7678 41.232C20.7915 40.2557 19.2085 40.2557 18.2322 41.232C17.2559 42.2084 17.2559 43.7913 18.2322 44.7676L33.2322 59.7676C33.7409 60.2763 34.4441 60.5412 35.162 60.4946C35.8799 60.4479 36.5429 60.0943 36.9816 59.5241L61.9816 27.0241Z" fill="#000001"></path>  </mask>  <g mask="url(#mask-background)"><rect width="80" height="80" transform="translate(0 0.5)" fill="#62D84E"></rect></g></svg>';
+
 // src/SurveyBuilder.ts
 class SurveyBuilder {
   VERSION = "0.05.02.1";
@@ -1818,6 +1821,7 @@ class SurveyBuilder {
     this.questionComponents = [];
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
+    console.log(GreenCheck);
   }
   initializeSurveyPages() {
     this.landingPage = new SurveyPage("landing-page");
@@ -1829,8 +1833,7 @@ class SurveyBuilder {
     this.surveyContainer.appendChild(this.questionsPage.pageContainer);
     this.thankYouPage = new SurveyPage("thank-you-page");
     this.thankYouPage.setTitle("Thank you for your input");
-    this.thankYouPage.setContent(`<p style="text-align: center; margin: 20px; font-size: 1.3rem;">
-            You can safely close this page.</p>
+    this.thankYouPage.setContent(`<div style="text-align: center; margin: 20px; font-size: 1.3rem;">` + GreenCheck + `<div>You can safely close this page.</div>
             <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
             If you wish to discover how ServiceNow Creator Workflows 
             can streamline your business processes and enhance automation,  
