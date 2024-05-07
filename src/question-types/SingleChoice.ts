@@ -1,7 +1,6 @@
 import { AbstractChoice } from "./AbstractChoice.ts";
 import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 
 /**
@@ -15,7 +14,7 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
  * ◯ Fall 
  * ◯ Winter
  **/
-export class OneChoice extends AbstractChoice {
+export class SingleChoice extends AbstractChoice {
 
     constructor(question: IQuestion, index: number) {
         super(question, index);

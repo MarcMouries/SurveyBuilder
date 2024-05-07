@@ -1,9 +1,8 @@
 import {
     FollowUpQuestion, RankingQuestion, SelectQuestion, SingleLineTextQuestion,
-    MultiChoice, OneChoice, MultiLineTextQuestion, YesNoQuestion2
+    MultiChoice, SingleChoice, MultiLineTextQuestion, NPS, YesNoQuestion2
 } from './question-types/index.js';
 import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
-import type { ISurveyBuilder } from './ISurveyBuilder.ts';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { SurveyModel } from './SurveyModel.ts';
@@ -13,7 +12,7 @@ import { SurveyPage } from "./SurveyPage";
 import {GreenCheck } from '../src/icons';
 
 class SurveyBuilder {
-    private VERSION: String = "0.05.02.1";
+    private VERSION: String = "2024.05.06.1";
 
     private surveyModel!: SurveyModel;
 
@@ -42,6 +41,7 @@ class SurveyBuilder {
         this.surveyContainer = containerElement;
 
         if (!this.setUpSurveyModel(config)) {
+
             return; 
         }
 
@@ -51,10 +51,6 @@ class SurveyBuilder {
 
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
         EventEmitter.on(ANSWER_SELECTED, (response: IQuestionResponse) => this.handleResponse(response));
-
-
-        console.log(GreenCheck)
-
     }
     private initializeSurveyPages() {
 
@@ -109,13 +105,12 @@ class SurveyBuilder {
             }
             return true;
         } catch (error) {
+            console.log(error);
             const errorType = (error as Error).message.includes('JSON') ? 'invalid' : 'empty';
             this.displayErrorMessage(errorType);
             return false;
         }
     }
-
-
 
     private displayPage(page: SurveyPage) {
         this.surveyContainer.innerHTML = '';
@@ -236,8 +231,9 @@ class SurveyBuilder {
             case "multi-line-text": return new MultiLineTextQuestion(question, index);
             case "yes-no": return new YesNoQuestion2(question, index);
             case "YesNoQuestion2": return new YesNoQuestion2(question, index);
-            case "single-choice": return new OneChoice(question, index);
+            case "single-choice": return new SingleChoice(question, index);
             case "multi-choice": return new MultiChoice(question, index);
+            case "nps": return new NPS(question, index);
             case "select": return new SelectQuestion(question, index);
             case "followup": return new FollowUpQuestion(question, index);
             default: console.error("Unsupported question type: " + question.type);
