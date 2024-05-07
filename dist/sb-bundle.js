@@ -241,8 +241,26 @@ class MultiChoice extends AbstractChoice {
     return checkboxInput;
   }
 }
-// src/question-types/OneChoice.ts
-class OneChoice extends AbstractChoice {
+// src/question-types/NPS.ts
+class NPS extends QuestionComponent {
+  constructor(question, index) {
+    super(question, index);
+    const npsComponent = document.createElement("nps-component");
+    this.questionDiv.appendChild(npsComponent);
+    npsComponent.addEventListener("optionSelected", (event) => {
+      const customEvent = event;
+      const selectedOption = customEvent.detail.option;
+      console.log("In searchComponent optionSelected: ", selectedOption);
+      const response = {
+        questionName: question.name,
+        response: selectedOption
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+}
+// src/question-types/SingleChoice.ts
+class SingleChoice extends AbstractChoice {
   constructor(question, index) {
     super(question, index);
   }
@@ -437,7 +455,7 @@ class SingleLineTextQuestion extends QuestionComponent {
   }
 }
 // src/question-types/YesNoQuestion.ts
-class YesNoQuestion2 extends OneChoice {
+class YesNoQuestion2 extends SingleChoice {
   constructor(question, index) {
     const modifiedQuestion = { ...question, items: ["Yes", "No"] };
     super(modifiedQuestion, index);
@@ -709,6 +727,117 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
+// src/component/NpsComponent.ts
+class NpsComponent extends HTMLElement {
+  selectedButton;
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    console.log("this.shadowRoot");
+    console.log(this.shadowRoot);
+    this.selectedButton = null;
+    this.build();
+    this.bindEvents();
+  }
+  build() {
+    console.log(this.shadowRoot);
+    if (this.shadowRoot) {
+      this.shadowRoot.innerHTML = `
+            <style>
+            .nps-container {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 400px;
+            }
+            .nps-container > button {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 28px;
+                width: 28px;
+                line-height: 1;
+                background-color: #f3f3f3;
+                border: none;
+                border-radius: 8px;
+                color: #333;
+                font-size: 12px;
+                transition: all ease 0.1s;
+                cursor: pointer;
+            }
+
+            .nps-container > button.active {
+                border: 2px solid black;
+                transform: scale(1.25);
+            }
+
+            .nps-container > button:hover {
+                border: 2px solid black;
+                transform: scale(1.25);
+            }
+
+            .nps-container .detractor:nth-child(1) { background-color: #ff9eae; }
+            .nps-container .detractor:nth-child(2) { background-color: #ffafbc; }
+            .nps-container .detractor:nth-child(3) { background-color: #ffb8c6; }
+            .nps-container .detractor:nth-child(4) { background-color: #ffc0cb; }
+            .nps-container .detractor:nth-child(5) { background-color: #ffd1d9; }
+            .nps-container .detractor:nth-child(6) { background-color: #ffe2e7; }
+            .nps-container .detractor:nth-child(7) { background-color: #ffdfe4; }
+            .nps-container .passive:nth-child(8)   { background-color: #ecf1e0; }
+            .nps-container .passive:nth-child(9)   { background-color: #c8e6cc; }
+            .nps-container .promoter:nth-child(10) { background-color: #adecba; }
+            .nps-container .promoter:nth-child(11) { background-color: #5ad974; }
+
+            .labels {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                max-width: 400px;
+                font-size: small;
+                color: #aaa;
+            }
+            </style>
+            <div class="nps-container">
+                <button class="detractor">0</button>
+                <button class="detractor">1</button>
+                <button class="detractor">2</button>
+                <button class="detractor">3</button>
+                <button class="detractor">4</button>
+                <button class="detractor">5</button>
+                <button class="detractor">6</button>
+                <button class="passive">7</button>
+                <button class="passive">8</button>
+                <button class="promoter">9</button>
+                <button class="promoter">10</button>
+            </div>
+            <div class="labels">
+                <span>Not Likely</span>
+                <span>Very Likely</span>
+          </div>
+        `;
+    }
+  }
+  bindEvents() {
+    const buttons = this.shadowRoot.querySelectorAll("button");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        this.onSelectOption(button);
+      });
+    });
+  }
+  onSelectOption(selectedButton) {
+    if (this.selectedButton) {
+      this.selectedButton.classList.remove("active");
+    }
+    this.selectedButton = selectedButton;
+    this.selectedButton.classList.add("active");
+    const event = new CustomEvent("optionSelected", {
+      detail: { option: this.selectedButton.textContent }
+    });
+    this.dispatchEvent(event);
+  }
+}
+customElements.define("nps-component", NpsComponent);
 // src/engine/ast/ASTNode.ts
 class AssignmentExpression {
   left;
@@ -1696,7 +1825,17 @@ class SurveyModel {
       throw new Error("Invalid or missing surveyDescription");
     if (!Array.isArray(config.questions))
       throw new Error("Invalid or missing questions array");
-    const allowedTypes = ["yes-no", "select", "single-choice", "followup", "multi-choice", "ranking", "multi-line-text", "single-line-text"];
+    const allowedTypes = [
+      "nps",
+      "select",
+      "single-choice",
+      "followup",
+      "multi-choice",
+      "ranking",
+      "multi-line-text",
+      "single-line-text",
+      "yes-no"
+    ];
     config.questions.forEach((question, index) => {
       if (typeof question !== "object")
         throw new Error(`Question at index ${index} is not an object`);
@@ -1797,7 +1936,7 @@ var GreenCheck = '<svg width="80" height="81" viewBox="0 0 80 81" fill="none" xm
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
-  VERSION = "0.05.02.1";
+  VERSION = "2024.05.06.1";
   surveyModel;
   surveyContainer;
   landingPage;
@@ -1821,7 +1960,6 @@ class SurveyBuilder {
     this.questionComponents = [];
     EventEmitter.on(TITLE_UPDATED, (index, newTitle) => this.handleTitleUpdate(index, newTitle));
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
-    console.log(GreenCheck);
   }
   initializeSurveyPages() {
     this.landingPage = new SurveyPage("landing-page");
@@ -1863,6 +2001,7 @@ class SurveyBuilder {
       }
       return true;
     } catch (error) {
+      console.log(error);
       const errorType = error.message.includes("JSON") ? "invalid" : "empty";
       this.displayErrorMessage(errorType);
       return false;
@@ -1959,9 +2098,11 @@ class SurveyBuilder {
       case "YesNoQuestion2":
         return new YesNoQuestion2(question, index);
       case "single-choice":
-        return new OneChoice(question, index);
+        return new SingleChoice(question, index);
       case "multi-choice":
         return new MultiChoice(question, index);
+      case "nps":
+        return new NPS(question, index);
       case "select":
         return new SelectQuestion(question, index);
       case "followup":
