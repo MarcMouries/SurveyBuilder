@@ -1,5 +1,4 @@
 import type { IQuestion } from "../IQuestion.ts";
-import type { ISurveyBuilder } from "../ISurveyBuilder.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { SearchInput } from '../component/SearchInput.ts';
 import { QuestionComponent } from "./QuestionComponent.ts";
@@ -9,7 +8,6 @@ export class SelectQuestion extends QuestionComponent {
 
     constructor(question: IQuestion, index: number) {
         super(question, index);
-        //this.questionDiv.className += ' select-question';
 
         // Specific implementation for select question
         const searchComponent = document.createElement('search-input') as SearchInput;
