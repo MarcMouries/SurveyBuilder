@@ -7,11 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (testType === 'one-question') {
             configFile = 'survey-one-question.json';
         } else if (testType === 'empty') {
-            new SurveyBuilder("", 'survey-container').onComplete(printResponses); // Empty config
+            // Empty config
+            new SurveyBuilder("", 'survey-container').onComplete(printResponses); 
             return;
-        } else if (testType === 'contact') {
-            document.getElementById('survey-container').innerHTML = '<p>Contact information...</p>';
-            return;
+        } else if (testType === 'all-qestion') {
+            configFile = 'survey-data.json';
         }
 
         fetch(configFile)
