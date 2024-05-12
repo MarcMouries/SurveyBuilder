@@ -8,7 +8,7 @@ export interface IQuestion {
     type: string;
     items? : string[];
     options? : string[];
-    options_source?: string[];
+    dynamic_options_service?: string;
     visible_when?: string;
     includeOtherOption?: any;
     placeholder? : string;

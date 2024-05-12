@@ -7,16 +7,16 @@ export class Question implements IQuestion {
   name: string;
   title: string;
   description: string;
-  isRequired?: boolean | undefined;
-  isVisible?: boolean | undefined;
+  isRequired?: boolean;
+  isVisible?: boolean;
   type: string;
-  items?: string[] | undefined;
-  options?: string[] | undefined;
-  options_source?: string[] | undefined;
-  visible_when?: string | undefined;
+  items?: string[];
+  options?: string[];
+  dynamic_options_service?: string;
+  visible_when?: string;
   includeOtherOption?: any;
-  placeholder?: string | undefined;
-  detailQuestions?: IQuestion[] | undefined;
+  placeholder?: string;
+  detailQuestions?: IQuestion[];
 
   constructor(data: Omit<IQuestion, 'index'>) {
     this.index = Question.currentQuestionNumber++;
@@ -28,7 +28,7 @@ export class Question implements IQuestion {
     this.isVisible = typeof data.isVisible === 'boolean' ? data.isVisible : true;
     this.items = data.items;
     this.options = data.options;
-    this.options_source = data.options_source;
+    this.dynamic_options_service = data.dynamic_options_service;
     this.visible_when = data.visible_when;
     this.includeOtherOption = data.includeOtherOption;
     this.placeholder = data.placeholder;
