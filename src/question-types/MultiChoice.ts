@@ -24,7 +24,7 @@ export class MultiChoice extends AbstractChoice {
         });
 
         // Include 'Other' option if specified
-        if (this.questionData.includeOtherOption) {
+        if (this.question.includeOtherOption) {
             this.appendOtherOption(choiceContainer);
         }
 
@@ -39,8 +39,8 @@ export class MultiChoice extends AbstractChoice {
         const wrapperDiv = document.createElement('div');
         wrapperDiv.className = 'item';
 
-        const checkboxId = `${this.questionData.name}-${index}`;
-        const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
+        const checkboxId = `${this.question.name}-${index}`;
+        const checkbox = this.createCheckbox(item, this.question.name, checkboxId);
         const label = this.createLabel(checkboxId, item);
 
         wrapperDiv.appendChild(checkbox);
@@ -52,8 +52,8 @@ export class MultiChoice extends AbstractChoice {
         const otherWrapperDiv = document.createElement('div');
         otherWrapperDiv.className = 'item other-item';
 
-        const checkboxId = `${this.questionData.name}-other`;
-        const checkbox = this.createCheckbox("Other", this.questionData.name, checkboxId);
+        const checkboxId = `${this.question.name}-other`;
+        const checkbox = this.createCheckbox("Other", this.question.name, checkboxId);
         checkbox.dataset.other = "true"; // Mark this checkbox for special handling
 
         const label = this.createLabel(checkboxId, "Other");
@@ -63,7 +63,7 @@ export class MultiChoice extends AbstractChoice {
         const otherInput = document.createElement('input');
         otherInput.type = 'text';
         otherInput.id = `${checkboxId}-specify`;
-        otherInput.name = `${this.questionData.name}-other-specify`;
+        otherInput.name = `${this.question.name}-other-specify`;
         otherInput.placeholder = "Specify";
         otherInput.className = 'other-specify-input';
 
@@ -90,18 +90,18 @@ export class MultiChoice extends AbstractChoice {
      
     handleResponseChange() {
         const selectedOptions = this.items.filter((_, i) => {
-            const checkbox = document.getElementById(`${this.questionData.name}-${i}`) as HTMLInputElement;
+            const checkbox = document.getElementById(`${this.question.name}-${i}`) as HTMLInputElement;
             return checkbox && checkbox.checked;
         }).map((item, i) => ({ value: item }));
 
         // Special handling for "Other" input
-        const otherInput = document.getElementById(`${this.questionData.name}-other-specify`) as HTMLInputElement;
+        const otherInput = document.getElementById(`${this.question.name}-other-specify`) as HTMLInputElement;
         if (otherInput && otherInput.style.display !== 'none') {
             selectedOptions.push({ value: otherInput.value });
         }
 
         const response: IQuestionResponse = {
-            questionName: this.questionData.name,
+            questionName: this.question.name,
             response: selectedOptions
         };
 
@@ -109,12 +109,5 @@ export class MultiChoice extends AbstractChoice {
     }
 
 
-    createCheckbox(value: string, name: string, id: string) {
-        const checkboxInput = document.createElement('input');
-        checkboxInput.type = 'checkbox';
-        checkboxInput.id = id;
-        checkboxInput.name = name;
-        checkboxInput.value = value;
-        return checkboxInput;
-    }
+
 }

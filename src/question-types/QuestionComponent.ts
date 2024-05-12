@@ -1,6 +1,6 @@
 import { createQuestionTitle } from './common.js';
 import type { IQuestion } from "../IQuestion.ts";
-import type { IQuestionComponent } from "./IQuestionComponent.ts";
+import type { IQuestionComponent } from "../component/IQuestionComponent.ts";
 import type { IQuestionResponse } from "./IQuestionResponse.ts";
 import { EventEmitter} from '../EventEmitter.ts'
 import { ANSWER_SELECTED } from '../EventTypes';
@@ -8,10 +8,10 @@ import { ANSWER_SELECTED } from '../EventTypes';
 
 export abstract class QuestionComponent implements IQuestionComponent {
     protected questionDiv: HTMLDivElement;
-    public questionData: IQuestion;
+    public question: IQuestion;
 
     constructor(question: IQuestion, index: number) {
-        this.questionData = question;
+        this.question = question;
         this.questionDiv = document.createElement('div');
         this.questionDiv.className = `question ${question.type}-question`;
         this.questionDiv.dataset.index = index.toString();
@@ -26,14 +26,14 @@ export abstract class QuestionComponent implements IQuestionComponent {
     }
 
     setTitle(newTitle: string): void {
-        this.questionData.title = newTitle;
+        this.question.title = newTitle;
 
         // Find the title element within this question component's div and update its text content
         const titleElement = this.questionDiv.querySelector('.question-title');
         if (titleElement) {
             titleElement.textContent = newTitle;
         } else {
-            console.error('Title element not found for question:', this.questionData.name);
+            console.error('Title element not found for question:', this.question.name);
         }
     }
 
@@ -43,6 +43,8 @@ export abstract class QuestionComponent implements IQuestionComponent {
             EventEmitter.emit(ANSWER_SELECTED, responseEvent.detail);
         });
     }
+
+
 
     public show() {
         this.questionDiv.style.display = 'block';
@@ -54,5 +56,31 @@ export abstract class QuestionComponent implements IQuestionComponent {
 
     public getQuestionDiv () : HTMLDivElement {
         return this.questionDiv;
+    }
+
+    protected createLabel(forId: string, text: string) {
+        const label = document.createElement('label');
+        label.htmlFor = forId;
+        label.textContent = text;
+        label.classList.add('choice-label');
+        return label;
+    }
+
+    protected createRadio(value: string, name: string, id: string) {
+        const radioInput = document.createElement('input');
+        radioInput.type = 'radio';
+        radioInput.id = id;
+        radioInput.name = name;
+        radioInput.value = value;
+        return radioInput;
+    }
+
+    protected createCheckbox(value: string, name: string, id: string) {
+        const checkboxInput = document.createElement('input');
+        checkboxInput.type = 'checkbox';
+        checkboxInput.id = id;
+        checkboxInput.name = name;
+        checkboxInput.value = value;
+        return checkboxInput;
     }
 }

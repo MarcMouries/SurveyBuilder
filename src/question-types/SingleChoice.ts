@@ -29,8 +29,8 @@ export class SingleChoice extends AbstractChoice {
                 const wrapperDiv = document.createElement('div');
                 wrapperDiv.className = 'item';
 
-                const radioId = `${this.questionData.name}-${i}`;
-                const radio = this.createRadio(item, this.questionData.name, radioId);
+                const radioId = `${this.question.name}-${i}`;
+                const radio = this.createRadio(item, this.question.name, radioId);
                 const label = this.createLabel(radioId, item);
 
                 wrapperDiv.appendChild(radio);
@@ -38,7 +38,7 @@ export class SingleChoice extends AbstractChoice {
                 choiceContainer.appendChild(wrapperDiv);
             });
         } else {
-            console.warn("Items are undefined for question:", this.questionData.name);
+            console.warn("Items are undefined for question:", this.question.name);
         }
 
         this.questionDiv.appendChild(choiceContainer);
@@ -47,18 +47,11 @@ export class SingleChoice extends AbstractChoice {
         choiceContainer.addEventListener('change', (event) => {
             const target = event.target as HTMLInputElement;
             const response: IQuestionResponse = {
-                questionName: this.questionData.name,
+                questionName: this.question.name,
                 response: target.value
             };
             this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });
     }
-    createRadio(value: string, name: string, id: string) {
-        const radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.id = id;
-        radioInput.name = name;
-        radioInput.value = value;
-        return radioInput;
-    }
+
 }
