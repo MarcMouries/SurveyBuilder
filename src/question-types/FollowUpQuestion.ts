@@ -40,7 +40,7 @@ export class FollowUpQuestion extends QuestionComponent {
         this.detailResponses[name] = target.value;
 
         const response: IQuestionResponse = {
-            questionName: this.questionData.name,
+            questionName: this.question.name,
             response: this.detailResponses
         };
         console.log("Aggregated Input Change:", this.detailResponses);
