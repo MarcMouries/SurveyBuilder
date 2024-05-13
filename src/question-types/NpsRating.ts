@@ -7,21 +7,21 @@ import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
 /**
  * NPS Question
  */
-export class NPS  extends QuestionComponent {
+export class NpsRating  extends QuestionComponent {
     constructor(question: IQuestion, index: number) {
         super(question, index);
 
-        const npsComponent = document.createElement('nps-component') as NpsComponent;
-        this.questionDiv.appendChild(npsComponent);
+        const component = document.createElement('nps-component') as NpsComponent;
+        this.questionDiv.appendChild(component);
 
-
-        npsComponent.addEventListener('optionSelected', (event) => {
+        component.addEventListener('optionSelected', (event) => {
             const customEvent = event as CustomEvent<{ option: string }>;
             const selectedOption = customEvent.detail.option;
-            console.log("In searchComponent optionSelected: ", selectedOption);
+            console.log(`Component ${question.type}: optionSelected: `, selectedOption);
+
             const response: IQuestionResponse = {
                 questionName: question.name,
-                response: selectedOption
+                response: parseFloat(selectedOption)
             };
             this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });

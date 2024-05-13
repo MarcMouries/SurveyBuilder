@@ -1,13 +1,13 @@
+import type {IQuestion } from "../IQuestion";
 
 export class NpsComponent extends HTMLElement {
 
     private selectedButton: HTMLButtonElement | null;
+    private question! : IQuestion;
 
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        console.log("this.shadowRoot");
-        console.log(this.shadowRoot);
 
         this.selectedButton = null;
 
@@ -15,10 +15,12 @@ export class NpsComponent extends HTMLElement {
         this.bindEvents();
     }
 
-    build() {
-        console.log(this.shadowRoot);
-        if (this.shadowRoot) {
+    setQuestion(question: IQuestion) {
+        this.question = question;
+    }
 
+    build() {
+        if (this.shadowRoot) {
             this.shadowRoot.innerHTML =
             `
             <style>
@@ -91,7 +93,7 @@ export class NpsComponent extends HTMLElement {
             <div class="labels">
                 <span>Not Likely</span>
                 <span>Very Likely</span>
-          </div>
+            </div>
         `
         }
     }
@@ -108,9 +110,7 @@ export class NpsComponent extends HTMLElement {
 
     onSelectOption(selectedButton: HTMLButtonElement) {
         // Remove 'active' class from previously selected button if it exists
-        if (this.selectedButton) {
-            this.selectedButton.classList.remove('active');
-        }
+            this.selectedButton?.classList.remove('active');
     
         // Set the new selected button
         this.selectedButton = selectedButton;
@@ -124,7 +124,5 @@ export class NpsComponent extends HTMLElement {
         });
         this.dispatchEvent(event);
     }
-    
 }
-// Define the new element
 customElements.define('nps-component', NpsComponent);
