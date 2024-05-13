@@ -10,24 +10,15 @@ export class SelectQuestion extends QuestionComponent {
         super(question, index);
 
         // Specific implementation for select question
-        const searchComponent = document.createElement('search-input') as SearchInput;
-
-        this.questionDiv.appendChild(searchComponent);
-
-        // Create configuration object for search-input
-        const config = {
-            static_options: question.options || [],
-            dynamic_options_service: question.options_source
-        };
-
-        // Apply the configuration to the search-input component
-        searchComponent.setConfig(config);
+        const component = document.createElement('search-input') as SearchInput;
+        component.setQuestion(question);
+        this.questionDiv.appendChild(component);        
 
         // Listen for selection from search-input and handle it
-        searchComponent.addEventListener('optionSelected', (event) => {
+        component.addEventListener('optionSelected', (event) => {
             const customEvent = event as CustomEvent<{ option: string }>;
             const selectedOption = customEvent.detail.option;
-            console.log("In searchComponent optionSelected: ", selectedOption);
+            console.log("In component optionSelected: ", selectedOption);
             const response: IQuestionResponse = {
                 questionName: question.name,
                 response: selectedOption
