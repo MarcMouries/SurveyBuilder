@@ -51,9 +51,9 @@ var SURVEY_STARTED = "survey-started";
 // src/question-types/QuestionComponent.ts
 class QuestionComponent {
   questionDiv;
-  questionData;
+  question;
   constructor(question, index) {
-    this.questionData = question;
+    this.question = question;
     this.questionDiv = document.createElement("div");
     this.questionDiv.className = `question ${question.type}-question`;
     this.questionDiv.dataset.index = index.toString();
@@ -64,12 +64,12 @@ class QuestionComponent {
     this.setupResponseListener();
   }
   setTitle(newTitle) {
-    this.questionData.title = newTitle;
+    this.question.title = newTitle;
     const titleElement = this.questionDiv.querySelector(".question-title");
     if (titleElement) {
       titleElement.textContent = newTitle;
     } else {
-      console.error("Title element not found for question:", this.questionData.name);
+      console.error("Title element not found for question:", this.question.name);
     }
   }
   setupResponseListener() {
@@ -86,6 +86,29 @@ class QuestionComponent {
   }
   getQuestionDiv() {
     return this.questionDiv;
+  }
+  createLabel(forId, text) {
+    const label = document.createElement("label");
+    label.htmlFor = forId;
+    label.textContent = text;
+    label.classList.add("choice-label");
+    return label;
+  }
+  createRadio(value, name, id) {
+    const radioInput = document.createElement("input");
+    radioInput.type = "radio";
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    return radioInput;
+  }
+  createCheckbox(value, name, id) {
+    const checkboxInput = document.createElement("input");
+    checkboxInput.type = "checkbox";
+    checkboxInput.id = id;
+    checkboxInput.name = name;
+    checkboxInput.value = value;
+    return checkboxInput;
   }
 }
 
@@ -117,7 +140,7 @@ class FollowUpQuestion extends QuestionComponent {
     const target = event.target;
     this.detailResponses[name] = target.value;
     const response = {
-      questionName: this.questionData.name,
+      questionName: this.question.name,
       response: this.detailResponses
     };
     console.log("Aggregated Input Change:", this.detailResponses);
@@ -145,18 +168,11 @@ class MultiLineTextQuestion extends QuestionComponent {
 }
 // src/question-types/AbstractChoice.ts
 class AbstractChoice extends QuestionComponent {
-  items = [];
+  items;
   constructor(question, index) {
     super(question, index);
     this.items = question.items;
     this.renderChoices();
-  }
-  createLabel(forId, text) {
-    const label = document.createElement("label");
-    label.htmlFor = forId;
-    label.textContent = text;
-    label.classList.add("choice-label");
-    return label;
   }
 }
 
@@ -171,7 +187,7 @@ class MultiChoice extends AbstractChoice {
     this.items.forEach((item, i) => {
       this.appendChoice(item, i, choiceContainer);
     });
-    if (this.questionData.includeOtherOption) {
+    if (this.question.includeOtherOption) {
       this.appendOtherOption(choiceContainer);
     }
     this.questionDiv.appendChild(choiceContainer);
@@ -180,8 +196,8 @@ class MultiChoice extends AbstractChoice {
   appendChoice(item, index, container) {
     const wrapperDiv = document.createElement("div");
     wrapperDiv.className = "item";
-    const checkboxId = `${this.questionData.name}-${index}`;
-    const checkbox = this.createCheckbox(item, this.questionData.name, checkboxId);
+    const checkboxId = `${this.question.name}-${index}`;
+    const checkbox = this.createCheckbox(item, this.question.name, checkboxId);
     const label = this.createLabel(checkboxId, item);
     wrapperDiv.appendChild(checkbox);
     wrapperDiv.appendChild(label);
@@ -190,15 +206,15 @@ class MultiChoice extends AbstractChoice {
   appendOtherOption(container) {
     const otherWrapperDiv = document.createElement("div");
     otherWrapperDiv.className = "item other-item";
-    const checkboxId = `${this.questionData.name}-other`;
-    const checkbox = this.createCheckbox("Other", this.questionData.name, checkboxId);
+    const checkboxId = `${this.question.name}-other`;
+    const checkbox = this.createCheckbox("Other", this.question.name, checkboxId);
     checkbox.dataset.other = "true";
     const label = this.createLabel(checkboxId, "Other");
     label.htmlFor = checkboxId;
     const otherInput = document.createElement("input");
     otherInput.type = "text";
     otherInput.id = `${checkboxId}-specify`;
-    otherInput.name = `${this.questionData.name}-other-specify`;
+    otherInput.name = `${this.question.name}-other-specify`;
     otherInput.placeholder = "Specify";
     otherInput.className = "other-specify-input";
     checkbox.addEventListener("change", () => {
@@ -219,41 +235,33 @@ class MultiChoice extends AbstractChoice {
   }
   handleResponseChange() {
     const selectedOptions = this.items.filter((_, i) => {
-      const checkbox = document.getElementById(`${this.questionData.name}-${i}`);
+      const checkbox = document.getElementById(`${this.question.name}-${i}`);
       return checkbox && checkbox.checked;
     }).map((item, i) => ({ value: item }));
-    const otherInput = document.getElementById(`${this.questionData.name}-other-specify`);
+    const otherInput = document.getElementById(`${this.question.name}-other-specify`);
     if (otherInput && otherInput.style.display !== "none") {
       selectedOptions.push({ value: otherInput.value });
     }
     const response = {
-      questionName: this.questionData.name,
+      questionName: this.question.name,
       response: selectedOptions
     };
     this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
   }
-  createCheckbox(value, name, id) {
-    const checkboxInput = document.createElement("input");
-    checkboxInput.type = "checkbox";
-    checkboxInput.id = id;
-    checkboxInput.name = name;
-    checkboxInput.value = value;
-    return checkboxInput;
-  }
 }
-// src/question-types/NPS.ts
-class NPS extends QuestionComponent {
+// src/question-types/NpsRating.ts
+class NpsRating extends QuestionComponent {
   constructor(question, index) {
     super(question, index);
-    const npsComponent = document.createElement("nps-component");
-    this.questionDiv.appendChild(npsComponent);
-    npsComponent.addEventListener("optionSelected", (event) => {
+    const component = document.createElement("nps-component");
+    this.questionDiv.appendChild(component);
+    component.addEventListener("optionSelected", (event) => {
       const customEvent = event;
       const selectedOption = customEvent.detail.option;
-      console.log("In searchComponent optionSelected: ", selectedOption);
+      console.log(`Component ${question.type}: optionSelected: `, selectedOption);
       const response = {
         questionName: question.name,
-        response: selectedOption
+        response: parseFloat(selectedOption)
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
@@ -271,33 +279,25 @@ class SingleChoice extends AbstractChoice {
       this.items.forEach((item, i) => {
         const wrapperDiv = document.createElement("div");
         wrapperDiv.className = "item";
-        const radioId = `${this.questionData.name}-${i}`;
-        const radio = this.createRadio(item, this.questionData.name, radioId);
+        const radioId = `${this.question.name}-${i}`;
+        const radio = this.createRadio(item, this.question.name, radioId);
         const label = this.createLabel(radioId, item);
         wrapperDiv.appendChild(radio);
         wrapperDiv.appendChild(label);
         choiceContainer.appendChild(wrapperDiv);
       });
     } else {
-      console.warn("Items are undefined for question:", this.questionData.name);
+      console.warn("Items are undefined for question:", this.question.name);
     }
     this.questionDiv.appendChild(choiceContainer);
     choiceContainer.addEventListener("change", (event) => {
       const target = event.target;
       const response = {
-        questionName: this.questionData.name,
+        questionName: this.question.name,
         response: target.value
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
-  }
-  createRadio(value, name, id) {
-    const radioInput = document.createElement("input");
-    radioInput.type = "radio";
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    return radioInput;
   }
 }
 // src/question-types/ranking.ts
@@ -415,17 +415,13 @@ class RankingQuestion extends QuestionComponent {
 class SelectQuestion extends QuestionComponent {
   constructor(question, index) {
     super(question, index);
-    const searchComponent = document.createElement("search-input");
-    this.questionDiv.appendChild(searchComponent);
-    const config = {
-      static_options: question.options || [],
-      dynamic_options_service: question.options_source
-    };
-    searchComponent.setConfig(config);
-    searchComponent.addEventListener("optionSelected", (event) => {
+    const component = document.createElement("search-input");
+    component.setQuestion(question);
+    this.questionDiv.appendChild(component);
+    component.addEventListener("optionSelected", (event) => {
       const customEvent = event;
       const selectedOption = customEvent.detail.option;
-      console.log("In searchComponent optionSelected: ", selectedOption);
+      console.log("In component optionSelected: ", selectedOption);
       const response = {
         questionName: question.name,
         response: selectedOption
@@ -463,7 +459,7 @@ class YesNoQuestion2 extends SingleChoice {
 }
 // src/component/SearchInput.ts
 class SearchInput extends HTMLElement {
-  _config;
+  question;
   inputValue;
   modalContainer;
   filterInput;
@@ -475,6 +471,9 @@ class SearchInput extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.build();
     this.bindEvents();
+  }
+  setQuestion(question) {
+    this.question = question;
   }
   build() {
     if (this.shadowRoot) {
@@ -664,9 +663,6 @@ class SearchInput extends HTMLElement {
     this.modalContainer.style.display = "none";
     this.inputValue.style.display = "block";
   }
-  setConfig(config) {
-    this._config = config;
-  }
   handleFilterInput(inputValue) {
     this.optionsContainer.innerHTML = "";
     if (inputValue.length >= 2) {
@@ -691,8 +687,8 @@ class SearchInput extends HTMLElement {
   }
   fetchOptions(searchText) {
     return new Promise((resolve, reject) => {
-      if (this._config.dynamic_options_service) {
-        const serviceUrl = `${this._config.dynamic_options_service}${encodeURIComponent(searchText)}`;
+      if (this.question.dynamic_options_service) {
+        const serviceUrl = `${this.question.dynamic_options_service}${encodeURIComponent(searchText)}`;
         console.log("serviceUrl : ", serviceUrl);
         fetch(serviceUrl).then((response) => {
           if (!response.ok) {
@@ -707,8 +703,8 @@ class SearchInput extends HTMLElement {
           console.error("Error fetching dynamic options:", error);
           reject(error);
         });
-      } else if (this._config.static_options) {
-        const filteredOptions = this._config.static_options.filter((option) => option.toLowerCase().includes(searchText.toLowerCase()));
+      } else if (this.question.options) {
+        const filteredOptions = this.question.options.filter((option) => option.toLowerCase().includes(searchText.toLowerCase()));
         resolve(filteredOptions);
       } else {
         resolve([]);
@@ -730,17 +726,18 @@ customElements.define("search-input", SearchInput);
 // src/component/NpsComponent.ts
 class NpsComponent extends HTMLElement {
   selectedButton;
+  question;
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    console.log("this.shadowRoot");
-    console.log(this.shadowRoot);
     this.selectedButton = null;
     this.build();
     this.bindEvents();
   }
+  setQuestion(question) {
+    this.question = question;
+  }
   build() {
-    console.log(this.shadowRoot);
     if (this.shadowRoot) {
       this.shadowRoot.innerHTML = `
             <style>
@@ -813,7 +810,7 @@ class NpsComponent extends HTMLElement {
             <div class="labels">
                 <span>Not Likely</span>
                 <span>Very Likely</span>
-          </div>
+            </div>
         `;
     }
   }
@@ -826,9 +823,7 @@ class NpsComponent extends HTMLElement {
     });
   }
   onSelectOption(selectedButton) {
-    if (this.selectedButton) {
-      this.selectedButton.classList.remove("active");
-    }
+    this.selectedButton?.classList.remove("active");
     this.selectedButton = selectedButton;
     this.selectedButton.classList.add("active");
     const event = new CustomEvent("optionSelected", {
@@ -1615,7 +1610,7 @@ class Question {
   type;
   items;
   options;
-  options_source;
+  dynamic_options_service;
   visible_when;
   includeOtherOption;
   placeholder;
@@ -1630,7 +1625,7 @@ class Question {
     this.isVisible = typeof data.isVisible === "boolean" ? data.isVisible : true;
     this.items = data.items;
     this.options = data.options;
-    this.options_source = data.options_source;
+    this.dynamic_options_service = data.dynamic_options_service;
     this.visible_when = data.visible_when;
     this.includeOtherOption = data.includeOtherOption;
     this.placeholder = data.placeholder;
@@ -1743,7 +1738,7 @@ class SurveyModel {
     return this.started;
   }
   updateResponse(questionName, response) {
-    console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`);
+    console.log(`SurveyModel.updateResponse: '${response}' from question '${questionName}'`);
     this.responseMap[questionName] = response;
     this.environment.set(questionName, response);
     this.updateDynamicTitles(questionName);
@@ -1826,13 +1821,13 @@ class SurveyModel {
     if (!Array.isArray(config.questions))
       throw new Error("Invalid or missing questions array");
     const allowedTypes = [
-      "nps",
-      "select",
-      "single-choice",
       "followup",
       "multi-choice",
-      "ranking",
       "multi-line-text",
+      "nps",
+      "ranking",
+      "select",
+      "single-choice",
       "single-line-text",
       "yes-no"
     ];
@@ -1934,9 +1929,48 @@ class SurveyPage {
 // src/icons/index.ts
 var GreenCheck = '<svg width="80" height="81" viewBox="0 0 80 81" fill="none" xmlns="http://www.w3.org/2000/svg">  <mask id="mask-background" maskUnits="userSpaceOnUse" x="0" y="0" width="80" height="81" style="mask-type: alpha;">    <path fill-rule="evenodd" clip-rule="evenodd" d="M40 80.5C62.0914 80.5 80 62.5914 80 40.5C80 18.4086 62.0914 0.5 40 0.5C17.9086 0.5 0 18.4086 0 40.5C0 62.5914 17.9086 80.5 40 80.5ZM61.9816 27.0241C62.8234 25.9297 62.6187 24.3601 61.5243 23.5183C60.4299 22.6764 58.8603 22.8812 58.0184 23.9755L34.7544 54.2187L21.7678 41.232C20.7915 40.2557 19.2085 40.2557 18.2322 41.232C17.2559 42.2084 17.2559 43.7913 18.2322 44.7676L33.2322 59.7676C33.7409 60.2763 34.4441 60.5412 35.162 60.4946C35.8799 60.4479 36.5429 60.0943 36.9816 59.5241L61.9816 27.0241Z" fill="#000001"></path>  </mask>  <g mask="url(#mask-background)"><rect width="80" height="80" transform="translate(0 0.5)" fill="#62D84E"></rect></g></svg>';
 
+// src/SurveyPageFactory.ts
+class SurveyPageFactory {
+  static createLandingPage(title, description) {
+    let landingPage = new SurveyPage("landing-page");
+    landingPage.setTitle(title);
+    landingPage.setContent(description);
+    return landingPage;
+  }
+  static createErrorPage(errorType) {
+    const errorIcon = errorType === "empty" ? "\u2757" : "\u26A0\uFE0F";
+    const errorMessage = errorType === "empty" ? "The survey configuration is missing. <br>Please ensure it is provided." : "The survey configuration is invalid. <br>Please check the format and try again.";
+    let errorPage = new SurveyPage("error-page");
+    errorPage.setTitle("error page title");
+    errorPage.setContent(`
+        <div id="error-message" class="error-container">
+            <div class="error-icon">${errorIcon}</div>
+            <div class="text error-title">Error!</div>
+            <div class="text">Oh no, something went wrong.</div>
+            <div class="text">${errorMessage}</div>
+            <button onclick="location.reload()">
+                <div class="button-label">Try Again</div>
+            </button>
+        </div>
+    `);
+    return errorPage;
+  }
+  static createThankYouPage() {
+    let thankYouPage = new SurveyPage("thank-you-page");
+    thankYouPage.setTitle("Thank you for your input");
+    thankYouPage.setContent(`<div style="text-align: center; margin: 20px; font-size: 1.3rem;">` + GreenCheck + `<div>You can safely close this page.</div>
+            <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
+            If you wish to discover how ServiceNow Creator Workflows 
+            can streamline your business processes and enhance automation,  
+            please follow this link to learn more about 
+            <a href=http://URL_TO_SERVICE_NOW_CREATOR_WORKFLOWS>ServiceNow Creator Workflows</a>.</p>`);
+    return thankYouPage;
+  }
+}
+
 // src/SurveyBuilder.ts
 class SurveyBuilder {
-  VERSION = "2024.05.06.1";
+  VERSION = "2024.05.10.1";
   surveyModel;
   surveyContainer;
   landingPage;
@@ -1962,21 +1996,12 @@ class SurveyBuilder {
     EventEmitter.on(ANSWER_SELECTED, (response) => this.handleResponse(response));
   }
   initializeSurveyPages() {
-    this.landingPage = new SurveyPage("landing-page");
-    this.landingPage.setTitle(this.surveyModel.getTitle());
-    this.landingPage.setContent(this.surveyModel.getDescription());
+    this.landingPage = SurveyPageFactory.createLandingPage(this.surveyModel.getTitle(), this.surveyModel.getDescription());
     this.surveyContainer.appendChild(this.landingPage.pageContainer);
     this.questionsPage = new SurveyPage("survey-questions");
     this.questionsPage.hide();
     this.surveyContainer.appendChild(this.questionsPage.pageContainer);
-    this.thankYouPage = new SurveyPage("thank-you-page");
-    this.thankYouPage.setTitle("Thank you for your input");
-    this.thankYouPage.setContent(`<div style="text-align: center; margin: 20px; font-size: 1.3rem;">` + GreenCheck + `<div>You can safely close this page.</div>
-            <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
-            If you wish to discover how ServiceNow Creator Workflows 
-            can streamline your business processes and enhance automation,  
-            please follow this link to learn more about 
-            <a href=http://URL_TO_SERVICE_NOW_CREATOR_WORKFLOWS>ServiceNow Creator Workflows</a>.</p>`);
+    this.thankYouPage = SurveyPageFactory.createThankYouPage();
     this.thankYouPage.hide();
     this.surveyContainer.appendChild(this.thankYouPage.pageContainer);
     this.buttonsContainer = document.createElement("div");
@@ -2007,25 +2032,8 @@ class SurveyBuilder {
       return false;
     }
   }
-  displayPage(page) {
-    this.surveyContainer.innerHTML = "";
-    this.surveyContainer.appendChild(page.pageContainer);
-  }
   displayErrorMessage(errorType) {
-    const errorMessage = errorType === "empty" ? "The survey configuration is missing. <br>Please ensure it is provided." : "The survey configuration is invalid. <br>Please check the format and try again.";
-    const errorIcon = errorType === "empty" ? "\u2757" : "\u26A0\uFE0F";
-    const errorPage = new SurveyPage("error-page");
-    errorPage.setContent(`
-        <div id="error-message" class="error-container">
-            <div class="error-icon">${errorIcon}</div>
-            <div class="text error-title">Error!</div>
-            <div class="text">Oh no, something went wrong.</div>
-            <div class="text">${errorMessage}</div>
-            <button onclick="location.reload()">
-                <div class="button-label">Try Again</div>
-            </button>
-        </div>
-    `);
+    const errorPage = SurveyPageFactory.createErrorPage(errorType);
     this.surveyContainer.appendChild(errorPage.pageContainer);
   }
   displayThankYouPage() {
@@ -2102,7 +2110,7 @@ class SurveyBuilder {
       case "multi-choice":
         return new MultiChoice(question, index);
       case "nps":
-        return new NPS(question, index);
+        return new NpsRating(question, index);
       case "select":
         return new SelectQuestion(question, index);
       case "followup":
@@ -2131,8 +2139,6 @@ class SurveyBuilder {
   }
   showQuestion(question) {
     console.log("showQuestion: " + question.name);
-    console.log("showQuestion: ", question);
-    console.log("showQuestion: ", this.questionComponents);
     this.questionComponents.forEach((component) => component.hide());
     this.questionComponents[question.index].show();
     this.updateButtonsVisibility();
@@ -2158,7 +2164,7 @@ class SurveyBuilder {
     this.buttonsContainer.appendChild(button);
     return button;
   }
-  getQuestionElement(index) {
+  __DELETE_getQuestionElement(index) {
     let allQuestionElements = this.questionsPage.pageContainer.getElementsByClassName(".question");
     console.log("allQuestionElements", allQuestionElements);
     console.log(allQuestionElements.length);
