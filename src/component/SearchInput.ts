@@ -1,5 +1,8 @@
+import type { IQuestion } from "../IQuestion";
+
 export class SearchInput extends HTMLElement {
-    private _config: any;
+
+    private question! : IQuestion;
     private inputValue: any;
     private modalContainer: any;
     private filterInput: any;
@@ -8,9 +11,14 @@ export class SearchInput extends HTMLElement {
     private cancelButton: any;
     constructor() {
         super();
+        
         this.attachShadow({ mode: 'open' });
         this.build();
         this.bindEvents();
+    }
+
+    setQuestion(question: IQuestion) {
+        this.question = question;
     }
 
     build() {
@@ -192,31 +200,28 @@ export class SearchInput extends HTMLElement {
         this.filterInput.addEventListener('input', (e: any) => this.handleFilterInput(e.target.value));
         this.clearButton.addEventListener('click', () => {
             this.filterInput.value = '';
-            this.optionsContainer.innerHTML = ''; // Clear options if needed
-            this.filterInput.focus(); // Refocus on the filter input
+            this.optionsContainer.innerHTML = ''; 
+            this.filterInput.focus(); 
         });
     }
 
     showModal() {
-        this.inputValue.style.display = 'none'; // Hide the initial input
-        this.modalContainer.style.display = 'flex'; // Show the modal
-        this.filterInput.focus(); // Focus on the filter input inside the modal
+        this.inputValue.style.display = 'none'; 
+        this.modalContainer.style.display = 'flex';
+        this.filterInput.focus(); 
     }
 
     hideModal() {
-        this.modalContainer.style.display = 'none'; // Hide the modal
-        this.inputValue.style.display = 'block'; // Show the initial input
+        this.modalContainer.style.display = 'none'; 
+        this.inputValue.style.display = 'block'; 
     }
 
-    setConfig(config: any) {
-        this._config = config;
-    }
+
 
     handleFilterInput(inputValue: any) {
         // Clear existing options
         this.optionsContainer.innerHTML = '';
         if (inputValue.length >= 2) {
-            // Fetch or filter options based on inputValue
             this.fetchOptions(inputValue).then(options => {
                 options.forEach(option => {
                     const optionDiv = document.createElement('div');
@@ -232,7 +237,7 @@ export class SearchInput extends HTMLElement {
     onSelectOption(optionSelected: string) {
         this.inputValue.value = optionSelected;
         this.hideModal();
-        const event = new CustomEvent('optionSelected', { 
+        const event = new CustomEvent('optionSelected', {
             detail: { option: optionSelected }
         });
         this.dispatchEvent(event);
@@ -240,9 +245,9 @@ export class SearchInput extends HTMLElement {
 
     fetchOptions(searchText: string): Promise<string[]> {
         return new Promise((resolve, reject) => {
-            if (this._config.dynamic_options_service) {
+            if (this.question.dynamic_options_service) {
                 // Fetch dynamic options from the service
-                const serviceUrl = `${this._config.dynamic_options_service}${encodeURIComponent(searchText)}`;
+                const serviceUrl = `${this.question.dynamic_options_service}${encodeURIComponent(searchText)}`;
                 console.log("serviceUrl : ", serviceUrl);
                 fetch(serviceUrl)
                     .then(response => {
@@ -260,9 +265,9 @@ export class SearchInput extends HTMLElement {
                         console.error('Error fetching dynamic options:', error);
                         reject(error);
                     });
-            } else if (this._config.static_options) {
+            } else if (this.question.options) {
                 // Filter static options based on searchText
-                const filteredOptions = this._config.static_options.filter((option: any) =>
+                const filteredOptions = this.question.options.filter((option: any) =>
                     option.toLowerCase().includes(searchText.toLowerCase())
                 );
                 resolve(filteredOptions);
@@ -273,22 +278,17 @@ export class SearchInput extends HTMLElement {
         });
     }
 
-
-
-
     onClear() {
-        this.filterInput.value = ''; // Clear the filterInput field
-        this.clearButton.style.visibility = 'hidden'; // Hide the clear button
+        this.filterInput.value = ''; 
+        this.clearButton.style.visibility = 'hidden';
         this.clearOptions();
-        // Dispatch a clear event if needed
         this.dispatchEvent(new CustomEvent('clear'));
     }
 
     clearOptions() {
         this.optionsContainer.innerHTML = '';
-        this.optionsContainer.style.display = 'none'; // Hide options
+        this.optionsContainer.style.display = 'none';
     }
 }
 
-// Define the new element
 customElements.define('search-input', SearchInput);
