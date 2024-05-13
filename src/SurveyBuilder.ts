@@ -1,18 +1,18 @@
 import {
-    FollowUpQuestion, RankingQuestion, SelectQuestion, SingleLineTextQuestion,
-    MultiChoice, SingleChoice, MultiLineTextQuestion, NPS, YesNoQuestion2
+    MultiChoice, MultiLineTextQuestion, NPS, FollowUpQuestion, RankingQuestion, 
+    SelectQuestion, SingleLineTextQuestion, SingleChoice, YesNoQuestion2
 } from './question-types/index.js';
-import type { IQuestionComponent } from "./question-types/IQuestionComponent.ts";
 import type { IQuestion } from './IQuestion.ts';
+import type { IQuestionComponent } from "./component/IQuestionComponent.ts";
 import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
 import { SurveyModel } from './SurveyModel.ts';
 import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
-import {GreenCheck } from '../src/icons';
+import { SurveyPageFactory} from "./SurveyPageFactory.ts"
 
 class SurveyBuilder {
-    private VERSION: String = "2024.05.06.1";
+    private VERSION: String = "2024.05.10.1";
 
     private surveyModel!: SurveyModel;
 
@@ -41,12 +41,12 @@ class SurveyBuilder {
         this.surveyContainer = containerElement;
 
         if (!this.setUpSurveyModel(config)) {
-
             return; 
         }
 
+        // initialize Survey Pages
         this.initializeSurveyPages();
-
+        
         this.questionComponents = [];
 
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
@@ -55,9 +55,8 @@ class SurveyBuilder {
     private initializeSurveyPages() {
 
         // LANDING PAGE
-        this.landingPage = new SurveyPage('landing-page');
-        this.landingPage.setTitle(this.surveyModel.getTitle());
-        this.landingPage.setContent(this.surveyModel.getDescription());
+        this.landingPage = SurveyPageFactory.createLandingPage(
+            this.surveyModel.getTitle(), this.surveyModel.getDescription());
         this.surveyContainer.appendChild(this.landingPage.pageContainer);
 
         // Setup Questions Page
@@ -66,17 +65,7 @@ class SurveyBuilder {
         this.surveyContainer.appendChild(this.questionsPage.pageContainer);
 
         // Setup Thank You Page
-        this.thankYouPage = new SurveyPage('thank-you-page');
-        this.thankYouPage.setTitle("Thank you for your input");
-        this.thankYouPage.setContent(
-            `<div style="text-align: center; margin: 20px; font-size: 1.3rem;">` 
-            +  GreenCheck + 
-            `<div>You can safely close this page.</div>
-            <p style="text-align: center; margin: 20px; font-size: 1.1rem;">
-            If you wish to discover how ServiceNow Creator Workflows 
-            can streamline your business processes and enhance automation,  
-            please follow this link to learn more about 
-            <a href=http://URL_TO_SERVICE_NOW_CREATOR_WORKFLOWS>ServiceNow Creator Workflows</a>.</p>`);
+        this.thankYouPage = SurveyPageFactory.createThankYouPage();
         this.thankYouPage.hide();
         this.surveyContainer.appendChild(this.thankYouPage.pageContainer);
 
@@ -112,38 +101,10 @@ class SurveyBuilder {
         }
     }
 
-    private displayPage(page: SurveyPage) {
-        this.surveyContainer.innerHTML = '';
-        this.surveyContainer.appendChild(page.pageContainer);
-    }
-
     private displayErrorMessage(errorType: 'empty' | 'invalid') {
-        const errorMessage = errorType === 'empty'
-            ? "The survey configuration is missing. <br>Please ensure it is provided."
-            : "The survey configuration is invalid. <br>Please check the format and try again.";
-
-        const errorIcon = errorType === 'empty' ? "❗" : "⚠️";
-
-        const errorPage = new SurveyPage('error-page');
-        errorPage.setContent(`
-        <div id="error-message" class="error-container">
-            <div class="error-icon">${errorIcon}</div>
-            <div class="text error-title">Error!</div>
-            <div class="text">Oh no, something went wrong.</div>
-            <div class="text">${errorMessage}</div>
-            <button onclick="location.reload()">
-                <div class="button-label">Try Again</div>
-            </button>
-        </div>
-    `);
-    
-
-        // this.surveyContainer.innerHTML = '';
+        const errorPage = SurveyPageFactory.createErrorPage(errorType);
         this.surveyContainer.appendChild(errorPage.pageContainer);
     }
-
-
-
 
     private displayThankYouPage() {
         this.questionsPage.hide();
@@ -263,8 +224,7 @@ class SurveyBuilder {
 
     private showQuestion(question: IQuestion) {
         console.log("showQuestion: " + question.name);
-        console.log("showQuestion: ", question);
-        console.log("showQuestion: ", this.questionComponents);
+
         // First, hide all questions to ensure only one is shown at a time
         this.questionComponents.forEach(component => component.hide());
 
@@ -279,7 +239,7 @@ class SurveyBuilder {
         this.questionsPage.pageContainer.appendChild(questionDiv);
     }
 
-    handleResponse(response: IQuestionResponse): void {
+    private handleResponse(response: IQuestionResponse): void {
         console.log("SurveyBuilder.handleResponse: ", response);
         this.surveyModel.updateResponse(response.questionName, response.response);
     }
@@ -302,7 +262,7 @@ class SurveyBuilder {
     }
 
 
-    getQuestionElement(index: number): any {
+    __DELETE_getQuestionElement(index: number): any {
         let allQuestionElements = this.questionsPage.pageContainer.getElementsByClassName(".question");
 
         console.log("allQuestionElements", allQuestionElements);
@@ -312,7 +272,7 @@ class SurveyBuilder {
     }
 
 
-    finishSurvey() {
+    private finishSurvey() {
         this.surveyModel.completeSurvey();
 
         this.updateButtonsVisibility();
@@ -333,5 +293,4 @@ class SurveyBuilder {
 }
 
 //export default SurveyBuilder;
-// Attach SurveyBuilder to the window object to make it globally accessible
 window.SurveyBuilder = SurveyBuilder;
