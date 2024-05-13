@@ -115,7 +115,7 @@ export class SurveyModel {
     public isCompleted(): boolean { return this.completed; }
     public isStarted(): boolean { return this.started; }
     public updateResponse(questionName: string, response: any) {
-        console.log(`SurveyModel.updateResponse: Received Response: '${response}' from Question '${questionName}'`)
+        console.log(`SurveyModel.updateResponse: '${response}' from question '${questionName}'`)
         this.responseMap[questionName] = response;
         this.environment.set(questionName, response);
         this.updateDynamicTitles(questionName);
