@@ -1,9 +1,9 @@
-import type {IQuestion } from "../IQuestion";
+import type { IQuestion } from "../IQuestion";
 
 export class NpsComponent extends HTMLElement {
 
-    private selectedButton: HTMLButtonElement | null;
-    private question! : IQuestion;
+    private selectedButton!: HTMLButtonElement | null;
+    private question!: IQuestion;
 
     constructor() {
         super();
@@ -15,22 +15,27 @@ export class NpsComponent extends HTMLElement {
         this.bindEvents();
     }
 
+
     setQuestion(question: IQuestion) {
         this.question = question;
     }
 
     build() {
-        if (this.shadowRoot) {
-            this.shadowRoot.innerHTML =
-            `
-            <style>
+        const style = document.createElement("style");
+        style.textContent = `
             .nps-container {
                 display: flex;
-                justify-content: space-between;
+                flex-direction: column;
+                align-items: center;
                 width: 100%;
                 max-width: 400px;
             }
-            .nps-container > button {
+            .buttons {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+            .buttons > button {
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -45,39 +50,39 @@ export class NpsComponent extends HTMLElement {
                 transition: all ease 0.1s;
                 cursor: pointer;
             }
-
-            .nps-container > button.active {
+            .buttons > button.active {
                 border: 2px solid black;
                 transform: scale(1.25);
             }
-
-            .nps-container > button:hover {
+            .buttons > button:hover {
                 border: 2px solid black;
                 transform: scale(1.25);
             }
-
-            .nps-container .detractor:nth-child(1) { background-color: #ff9eae; }
-            .nps-container .detractor:nth-child(2) { background-color: #ffafbc; }
-            .nps-container .detractor:nth-child(3) { background-color: #ffb8c6; }
-            .nps-container .detractor:nth-child(4) { background-color: #ffc0cb; }
-            .nps-container .detractor:nth-child(5) { background-color: #ffd1d9; }
-            .nps-container .detractor:nth-child(6) { background-color: #ffe2e7; }
-            .nps-container .detractor:nth-child(7) { background-color: #ffdfe4; }
-            .nps-container .passive:nth-child(8)   { background-color: #ecf1e0; }
-            .nps-container .passive:nth-child(9)   { background-color: #c8e6cc; }
-            .nps-container .promoter:nth-child(10) { background-color: #adecba; }
-            .nps-container .promoter:nth-child(11) { background-color: #5ad974; }
-
+            .buttons .detractor:nth-child(1) { background-color: #ff9eae; }
+            .buttons .detractor:nth-child(2) { background-color: #ffafbc; }
+            .buttons .detractor:nth-child(3) { background-color: #ffb8c6; }
+            .buttons .detractor:nth-child(4) { background-color: #ffc0cb; }
+            .buttons .detractor:nth-child(5) { background-color: #ffd1d9; }
+            .buttons .detractor:nth-child(6) { background-color: #ffe2e7; }
+            .buttons .detractor:nth-child(7) { background-color: #ffdfe4; }
+            .buttons .passive:nth-child(8) { background-color: #ecf1e0; }
+            .buttons .passive:nth-child(9) { background-color: #c8e6cc; }
+            .buttons .promoter:nth-child(10) { background-color: #adecba; }
+            .buttons .promoter:nth-child(11) { background-color: #5ad974; }
             .labels {
                 display: flex;
                 flex-direction: row;
                 justify-content: space-between;
-                max-width: 400px;
+                width: 100%;
                 font-size: small;
                 color: #aaa;
             }
-            </style>
-            <div class="nps-container">
+        `;
+
+        const container = document.createElement('div');
+        container.classList.add('nps-container');
+        container.innerHTML = `
+            <div class="buttons">
                 <button class="detractor">0</button>
                 <button class="detractor">1</button>
                 <button class="detractor">2</button>
@@ -94,7 +99,11 @@ export class NpsComponent extends HTMLElement {
                 <span>Not Likely</span>
                 <span>Very Likely</span>
             </div>
-        `
+        `;
+
+        if (this.shadowRoot) {
+            this.shadowRoot.appendChild(style);
+            this.shadowRoot.appendChild(container);
         }
     }
 
@@ -102,23 +111,16 @@ export class NpsComponent extends HTMLElement {
         const buttons = this.shadowRoot!.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
-                this.onSelectOption(button); 
+                this.onSelectOption(button);
             });
         });
     }
-    
+
 
     onSelectOption(selectedButton: HTMLButtonElement) {
-        // Remove 'active' class from previously selected button if it exists
-            this.selectedButton?.classList.remove('active');
-    
-        // Set the new selected button
+        this.selectedButton?.classList.remove('active');
         this.selectedButton = selectedButton;
-    
-        // Add 'active' class to the newly selected button
         this.selectedButton.classList.add('active');
-    
-        // Dispatch the custom event with the selected button's text as the option
         const event = new CustomEvent('optionSelected', {
             detail: { option: this.selectedButton.textContent }
         });
