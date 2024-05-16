@@ -8,6 +8,11 @@
       "name": "NPS",
       "title": "How likely is it that you would recommend us to a friend?"
     },
+    {
+      "type": "star-rating",
+      "name": "star-rating",
+      "title": "How likely is it that you would recommend us to a friend?"
+    },
    {
       "type": "yes-no",
       "name": "use-federal-forms",

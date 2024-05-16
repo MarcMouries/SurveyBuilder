@@ -233,6 +233,7 @@ export class SurveyModel {
             'select', 
             'single-choice', 
             'single-line-text',
+            'star-rating',
             'yes-no'
          ];
 

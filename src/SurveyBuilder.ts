@@ -1,6 +1,6 @@
 import {
     MultiChoice, MultiLineTextQuestion, NPS, FollowUpQuestion, RankingQuestion, 
-    SelectQuestion, SingleLineTextQuestion, SingleChoice, YesNoQuestion2
+    SelectQuestion, SingleLineTextQuestion, SingleChoice, StarRating, YesNoQuestion2
 } from './question-types/index.js';
 import type { IQuestion } from './IQuestion.ts';
 import type { IQuestionComponent } from "./component/IQuestionComponent.ts";
@@ -187,16 +187,17 @@ class SurveyBuilder {
 
     createQuestionComponent(question: IQuestion, index: number): IQuestionComponent {
         switch (question.type) {
-            case "ranking": return new RankingQuestion(question, index);
-            case "single-line-text": return new SingleLineTextQuestion(question, index);
-            case "multi-line-text": return new MultiLineTextQuestion(question, index);
-            case "yes-no": return new YesNoQuestion2(question, index);
-            case "YesNoQuestion2": return new YesNoQuestion2(question, index);
-            case "single-choice": return new SingleChoice(question, index);
+            case "followup": return new FollowUpQuestion(question, index);
             case "multi-choice": return new MultiChoice(question, index);
+            case "multi-line-text": return new MultiLineTextQuestion(question, index);
             case "nps": return new NPS(question, index);
             case "select": return new SelectQuestion(question, index);
-            case "followup": return new FollowUpQuestion(question, index);
+            case "single-line-text": return new SingleLineTextQuestion(question, index);
+            case "single-choice": return new SingleChoice(question, index);
+            case "star-rating": return new StarRating(question, index);
+            case "ranking": return new RankingQuestion(question, index);
+            case "yes-no": return new YesNoQuestion2(question, index);
+            case "YesNoQuestion2": return new YesNoQuestion2(question, index);
             default: console.error("Unsupported question type: " + question.type);
         }
         return null!;

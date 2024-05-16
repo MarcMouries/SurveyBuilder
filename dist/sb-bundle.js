@@ -255,13 +255,11 @@ class NpsRating extends QuestionComponent {
     super(question, index);
     const component = document.createElement("nps-component");
     this.questionDiv.appendChild(component);
-    component.addEventListener("optionSelected", (event) => {
+    component.addEventListener("SelectionChanged", (event) => {
       const customEvent = event;
-      const selectedOption = customEvent.detail.option;
-      console.log(`Component ${question.type}: optionSelected: `, selectedOption);
       const response = {
         questionName: question.name,
-        response: parseFloat(selectedOption)
+        response: parseInt(customEvent.detail.value.toString())
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
@@ -450,6 +448,22 @@ class SingleLineTextQuestion extends QuestionComponent {
     });
   }
 }
+// src/question-types/StarRating.ts
+class StarRating extends QuestionComponent {
+  constructor(question, index) {
+    super(question, index);
+    const component = document.createElement("star-rating-component");
+    this.questionDiv.appendChild(component);
+    component.addEventListener("SelectionChanged", (event) => {
+      const customEvent = event;
+      const response = {
+        questionName: question.name,
+        response: parseInt(customEvent.detail.value.toString())
+      };
+      this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
+    });
+  }
+}
 // src/question-types/YesNoQuestion.ts
 class YesNoQuestion2 extends SingleChoice {
   constructor(question, index) {
@@ -457,6 +471,123 @@ class YesNoQuestion2 extends SingleChoice {
     super(modifiedQuestion, index);
   }
 }
+// src/component/NpsComponent.ts
+class NpsComponent extends HTMLElement {
+  selectedButton;
+  question;
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this.selectedButton = null;
+    this.build();
+    this.bindEvents();
+  }
+  setQuestion(question) {
+    this.question = question;
+  }
+  build() {
+    const style = document.createElement("style");
+    style.textContent = `
+            .nps-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+                max-width: 400px;
+            }
+            .buttons {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+            .buttons > button {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 28px;
+                width: 28px;
+                line-height: 1;
+                background-color: #f3f3f3;
+                border: none;
+                border-radius: 8px;
+                color: #333;
+                font-size: 12px;
+                transition: all ease 0.1s;
+                cursor: pointer;
+            }
+            .buttons > button.active {
+                border: 2px solid black;
+                transform: scale(1.25);
+            }
+            .buttons > button:hover {
+                border: 2px solid black;
+                transform: scale(1.25);
+            }
+            .buttons .detractor:nth-child(1) { background-color: #ff9eae; }
+            .buttons .detractor:nth-child(2) { background-color: #ffafbc; }
+            .buttons .detractor:nth-child(3) { background-color: #ffb8c6; }
+            .buttons .detractor:nth-child(4) { background-color: #ffc0cb; }
+            .buttons .detractor:nth-child(5) { background-color: #ffd1d9; }
+            .buttons .detractor:nth-child(6) { background-color: #ffe2e7; }
+            .buttons .detractor:nth-child(7) { background-color: #ffdfe4; }
+            .buttons .passive:nth-child(8) { background-color: #ecf1e0; }
+            .buttons .passive:nth-child(9) { background-color: #c8e6cc; }
+            .buttons .promoter:nth-child(10) { background-color: #adecba; }
+            .buttons .promoter:nth-child(11) { background-color: #5ad974; }
+            .labels {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+                font-size: small;
+                color: #aaa;
+            }
+        `;
+    const container = document.createElement("div");
+    container.classList.add("nps-container");
+    container.innerHTML = `
+            <div class="buttons">
+                <button class="detractor">0</button>
+                <button class="detractor">1</button>
+                <button class="detractor">2</button>
+                <button class="detractor">3</button>
+                <button class="detractor">4</button>
+                <button class="detractor">5</button>
+                <button class="detractor">6</button>
+                <button class="passive">7</button>
+                <button class="passive">8</button>
+                <button class="promoter">9</button>
+                <button class="promoter">10</button>
+            </div>
+            <div class="labels">
+                <span>Not Likely</span>
+                <span>Very Likely</span>
+            </div>
+        `;
+    if (this.shadowRoot) {
+      this.shadowRoot.appendChild(style);
+      this.shadowRoot.appendChild(container);
+    }
+  }
+  bindEvents() {
+    const buttons = this.shadowRoot.querySelectorAll("button");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        this.onSelection(button);
+      });
+    });
+  }
+  onSelection(selectedButton) {
+    this.selectedButton?.classList.remove("active");
+    this.selectedButton = selectedButton;
+    this.selectedButton.classList.add("active");
+    const event = new CustomEvent("SelectionChanged", {
+      detail: { value: this.selectedButton.textContent }
+    });
+    this.dispatchEvent(event);
+  }
+}
+customElements.define("nps-component", NpsComponent);
 // src/component/SearchInput.ts
 class SearchInput extends HTMLElement {
   question;
@@ -723,116 +854,103 @@ class SearchInput extends HTMLElement {
   }
 }
 customElements.define("search-input", SearchInput);
-// src/component/NpsComponent.ts
-class NpsComponent extends HTMLElement {
-  selectedButton;
-  question;
+// src/component/StarRatingComponent.ts
+class StarRatingComponent extends HTMLElement {
+  selectedStar;
+  rating;
+  static get observedAttributes() {
+    return ["rating"];
+  }
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this.selectedButton = null;
+    this.selectedStar = null;
+  }
+  connectedCallback() {
     this.build();
     this.bindEvents();
   }
-  setQuestion(question) {
-    this.question = question;
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === "rating") {
+      this.rating = parseInt(newValue);
+      this.updateStars();
+    }
+  }
+  setRating(rating) {
+    this.setAttribute("rating", rating.toString());
   }
   build() {
-    if (this.shadowRoot) {
-      this.shadowRoot.innerHTML = `
-            <style>
-            .nps-container {
+    const style = document.createElement("style");
+    style.textContent = `
+            .star-container {
                 display: flex;
-                justify-content: space-between;
-                width: 100%;
-                max-width: 400px;
+                justify-content: center;
+                align-items: center;
             }
-            .nps-container > button {
+            .star-container > button {
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 height: 28px;
                 width: 28px;
-                line-height: 1;
-                background-color: #f3f3f3;
+                background-color: transparent;
                 border: none;
-                border-radius: 8px;
-                color: #333;
-                font-size: 12px;
-                transition: all ease 0.1s;
+                color: #ccc;
+                font-size: 28px;
                 cursor: pointer;
+                transition: color 0.2s;
             }
-
-            .nps-container > button.active {
-                border: 2px solid black;
-                transform: scale(1.25);
+            .star-container > button.active,
+            .star-container > button:hover {
+                color: gold;
             }
-
-            .nps-container > button:hover {
-                border: 2px solid black;
-                transform: scale(1.25);
-            }
-
-            .nps-container .detractor:nth-child(1) { background-color: #ff9eae; }
-            .nps-container .detractor:nth-child(2) { background-color: #ffafbc; }
-            .nps-container .detractor:nth-child(3) { background-color: #ffb8c6; }
-            .nps-container .detractor:nth-child(4) { background-color: #ffc0cb; }
-            .nps-container .detractor:nth-child(5) { background-color: #ffd1d9; }
-            .nps-container .detractor:nth-child(6) { background-color: #ffe2e7; }
-            .nps-container .detractor:nth-child(7) { background-color: #ffdfe4; }
-            .nps-container .passive:nth-child(8)   { background-color: #ecf1e0; }
-            .nps-container .passive:nth-child(9)   { background-color: #c8e6cc; }
-            .nps-container .promoter:nth-child(10) { background-color: #adecba; }
-            .nps-container .promoter:nth-child(11) { background-color: #5ad974; }
-
-            .labels {
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
-                max-width: 400px;
-                font-size: small;
-                color: #aaa;
-            }
-            </style>
-            <div class="nps-container">
-                <button class="detractor">0</button>
-                <button class="detractor">1</button>
-                <button class="detractor">2</button>
-                <button class="detractor">3</button>
-                <button class="detractor">4</button>
-                <button class="detractor">5</button>
-                <button class="detractor">6</button>
-                <button class="passive">7</button>
-                <button class="passive">8</button>
-                <button class="promoter">9</button>
-                <button class="promoter">10</button>
-            </div>
-            <div class="labels">
-                <span>Not Likely</span>
-                <span>Very Likely</span>
-            </div>
         `;
+    const container = document.createElement("div");
+    container.classList.add("star-container");
+    container.innerHTML = `
+            <button data-value="1">&#9733;</button>
+            <button data-value="2">&#9733;</button>
+            <button data-value="3">&#9733;</button>
+            <button data-value="4">&#9733;</button>
+            <button data-value="5">&#9733;</button>
+        `;
+    if (this.shadowRoot) {
+      this.shadowRoot.appendChild(style);
+      this.shadowRoot.appendChild(container);
     }
   }
   bindEvents() {
     const buttons = this.shadowRoot.querySelectorAll("button");
     buttons.forEach((button) => {
       button.addEventListener("click", () => {
-        this.onSelectOption(button);
+        this.onSelectStar(button);
       });
     });
   }
-  onSelectOption(selectedButton) {
-    this.selectedButton?.classList.remove("active");
-    this.selectedButton = selectedButton;
-    this.selectedButton.classList.add("active");
-    const event = new CustomEvent("optionSelected", {
-      detail: { option: this.selectedButton.textContent }
+  onSelectStar(selectedStar) {
+    this.selectedStar?.classList.remove("active");
+    this.selectedStar = selectedStar;
+    this.selectedStar.classList.add("active");
+    const rating = parseInt(this.selectedStar.dataset.value);
+    this.setRating(rating);
+    const event = new CustomEvent("SelectionChanged", {
+      detail: { value: rating }
     });
     this.dispatchEvent(event);
   }
+  updateStars() {
+    const buttons = this.shadowRoot.querySelectorAll("button");
+    buttons.forEach((button) => {
+      const value = parseInt(button.dataset.value);
+      if (value <= this.rating) {
+        button.classList.add("active");
+      } else {
+        button.classList.remove("active");
+      }
+    });
+  }
 }
-customElements.define("nps-component", NpsComponent);
+customElements.define("star-rating-component", StarRatingComponent);
 // src/engine/ast/ASTNode.ts
 class AssignmentExpression {
   left;
@@ -1829,6 +1947,7 @@ class SurveyModel {
       "select",
       "single-choice",
       "single-line-text",
+      "star-rating",
       "yes-no"
     ];
     config.questions.forEach((question, index) => {
@@ -2095,26 +2214,28 @@ class SurveyBuilder {
   }
   createQuestionComponent(question, index) {
     switch (question.type) {
-      case "ranking":
-        return new RankingQuestion(question, index);
-      case "single-line-text":
-        return new SingleLineTextQuestion(question, index);
-      case "multi-line-text":
-        return new MultiLineTextQuestion(question, index);
-      case "yes-no":
-        return new YesNoQuestion2(question, index);
-      case "YesNoQuestion2":
-        return new YesNoQuestion2(question, index);
-      case "single-choice":
-        return new SingleChoice(question, index);
+      case "followup":
+        return new FollowUpQuestion(question, index);
       case "multi-choice":
         return new MultiChoice(question, index);
+      case "multi-line-text":
+        return new MultiLineTextQuestion(question, index);
       case "nps":
         return new NpsRating(question, index);
       case "select":
         return new SelectQuestion(question, index);
-      case "followup":
-        return new FollowUpQuestion(question, index);
+      case "single-line-text":
+        return new SingleLineTextQuestion(question, index);
+      case "single-choice":
+        return new SingleChoice(question, index);
+      case "star-rating":
+        return new StarRating(question, index);
+      case "ranking":
+        return new RankingQuestion(question, index);
+      case "yes-no":
+        return new YesNoQuestion2(question, index);
+      case "YesNoQuestion2":
+        return new YesNoQuestion2(question, index);
       default:
         console.error("Unsupported question type: " + question.type);
     }
