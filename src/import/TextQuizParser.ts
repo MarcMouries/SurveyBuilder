@@ -23,18 +23,27 @@ export class TextQuizParser {
         if (currentQuestion) {
           questions.push(currentQuestion);
         }
-        currentQuestion = this.parseQuestion(line);
-      } else if (currentQuestion && line.trim()) {
-        this.parseItem(currentQuestion, line);
+        const isMultiChoice = /Select all that apply/.test(line);
+        let title = line.substring(line.indexOf('.') + 1).trim();
+        let isRequired = false;
+        if (title.endsWith('*')) {
+          title = title.slice(0, -1).trim();  // Remove the asterisk and trim trailing spaces
+          isRequired = true;
+        }
+        currentQuestion = new Question({
+          type: isMultiChoice ? "multi-choice" : "single-choice",
+          name: `question_${questions.length + 1}`,
+          title: title,
+          items: [],
+          isRequired: isRequired
+        });
+      } else if (currentQuestion) {
+        this.processLine(currentQuestion, line);
       }
     });
 
     if (currentQuestion) {
       questions.push(currentQuestion);
-    }
-
-    if (questions.length === 0) {
-      throw new Error("No valid questions found in the input text.");
     }
 
     return new SurveyModel({
@@ -44,23 +53,14 @@ export class TextQuizParser {
     });
   }
 
-  private parseQuestion(line: string): Question {
-    const title = line.substring(line.indexOf('.') + 1).trim();
-    if (!title) {
-      throw new Error("Question title is missing or improperly formatted.");
+  private processLine(currentQuestion: Question, line: string): void {
+    if (/^\(/.test(line)) {
+      currentQuestion.description += ` ${line.trim()}`;
+    } else if (line.match(/^[A-Z]\.\s+/)) {
+      const item = line.replace(/^[A-Z]\.\s*/, '');
+      currentQuestion.addItem(item);
+    } else if (line.trim()) {
+      currentQuestion.description += ` ${line.trim()}`;
     }
-    return new Question({
-      type: "single-choice",
-      name: `question_${Question.currentQuestionNumber + 1}`,
-      title: title
-    });
-  }
-
-  private parseItem(question: Question, line: string): void {
-    if (!line.match(/^[A-Z]\.\s+/)) {
-      throw new Error(`Line ${line} for Item is improperly formatted, expected a prefix like 'A. ', 'B. ' etc.`);
-    }
-    const item = line.replace(/^[A-Z]\.\s*/, '');
-    question.addItem(item);
   }
 }

@@ -1,6 +1,5 @@
 import { TextQuizParser } from '../../src/import/TextQuizParser';
 
-//const path = "./test/import/text_English_grammar_quiz.txt";
 const path = "./test/import/text_Attendee_confirmation_survey.txt";
 const file = Bun.file(path);
 const quizText = await file.text();
@@ -10,32 +9,38 @@ describe('TextQuizParser', () => {
   const surveyModel = parser.parse();
 
   test('it should correctly set the survey title', () => {
-    expect(surveyModel.getTitle()).toBe('English Grammar Quiz');
+    expect(surveyModel.getTitle()).toBe('Attendee confirmation survey');    
   });
 
   test('it should parse questions correctly with exact titles', () => {
     const questions = surveyModel.getQuestions();
-    expect(questions.length).toBe(5);
-    expect(questions[0].title).toBe('You can stand______the tall building to see the whole city.');
-    expect(questions[1].title).toBe("Gina, have you ever heard of the Ginat's Causeway? -Sure, it's one of the most fantastic______in the world.");
-    expect(questions[2].title).toBe('The banana pie tastes delicious. Could I have another______?');
-    expect(questions[3].title).toBe('There are some fish swimming______the bottom of the river.');
-    expect(questions[4].title).toBe('Describe the city you live in');
+    expect(questions.length).toBe(10);
+    expect(questions[0].title).toBe('Which date can you attend?');
+    expect(questions[1].title).toBe("Full name");
+    expect(questions[2].title).toBe('Your department');
+    expect(questions[3].title).toBe('Phone number');
+    expect(questions[4].title).toBe('Email address');
+    expect(questions[5].title).toBe('How would you like your appointment confirmation to be sent?');
+    expect(questions[6].title).toBe('How would you prefer to attend the event?');
+    expect(questions[7].title).toBe('Purpose of joining this event?');
+    expect(questions[8].title).toBe('Any additional questions for the organizer?');
+    expect(questions[9].title).toBe('May we contact you to participate in discussions that will help us better organize future events?');
   });
 
-  test('each "single-choice" question should have correct items', () => {
+  test('each choice question should have the correct items', () => {
     const questions = surveyModel.getQuestions();
-    expect(questions[0].items).toEqual([
-      "A. at the bottom of",
-      "B. on top of",
-      "C. in top of",
-      "D. at the end of"
+    expect(questions[5].items).toEqual(["Email", "Text", "Phone call"]);
+    expect(questions[6].items).toEqual([
+      "Join remotely online",
+      "Join in person"
     ]);
-    expect(questions[1].items).toEqual([
-      "A. ways",
-      "B. dreams",
-      "C. trips",
-      "D. wonders"
+    expect(questions[7].items).toEqual([
+         "Get better understanding of latest status from team",
+         "Share status progress to keep team updated",
+         "Brainstorm new direction for project",
+         "Other"
     ]);
+
+    surveyModel.
   });  
 });
