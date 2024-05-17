@@ -9,6 +9,51 @@ let surveyConfig: ISurveyConfig = {
 };
 
 
+describe('validateSurveySetup', () => {
+  test('should throw an error for missing config', () => {
+    expect(() => new SurveyModel(null)).toThrow('Config object is required');
+  });
+
+  test('should throw an error for invalid question type', () => {
+    const invalidTypeConfig = {
+      ...surveyConfig,
+      questions: [{
+        ...surveyConfig.questions[0],
+        name: "test", title: "title", type: "invalid-type"
+      }]
+    };
+    expect(() => new SurveyModel(invalidTypeConfig)).toThrow(
+      `Question type "invalid-type" at index 0 is not allowed. Allowed types are: ${SurveyModel.ALLOWED_QUESTION_TYPES.join(', ')}`
+    );
+  });
+
+  test('should throw an error for duplicate question names', () => {
+    const duplicateNamesConfig = {
+      ...surveyConfig,
+      questions: [
+        {
+          name: "duplicate_name",
+          title: "First Question with duplicate name",
+          type: "single-choice",
+        },
+        {
+          name: "duplicate_name",
+          title: "Second Question with duplicate name",
+          type: "single-choice",
+        }
+      ]
+    };
+    expect(() => new SurveyModel(duplicateNamesConfig)).toThrow(
+      `Question #2 has the same name "duplicate_name" as question #1. Please ensure all question names are unique.`
+    );
+  });
+
+
+  test('should validate successfully for a correct config', () => {
+    expect(() => new SurveyModel(surveyConfig)).not.toThrow();
+  });
+});
+
 
 test("Dynamic title is correctly updated based on response", () => {
   const questions = [
@@ -167,7 +212,7 @@ test("Complex condition evaluation affects multiple dependent questions", () => 
 
   surveyConfig.questions = questions;
   const surveyModel = new SurveyModel(surveyConfig);
-  surveyModel.startSurvey();  
+  surveyModel.startSurvey();
   // Initial visibility and response checks
   surveyModel.updateResponse("attending_status", "In-Person");
   surveyModel.updateResponse("has_dietary_restrictions", "Yes");
@@ -179,26 +224,6 @@ test("Complex condition evaluation affects multiple dependent questions", () => 
 
 
 
-describe('validateSurveySetup', () => {
-  test('should throw an error for missing config', () => {
-    expect(() => new SurveyModel(null)).toThrow('Config object is required');
-  });
-
-  test('should throw an error for invalid question type', () => {
-    const invalidTypeConfig = {
-      ...surveyConfig,
-      questions: [{
-        ...surveyConfig.questions[0],
-        name: "test", title: "title", type: "invalid-type"
-      }]
-    };
-    expect(() => new SurveyModel(invalidTypeConfig)).toThrow('Question type "invalid-type" at index 0 is not allowed. Allowed types are: yes-no, select, single-choice, followup, multi-choice, ranking, multi-line-text, single-line-text');
-  });
-
-  test('should validate successfully for a correct config', () => {
-    expect(() => new SurveyModel(surveyConfig)).not.toThrow();
-  });
-});
 
 
 describe('Question navigation', () => {
