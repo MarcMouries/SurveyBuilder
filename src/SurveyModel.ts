@@ -8,6 +8,20 @@ import { SURVEY_STARTED, TITLE_UPDATED } from './EventTypes';
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 export class SurveyModel {
+
+    public static ALLOWED_QUESTION_TYPES = [
+        'followup',
+        'multi-choice',
+        'multi-line-text',
+        'nps',
+        'ranking',
+        'select',
+        'single-choice',
+        'single-line-text',
+        'star-rating',
+        'yes-no'
+    ];
+
     private started: boolean = false;
     private completed: boolean = false;
 
@@ -27,7 +41,6 @@ export class SurveyModel {
     private visibilityDependencies: Map<string, Question[]> = new Map();
 
     constructor(config: any) {
-        console.log("SurveyModel: building for config = ", config);
         this.validateSurveySetup(config);
         this.surveyTitle = config.surveyTitle;
         this.surveyDescription = config.surveyDescription;
@@ -216,50 +229,57 @@ export class SurveyModel {
 
     private validateSurveySetup(config: any) {
         if (!config) throw new Error('Config object is required');
-
+    
         if (typeof config.surveyTitle !== 'string')
-             throw new Error(`Invalid or missing surveyTitle: ${config.surveyTitle}`);
-
-        if (typeof config.surveyDescription !== 'string') throw new Error('Invalid or missing surveyDescription');
-
-        if (!Array.isArray(config.questions)) throw new Error('Invalid or missing questions array');
-
-        const allowedTypes = [
-            'followup', 
-            'multi-choice', 
-            'multi-line-text',
-            'nps', 
-            'ranking', 
-            'select', 
-            'single-choice', 
-            'single-line-text',
-            'star-rating',
-            'yes-no'
-         ];
-
+            throw new Error(`Invalid or missing surveyTitle: ${config.surveyTitle}`);
+    
+        if (typeof config.surveyDescription !== 'string')
+            throw new Error('Invalid or missing surveyDescription');
+    
+        if (!Array.isArray(config.questions))
+            throw new Error('Invalid or missing questions array');
+    
+        const questionNames = new Map();  // Map to track question names and their indices
+    
         config.questions.forEach((question: any, index: number) => {
-
             if (typeof question !== 'object') throw new Error(`Question at index ${index} is not an object`);
             if (typeof question.name !== 'string' || question.name.trim() === '') {
                 throw new Error(`Question at index ${index} is missing a valid name`);
             }
+            if (questionNames.has(question.name)) {  
+                const firstIndex = questionNames.get(question.name);
+                throw new Error(`Question #${index + 1} has the same name "${question.name}" as question #${firstIndex + 1}. Please ensure all question names are unique.`);
+            }
+            questionNames.set(question.name, index);  
+    
             if (typeof question.title !== 'string' || question.title.trim() === '') {
                 throw new Error(`Question at index ${index} is missing a valid title`);
             }
-            if (!allowedTypes.includes(question.type)) {
-                const allowedTypesString = allowedTypes.join(', '); // Convert the array of allowed types to a string
+
+            if (!SurveyModel.ALLOWED_QUESTION_TYPES.includes(question.type)) {
+                const allowedTypesString = SurveyModel.ALLOWED_QUESTION_TYPES.join(', ');
                 throw new Error(`Question type "${question.type}" at index ${index} is not allowed. Allowed types are: ${allowedTypesString}`);
             }
-
-            if ('isRequired' in question && typeof question.isRequired !== 'boolean') throw new Error(`"isRequired" must be boolean at index ${index}`);
-
-            if (question.options && !Array.isArray(question.options)) throw new Error(`"options" must be an array at index ${index}`);
-            if (question.items && !Array.isArray(question.items)) throw new Error(`"items" must be an array at index ${index}`);
-
-            if (question.options_source && typeof question.options_source !== 'string') throw new Error(`"options_source" must be a string URL at index ${index}`);
-
+    
+            if ('isRequired' in question && typeof question.isRequired !== 'boolean') {
+                throw new Error(`"isRequired" must be boolean at index ${index}`);
+            }
+    
+            if (question.options && !Array.isArray(question.options)) {
+                throw new Error(`"options" must be an array at index ${index}`);
+            }
+    
+            if (question.items && !Array.isArray(question.items)) {
+                throw new Error(`"items" must be an array at index ${index}`);
+            }
+    
+            if (question.options_source && typeof question.options_source !== 'string') {
+                throw new Error(`"options_source" must be a string URL at index ${index}`);
+            }
         });
     }
+    
+    
 
 
     public getStateDetails(): string {
