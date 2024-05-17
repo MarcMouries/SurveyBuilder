@@ -1,5 +1,5 @@
 import {
-    MultiChoice, MultiLineTextQuestion, NPS, FollowUpQuestion, RankingQuestion, 
+    MultiChoice, MultiLineTextQuestion, NPS, FollowUpQuestion, RankingQuestion,
     SelectQuestion, SingleLineTextQuestion, SingleChoice, StarRating, YesNoQuestion2
 } from './question-types/index.js';
 import type { IQuestion } from './IQuestion.ts';
@@ -9,10 +9,16 @@ import { SurveyModel } from './SurveyModel.ts';
 import { EventEmitter } from './EventEmitter.ts'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
-import { SurveyPageFactory} from "./SurveyPageFactory.ts"
+import { SurveyPageFactory } from "./SurveyPageFactory.ts"
 
 class SurveyBuilder {
-    private VERSION: String = "2024.05.10.1";
+    private VERSION: String = "2024.05.17.1";
+
+    private ERROR_CONFIG_MISSING = "The survey configuration is missing.";
+
+    // "The survey configuration is missing. <br>Please ensure it is provided."
+
+    private ERROR_CONFIG_INVALID = "The survey configuration is invalid.";
 
     private surveyModel!: SurveyModel;
 
@@ -41,12 +47,12 @@ class SurveyBuilder {
         this.surveyContainer = containerElement;
 
         if (!this.setUpSurveyModel(config)) {
-            return; 
+            return;
         }
 
         // initialize Survey Pages
         this.initializeSurveyPages();
-        
+
         this.questionComponents = [];
 
         EventEmitter.on(TITLE_UPDATED, (index: number, newTitle: string) => this.handleTitleUpdate(index, newTitle));
@@ -84,7 +90,7 @@ class SurveyBuilder {
     private setUpSurveyModel(config: any): boolean {
         try {
             if (typeof config === 'string' && config.trim() === '') {
-                this.displayErrorMessage('empty');
+                this.displayErrorPage(this.ERROR_CONFIG_MISSING, "");
                 console.error("SurveyModel config is empty!");
                 return false;
             } else if (typeof config === 'string') {
@@ -95,14 +101,17 @@ class SurveyBuilder {
             return true;
         } catch (error) {
             console.log(error);
-            const errorType = (error as Error).message.includes('JSON') ? 'invalid' : 'empty';
-            this.displayErrorMessage(errorType);
+            if (error instanceof Error) {
+                this.displayErrorPage(this.ERROR_CONFIG_INVALID, error.message);
+            } else {
+                this.displayErrorPage(this.ERROR_CONFIG_INVALID, "An unexpected error occurred");
+            } 
             return false;
         }
     }
 
-    private displayErrorMessage(errorType: 'empty' | 'invalid') {
-        const errorPage = SurveyPageFactory.createErrorPage(errorType);
+    private displayErrorPage(message_one: string, message_two: string) {
+        const errorPage = SurveyPageFactory.createErrorPage(message_one, message_two);
         this.surveyContainer.appendChild(errorPage.pageContainer);
     }
 

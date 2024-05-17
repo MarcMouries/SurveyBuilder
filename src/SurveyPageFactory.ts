@@ -10,20 +10,18 @@ export class SurveyPageFactory {
         return landingPage;
     }
 
-    static createErrorPage(errorType: 'empty' | 'invalid') {
-        const errorIcon = errorType === 'empty' ? "❗" : "⚠️";
-        const errorMessage = errorType === 'empty'
-            ? "The survey configuration is missing. <br>Please ensure it is provided."
-            : "The survey configuration is invalid. <br>Please check the format and try again.";
-
+    static createErrorPage(mainMessage: string, detailedMessage: string) {
+        const errorIcon = "⚠️";
+                    
         let errorPage = new SurveyPage('error-page');
-        errorPage.setTitle("error page title");
+        errorPage.setTitle("Error Page");
         errorPage.setContent(`
         <div id="error-message" class="error-container">
             <div class="error-icon">${errorIcon}</div>
             <div class="text error-title">Error!</div>
             <div class="text">Oh no, something went wrong.</div>
-            <div class="text">${errorMessage}</div>
+            <div class="text">${mainMessage}</div>
+            <div class="text">${detailedMessage}</div>
             <button onclick="location.reload()">
                 <div class="button-label">Try Again</div>
             </button>
@@ -31,6 +29,7 @@ export class SurveyPageFactory {
     `);
         return errorPage;
     }
+    
 
 
     static createThankYouPage() {
