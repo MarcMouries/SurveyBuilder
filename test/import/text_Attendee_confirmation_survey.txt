@@ -18,14 +18,14 @@ Enter your answer
 
 6. How would you like your appointment confirmation to be sent? *
 A. Email
-B. exTI
+B. Text
 C. Phone call
 
 7. How would you prefer to attend the event? *
 A. Join remotely online
 B. Join in person
 
-8. Purpose of joining this event. *
+8. Purpose of joining this event? *
 (Select all that apply)
 A. Get better understanding of latest status from team
 B. Share status progress to keep team updated

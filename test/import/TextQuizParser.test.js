@@ -40,7 +40,5 @@ describe('TextQuizParser', () => {
          "Brainstorm new direction for project",
          "Other"
     ]);
-
-    surveyModel.
-  });  
+  });
 });
