@@ -1,8 +1,8 @@
 import { Parser } from "./engine/Parser";
 import { Interpreter } from "./engine/Interpreter";
 import { Environment } from "./engine/Environment";
-import { Question } from './Question.ts';
-import { EventEmitter } from './EventEmitter.ts'
+import { Question } from './Question';
+import { EventEmitter } from './EventEmitter'
 import { SURVEY_STARTED, TITLE_UPDATED } from './EventTypes';
 
 const QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
@@ -21,6 +21,7 @@ export class SurveyModel {
         'star-rating',
         'yes-no'
     ];
+
 
     private started: boolean = false;
     private completed: boolean = false;
