@@ -4,7 +4,7 @@ export class SurveyPage {
     public pageContainer: HTMLElement;
     public title: HTMLElement;
     public content: HTMLElement;
-    public buttonContainer: HTMLElement;
+    //public buttonContainer: HTMLElement;
     private buttons: Map<string, HTMLElement>;
 
 
@@ -19,11 +19,14 @@ export class SurveyPage {
         this.content = document.createElement('p');
         this.content.className = 'survey-page-content';
 
-        this.buttonContainer = document.createElement('div');
-        this.buttonContainer.className = 'button-container';
+
         this.pageContainer.appendChild(this.title);
         this.pageContainer.appendChild(this.content);
-        this.pageContainer.appendChild(this.buttonContainer);
+
+        // buttons handled by the Survey Builder
+        // this.buttonContainer = document.createElement('div');
+        // this.buttonContainer.className = 'button-container';
+        //this.pageContainer.appendChild(this.buttonContainer);
 
         this.buttons = new Map();
     }
@@ -36,7 +39,7 @@ export class SurveyPage {
         this.content.innerHTML = html;
     }
 
-    addButton(id: string, text: string, onClick: () => void): void {
+    __addButton(id: string, text: string, onClick: () => void): void {
         const button = document.createElement('button');
         button.id = id;
         button.textContent = text;
