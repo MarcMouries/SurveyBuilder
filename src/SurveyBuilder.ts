@@ -2,14 +2,14 @@ import {
     MultiChoice, MultiLineTextQuestion, NPS, FollowUpQuestion, RankingQuestion,
     SelectQuestion, SingleLineTextQuestion, SingleChoice, StarRating, YesNoQuestion2
 } from './question-types/index.js';
-import type { IQuestion } from './IQuestion.ts';
-import type { IQuestionComponent } from "./component/IQuestionComponent.ts";
-import type { IQuestionResponse } from './question-types/IQuestionResponse.ts';
-import { SurveyModel } from './SurveyModel.ts';
-import { EventEmitter } from './EventEmitter.ts'
+import type { IQuestion } from './IQuestion';
+import type { IQuestionComponent } from "./component/IQuestionComponent";
+import type { IQuestionResponse } from './question-types/IQuestionResponse';
+import { SurveyModel } from './SurveyModel';
+import { EventEmitter } from './EventEmitter'
 import { TITLE_UPDATED, ANSWER_SELECTED } from './EventTypes';
 import { SurveyPage } from "./SurveyPage";
-import { SurveyPageFactory } from "./SurveyPageFactory.ts"
+import { SurveyPageFactory } from "./SurveyPageFactory"
 
 class SurveyBuilder {
     private VERSION: String = "2024.05.17.1";
@@ -81,10 +81,11 @@ class SurveyBuilder {
         this.buttonsContainer.role = 'navigation';
         this.surveyContainer.appendChild(this.buttonsContainer);
 
-        this.buttons.set('start', this.createButton('Start Survey', 'survey-button', () => this.startSurvey(), 'block'));
-        this.buttons.set('prev', this.createButton('Previous', 'survey-button', () => this.showPreviousQuestion(), 'none'));
-        this.buttons.set('next', this.createButton('Next', 'survey-button', () => this.showNextQuestion(), 'none'));
-        this.buttons.set('complete', this.createButton('Complete', 'survey-button', () => this.finishSurvey(), 'none'));
+        this.buttons.set('start', this.createButton('Start Survey', 'survey-button -primary', () => this.startSurvey(), 'block'));
+        this.buttons.set('prev', this.createButton('Previous', 'survey-button -secondary', () => this.showPreviousQuestion(), 'none'));
+        this.buttons.set('next', this.createButton('Next', 'survey-button -primary', () => this.showNextQuestion(), 'none'));
+        this.buttons.set('complete', this.createButton('Complete', 'survey-button -primary', () => this.finishSurvey(), 'none'));
+
     }
 
     private setUpSurveyModel(config: any): boolean {

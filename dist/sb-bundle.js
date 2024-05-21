@@ -2003,7 +2003,6 @@ class SurveyPage {
   pageContainer;
   title;
   content;
-  buttonContainer;
   buttons;
   constructor(pageId) {
     this.pageContainer = document.createElement("div");
@@ -2137,10 +2136,10 @@ class SurveyBuilder {
     this.buttonsContainer.className = "survey-nav";
     this.buttonsContainer.role = "navigation";
     this.surveyContainer.appendChild(this.buttonsContainer);
-    this.buttons.set("start", this.createButton("Start Survey", "survey-button", () => this.startSurvey(), "block"));
-    this.buttons.set("prev", this.createButton("Previous", "survey-button", () => this.showPreviousQuestion(), "none"));
-    this.buttons.set("next", this.createButton("Next", "survey-button", () => this.showNextQuestion(), "none"));
-    this.buttons.set("complete", this.createButton("Complete", "survey-button", () => this.finishSurvey(), "none"));
+    this.buttons.set("start", this.createButton("Start Survey", "survey-button -primary", () => this.startSurvey(), "block"));
+    this.buttons.set("prev", this.createButton("Previous", "survey-button -secondary", () => this.showPreviousQuestion(), "none"));
+    this.buttons.set("next", this.createButton("Next", "survey-button -primary", () => this.showNextQuestion(), "none"));
+    this.buttons.set("complete", this.createButton("Complete", "survey-button -primary", () => this.finishSurvey(), "none"));
   }
   setUpSurveyModel(config) {
     try {
