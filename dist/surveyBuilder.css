@@ -16,8 +16,29 @@
     --custom-control-border-radius: 5px;
     --custom-control-selected-size: 20px;
     --custom-control-left-position: 5px;
-    --custom-control-padding-right: 40px
+    --custom-control-padding-right: 40px;
+
+    --now-button--primary--background-color: 0, 128, 163;
+    --now-button--primary--color: 255, 255, 255;
+    --now-button--secondary--color: 0, 128, 163;
+
+    --primary-color: #007bff;
+    --primary-button-hover-bg-color: #0056b3;
+    --secondary-color: #6c757d;
+    --secondary-button-hover-bg-color: #5a6268;
+
+
 }
+
+/*.now-button.-primary {*/
+.survey-button {
+    background-color: RGB(var(--now-button--primary--background-color, var(--now-color--primary-1, 30, 133, 109)));
+    border-color: RGB(var(--now-button--primary--border-color, var(--now-color--primary-3, 15, 67, 55)));
+    border-radius: var(--now-button--primary--border-radius, var(--now-button--border-radius, var(--now-actionable--border-radius, 0)));
+    border-width: var(--now-button--primary--border-width, var(--now-button--border-width, var(--now-actionable--border-width, 1px)));
+    color: RGB(var(--now-button--primary--color, var(--now-color--neutral-0, 255, 255, 255)));
+}
+
 
 /* Reset and Box Sizing */
 *,
@@ -36,7 +57,9 @@ body {
     width: 100%;
     font-family: 'Open Sans', sans-serif !important;
     font-size: 16px;
-    background-color: #f4f4f4;
+    _background-color: #f4f4f4;
+    background: linear-gradient(119.36deg, #eceef5 0%, #e3e5fb 100%);
+
     overflow: auto;
     margin: 0;
     display: flex;
@@ -100,7 +123,6 @@ body {
 
 .survey-button {
     padding: 10px 20px;
-    background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 4px;
@@ -108,8 +130,20 @@ body {
     font-size: 1em;
 }
 
-.survey-button:hover {
-    background-color: var(--button-hover-bg-color);
+.survey-button.-primary {
+    background-color: var(--primary-color);
+}
+
+.survey-button.-primary:hover {
+    background-color: var(--primary-button-hover-bg-color);
+}
+
+.survey-button.-secondary {
+    background-color: var(--secondary-color);
+}
+
+.survey-button.-secondary:hover {
+    background-color: var(--secondary-button-hover-bg-color);
 }
 
 .question {
@@ -526,7 +560,7 @@ textarea {
 .survey-nav {
     background-color: #f7f7f7;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     padding: 10px;
     gap: 10px;
 }

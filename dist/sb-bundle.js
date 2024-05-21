@@ -255,11 +255,13 @@ class NpsRating extends QuestionComponent {
     super(question, index);
     const component = document.createElement("nps-component");
     this.questionDiv.appendChild(component);
-    component.addEventListener("SelectionChanged", (event) => {
+    component.addEventListener("optionSelected", (event) => {
       const customEvent = event;
+      const selectedOption = customEvent.detail.option;
+      console.log(`Component ${question.type}: optionSelected: `, selectedOption);
       const response = {
         questionName: question.name,
-        response: parseInt(customEvent.detail.value.toString())
+        response: parseFloat(selectedOption)
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
@@ -573,16 +575,16 @@ class NpsComponent extends HTMLElement {
     const buttons = this.shadowRoot.querySelectorAll("button");
     buttons.forEach((button) => {
       button.addEventListener("click", () => {
-        this.onSelection(button);
+        this.onSelectOption(button);
       });
     });
   }
-  onSelection(selectedButton) {
+  onSelectOption(selectedButton) {
     this.selectedButton?.classList.remove("active");
     this.selectedButton = selectedButton;
     this.selectedButton.classList.add("active");
-    const event = new CustomEvent("SelectionChanged", {
-      detail: { value: this.selectedButton.textContent }
+    const event = new CustomEvent("optionSelected", {
+      detail: { option: this.selectedButton.textContent }
     });
     this.dispatchEvent(event);
   }
@@ -1758,6 +1760,18 @@ class Question {
 var QUESTION_REFERENCE_REGEX = /{{\s*(.+?)\s*}}/g;
 
 class SurveyModel {
+  static ALLOWED_QUESTION_TYPES = [
+    "followup",
+    "multi-choice",
+    "multi-line-text",
+    "nps",
+    "ranking",
+    "select",
+    "single-choice",
+    "single-line-text",
+    "star-rating",
+    "yes-no"
+  ];
   started = false;
   completed = false;
   surveyTitle;
@@ -1773,7 +1787,6 @@ class SurveyModel {
   titleDependencies = new Map;
   visibilityDependencies = new Map;
   constructor(config) {
-    console.log("SurveyModel: building for config = ", config);
     this.validateSurveySetup(config);
     this.surveyTitle = config.surveyTitle;
     this.surveyDescription = config.surveyDescription;
@@ -1938,39 +1951,37 @@ class SurveyModel {
       throw new Error("Invalid or missing surveyDescription");
     if (!Array.isArray(config.questions))
       throw new Error("Invalid or missing questions array");
-    const allowedTypes = [
-      "followup",
-      "multi-choice",
-      "multi-line-text",
-      "nps",
-      "ranking",
-      "select",
-      "single-choice",
-      "single-line-text",
-      "star-rating",
-      "yes-no"
-    ];
+    const questionNames = new Map;
     config.questions.forEach((question, index) => {
       if (typeof question !== "object")
         throw new Error(`Question at index ${index} is not an object`);
       if (typeof question.name !== "string" || question.name.trim() === "") {
         throw new Error(`Question at index ${index} is missing a valid name`);
       }
+      if (questionNames.has(question.name)) {
+        const firstIndex = questionNames.get(question.name);
+        throw new Error(`Question #${index + 1} has the same name "${question.name}" as question #${firstIndex + 1}. Please ensure all question names are unique.`);
+      }
+      questionNames.set(question.name, index);
       if (typeof question.title !== "string" || question.title.trim() === "") {
         throw new Error(`Question at index ${index} is missing a valid title`);
       }
-      if (!allowedTypes.includes(question.type)) {
-        const allowedTypesString = allowedTypes.join(", ");
+      if (!SurveyModel.ALLOWED_QUESTION_TYPES.includes(question.type)) {
+        const allowedTypesString = SurveyModel.ALLOWED_QUESTION_TYPES.join(", ");
         throw new Error(`Question type "${question.type}" at index ${index} is not allowed. Allowed types are: ${allowedTypesString}`);
       }
-      if ("isRequired" in question && typeof question.isRequired !== "boolean")
+      if ("isRequired" in question && typeof question.isRequired !== "boolean") {
         throw new Error(`"isRequired" must be boolean at index ${index}`);
-      if (question.options && !Array.isArray(question.options))
+      }
+      if (question.options && !Array.isArray(question.options)) {
         throw new Error(`"options" must be an array at index ${index}`);
-      if (question.items && !Array.isArray(question.items))
+      }
+      if (question.items && !Array.isArray(question.items)) {
         throw new Error(`"items" must be an array at index ${index}`);
-      if (question.options_source && typeof question.options_source !== "string")
+      }
+      if (question.options_source && typeof question.options_source !== "string") {
         throw new Error(`"options_source" must be a string URL at index ${index}`);
+      }
     });
   }
   getStateDetails() {
@@ -2002,11 +2013,8 @@ class SurveyPage {
     this.title.className = "survey-page-title";
     this.content = document.createElement("p");
     this.content.className = "survey-page-content";
-    this.buttonContainer = document.createElement("div");
-    this.buttonContainer.className = "button-container";
     this.pageContainer.appendChild(this.title);
     this.pageContainer.appendChild(this.content);
-    this.pageContainer.appendChild(this.buttonContainer);
     this.buttons = new Map;
   }
   setTitle(text) {
@@ -2015,7 +2023,7 @@ class SurveyPage {
   setContent(html) {
     this.content.innerHTML = html;
   }
-  addButton(id, text, onClick) {
+  __addButton(id, text, onClick) {
     const button = document.createElement("button");
     button.id = id;
     button.textContent = text;
@@ -2056,17 +2064,17 @@ class SurveyPageFactory {
     landingPage.setContent(description);
     return landingPage;
   }
-  static createErrorPage(errorType) {
-    const errorIcon = errorType === "empty" ? "\u2757" : "\u26A0\uFE0F";
-    const errorMessage = errorType === "empty" ? "The survey configuration is missing. <br>Please ensure it is provided." : "The survey configuration is invalid. <br>Please check the format and try again.";
+  static createErrorPage(mainMessage, detailedMessage) {
+    const errorIcon = "\u26A0\uFE0F";
     let errorPage = new SurveyPage("error-page");
-    errorPage.setTitle("error page title");
+    errorPage.setTitle("Error Page");
     errorPage.setContent(`
         <div id="error-message" class="error-container">
             <div class="error-icon">${errorIcon}</div>
             <div class="text error-title">Error!</div>
             <div class="text">Oh no, something went wrong.</div>
-            <div class="text">${errorMessage}</div>
+            <div class="text">${mainMessage}</div>
+            <div class="text">${detailedMessage}</div>
             <button onclick="location.reload()">
                 <div class="button-label">Try Again</div>
             </button>
@@ -2089,7 +2097,9 @@ class SurveyPageFactory {
 
 // src/SurveyBuilder.ts
 class SurveyBuilder {
-  VERSION = "2024.05.10.1";
+  VERSION = "2024.05.17.1";
+  ERROR_CONFIG_MISSING = "The survey configuration is missing.";
+  ERROR_CONFIG_INVALID = "The survey configuration is invalid.";
   surveyModel;
   surveyContainer;
   landingPage;
@@ -2135,7 +2145,7 @@ class SurveyBuilder {
   setUpSurveyModel(config) {
     try {
       if (typeof config === "string" && config.trim() === "") {
-        this.displayErrorMessage("empty");
+        this.displayErrorPage(this.ERROR_CONFIG_MISSING, "");
         console.error("SurveyModel config is empty!");
         return false;
       } else if (typeof config === "string") {
@@ -2146,13 +2156,16 @@ class SurveyBuilder {
       return true;
     } catch (error) {
       console.log(error);
-      const errorType = error.message.includes("JSON") ? "invalid" : "empty";
-      this.displayErrorMessage(errorType);
+      if (error instanceof Error) {
+        this.displayErrorPage(this.ERROR_CONFIG_INVALID, error.message);
+      } else {
+        this.displayErrorPage(this.ERROR_CONFIG_INVALID, "An unexpected error occurred");
+      }
       return false;
     }
   }
-  displayErrorMessage(errorType) {
-    const errorPage = SurveyPageFactory.createErrorPage(errorType);
+  displayErrorPage(message_one, message_two) {
+    const errorPage = SurveyPageFactory.createErrorPage(message_one, message_two);
     this.surveyContainer.appendChild(errorPage.pageContainer);
   }
   displayThankYouPage() {
