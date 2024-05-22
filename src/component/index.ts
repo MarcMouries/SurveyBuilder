@@ -1,4 +1,4 @@
-export type { IQuestionComponent } from './IQuestionComponent.ts';
-export { NpsComponent } from './NpsComponent.ts';
-export { SearchInput } from './SearchInput.ts';
-export { StarRatingComponent } from './StarRatingComponent.ts';
+export type { IQuestionComponent } from './IQuestionComponent';
+export { NpsComponent } from './NpsComponent';
+export { SearchInput } from './SearchInput';
+export { StarRatingComponent } from './StarRatingComponent';
