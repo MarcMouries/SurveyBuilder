@@ -560,7 +560,7 @@ textarea {
 .survey-nav {
     background-color: #f7f7f7;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     padding: 10px;
     gap: 10px;
 }
