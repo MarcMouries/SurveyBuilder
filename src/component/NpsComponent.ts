@@ -111,18 +111,18 @@ export class NpsComponent extends HTMLElement {
         const buttons = this.shadowRoot!.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
-                this.onSelectOption(button);
+                this.onSelection(button);
             });
         });
     }
 
 
-    onSelectOption(selectedButton: HTMLButtonElement) {
+    onSelection(selectedButton: HTMLButtonElement) {
         this.selectedButton?.classList.remove('active');
         this.selectedButton = selectedButton;
         this.selectedButton.classList.add('active');
-        const event = new CustomEvent('optionSelected', {
-            detail: { option: this.selectedButton.textContent }
+        const event = new CustomEvent('SelectionChanged', {
+            detail: { value: this.selectedButton.textContent }
         });
         this.dispatchEvent(event);
     }
