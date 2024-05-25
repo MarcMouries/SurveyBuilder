@@ -14,14 +14,12 @@ export class NpsRating  extends QuestionComponent {
         const component = document.createElement('nps-component') as NpsComponent;
         this.questionDiv.appendChild(component);
 
-        component.addEventListener('optionSelected', (event) => {
-            const customEvent = event as CustomEvent<{ option: string }>;
-            const selectedOption = customEvent.detail.option;
-            console.log(`Component ${question.type}: optionSelected: `, selectedOption);
+        component.addEventListener('SelectionChanged', (event) => {
+            const customEvent = event as CustomEvent<{ value: number }>;
 
             const response: IQuestionResponse = {
                 questionName: question.name,
-                response: parseFloat(selectedOption)
+                response: parseInt(customEvent.detail.value.toString())
             };
             this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
         });
