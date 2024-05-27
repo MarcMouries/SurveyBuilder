@@ -50,7 +50,14 @@ export class StarRatingComponent extends HTMLElement {
                 transition: color 0.2s;
             }
             .star-container > button.active,
-            .star-container > button:hover {
+            .star-container > button:hover ~ button {
+                color: #ccc;
+            }
+            .star-container > button:hover,
+            .star-container > button:hover ~ button.active {
+                color: gold;
+            }
+            .star-container > button.active {
                 color: gold;
             }
         `;
@@ -77,6 +84,12 @@ export class StarRatingComponent extends HTMLElement {
             button.addEventListener('click', () => {
                 this.onSelectStar(button);
             });
+            button.addEventListener('mouseover', () => {
+                this.updateStars(parseInt(button.dataset.value!));
+            });
+            button.addEventListener('mouseout', () => {
+                this.updateStars();
+            });
         });
     }
 
@@ -92,11 +105,11 @@ export class StarRatingComponent extends HTMLElement {
         this.dispatchEvent(event);
     }
 
-    updateStars() {
+    updateStars(hoverValue: number = this.rating) {
         const buttons = this.shadowRoot!.querySelectorAll('button');
         buttons.forEach(button => {
             const value = parseInt(button.dataset.value!);
-            if (value <= this.rating) {
+            if (value <= hoverValue) {
                 button.classList.add('active');
             } else {
                 button.classList.remove('active');
