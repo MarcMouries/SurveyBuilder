@@ -178,13 +178,7 @@ body {
     background-color: #f7f7f7;
 }
 
-.single-choice-question .item label,
-.multi-choice-question .item label {
-    position: relative;
-    cursor: pointer;
-    display: inline-block;
-    padding-left: var(--custom-control-padding-right);
-}
+
 
 /* Yes No Question */
 .yes-no-question .items {
@@ -213,9 +207,7 @@ body {
     background-color: #dc8686;
 }
 
-.multi-choice-question .item {
-    position: relative;
-}
+
 
 
 
@@ -248,23 +240,32 @@ body {
     /* Adds a subtle glow */
 }
 
-.multi-choice-question .item input[type="checkbox"]:checked+label+.other-specify-input {
-    display: block;
-    /* Show the input field when the checkbox is checked */
-}
 
-
-
-
-/** One Choice */
-.single-choice-question .items {
-    flex-direction: column;
-}
-
-.single-choice-question .item {
+/** Choices Styles */
+.single-choice-question .item,
+.multi-choice-question .item {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
+    transition: border-color 0.3s;
+}
+
+.single-choice-question .item:hover,
+.multi-choice-question .item:hover {
+    border-color: var(--primary-color);
+}
+
+.single-choice-question .items, 
+.multi-choice-question .items {
+    flex-direction: column;
+}
+
+.single-choice-question .item label,
+.multi-choice-question .item label {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    padding-left: var(--custom-control-padding-right);
 }
 
 /* Hide the actual radio and checkbox */
@@ -301,6 +302,29 @@ body {
     background-color: var(--primary-color);
 }
 
+/* Additional styles for label when control is checked */
+.single-choice-question .item input[type="radio"]:checked+label,
+.multi-choice-question .item input[type="checkbox"]:checked+label {
+    font-weight: bold;
+}
+
+.single-choice-question .item label:hover,
+.multi-choice-question .item label:hover {
+    background-color: #f0f0f0b0;
+    color: #333;
+    cursor: pointer;
+}
+
+/* transition for smooth color change */
+.single-choice-question .item {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.multi-choice-question .item input[type="checkbox"]:checked+label+.other-specify-input {
+    display: block;
+    /* Show the input field when the checkbox is checked */
+}
+
 
 /* Custom Checkbox Appearance */
 .multi-choice-question .item label:before {
@@ -328,28 +352,6 @@ body {
     left: calc(var(--custom-control-left-position) + (var(--custom-control-size) - var(--custom-control-selected-size)) / 2);
     top: calc(50% - var(--custom-control-selected-size) / 2);
     background-color: var(--primary-color);
-}
-
-
-/* Additional styles for label when control is checked */
-.single-choice-question .item input[type="radio"]:checked+label,
-.multi-choice-question .item input[type="checkbox"]:checked+label {
-    font-weight: bold;
-}
-
-
-
-
-/** Multi Choice */
-.multi-choice-question .items {
-    display: flex;
-    flex-direction: column;
-}
-
-.multi-choice-question .item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
 }
 
 
@@ -543,17 +545,7 @@ textarea {
     font-style: italic;
 }
 
-.single-choice-question .item label:hover,
-.multi-choice-question .item label:hover {
-    background-color: #f0f0f0b0;
-    color: #333;
-    cursor: pointer;
-}
 
-/* transition for smooth color change */
-.single-choice-question .item {
-    transition: background-color 0.3s, color 0.3s;
-}
 
 /* Complete Button Container and Button Styles */
 
