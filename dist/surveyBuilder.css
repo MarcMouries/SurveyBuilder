@@ -248,10 +248,12 @@ body {
     align-items: center;
     margin-bottom: 8px;
     transition: border-color 0.3s;
+    border: 2px solid;
+    border-color: var(--border-color);
 }
 
 .single-choice-question .item:hover,
-.multi-choice-question .item:hover {
+.multi-choice-question  .item:hover {
     border-color: var(--primary-color);
 }
 
