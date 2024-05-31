@@ -255,13 +255,11 @@ class NpsRating extends QuestionComponent {
     super(question, index);
     const component = document.createElement("nps-component");
     this.questionDiv.appendChild(component);
-    component.addEventListener("optionSelected", (event) => {
+    component.addEventListener("SelectionChanged", (event) => {
       const customEvent = event;
-      const selectedOption = customEvent.detail.option;
-      console.log(`Component ${question.type}: optionSelected: `, selectedOption);
       const response = {
         questionName: question.name,
-        response: parseFloat(selectedOption)
+        response: parseInt(customEvent.detail.value.toString())
       };
       this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     });
@@ -575,16 +573,16 @@ class NpsComponent extends HTMLElement {
     const buttons = this.shadowRoot.querySelectorAll("button");
     buttons.forEach((button) => {
       button.addEventListener("click", () => {
-        this.onSelectOption(button);
+        this.onSelection(button);
       });
     });
   }
-  onSelectOption(selectedButton) {
+  onSelection(selectedButton) {
     this.selectedButton?.classList.remove("active");
     this.selectedButton = selectedButton;
     this.selectedButton.classList.add("active");
-    const event = new CustomEvent("optionSelected", {
-      detail: { option: this.selectedButton.textContent }
+    const event = new CustomEvent("SelectionChanged", {
+      detail: { value: this.selectedButton.textContent }
     });
     this.dispatchEvent(event);
   }
@@ -903,7 +901,14 @@ class StarRatingComponent extends HTMLElement {
                 transition: color 0.2s;
             }
             .star-container > button.active,
-            .star-container > button:hover {
+            .star-container > button:hover ~ button {
+                color: #ccc;
+            }
+            .star-container > button:hover,
+            .star-container > button:hover ~ button.active {
+                color: gold;
+            }
+            .star-container > button.active {
                 color: gold;
             }
         `;
@@ -927,6 +932,12 @@ class StarRatingComponent extends HTMLElement {
       button.addEventListener("click", () => {
         this.onSelectStar(button);
       });
+      button.addEventListener("mouseover", () => {
+        this.updateStars(parseInt(button.dataset.value));
+      });
+      button.addEventListener("mouseout", () => {
+        this.updateStars();
+      });
     });
   }
   onSelectStar(selectedStar) {
@@ -940,11 +951,11 @@ class StarRatingComponent extends HTMLElement {
     });
     this.dispatchEvent(event);
   }
-  updateStars() {
+  updateStars(hoverValue = this.rating) {
     const buttons = this.shadowRoot.querySelectorAll("button");
     buttons.forEach((button) => {
       const value = parseInt(button.dataset.value);
-      if (value <= this.rating) {
+      if (value <= hoverValue) {
         button.classList.add("active");
       } else {
         button.classList.remove("active");
