@@ -1,7 +1,7 @@
-import { AbstractChoice } from "./AbstractChoice.ts";
-import { AnswerSelectedEvent } from "./AnswerSelectedEvent.ts";
-import type { IQuestion } from "../IQuestion.ts";
-import type { IQuestionResponse } from "./IQuestionResponse.ts";
+import { AbstractChoice } from "./AbstractChoice";
+import { AnswerSelectedEvent } from "./AnswerSelectedEvent";
+import type { IQuestion } from "../IQuestion";
+import type { IQuestionResponse } from "./IQuestionResponse";
 
 /**
  * Allows users to select multiple options from a list of checkboxes. 
@@ -9,6 +9,7 @@ import type { IQuestionResponse } from "./IQuestionResponse.ts";
  * Example Question: "Which of the following fruits do you like? (Select all that apply)"
  * [] Apples     [] Bananas
  * [] Cherries   [] Dates
+ * [] Other
  */
 export class MultiChoice extends AbstractChoice {
     constructor(question: IQuestion, index: number) {
@@ -32,7 +33,6 @@ export class MultiChoice extends AbstractChoice {
 
         // Add change event listener for collecting responses
         choiceContainer.addEventListener('change', this.handleResponseChange.bind(this));
-
     }
 
     private appendChoice(item: string, index: number, container: HTMLElement) {
@@ -70,16 +70,15 @@ export class MultiChoice extends AbstractChoice {
         // Toggle visibility based on checkbox
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
-                otherInput.style.display = 'block'; 
-                label.style.color = 'transparent'; 
+                otherInput.style.display = 'block';
+                label.style.color = 'transparent';
                 otherInput.focus();
             } else {
                 otherInput.style.display = 'none';
-                label.style.color = ''; 
+                label.style.color = '';
                 otherInput.value = '';
             }
         });
-        
 
         otherWrapperDiv.appendChild(checkbox);
         otherWrapperDiv.appendChild(label);
@@ -87,7 +86,6 @@ export class MultiChoice extends AbstractChoice {
         container.appendChild(otherWrapperDiv);
     }
 
-     
     handleResponseChange() {
         const selectedOptions = this.items.filter((_, i) => {
             const checkbox = document.getElementById(`${this.question.name}-${i}`) as HTMLInputElement;
@@ -95,9 +93,10 @@ export class MultiChoice extends AbstractChoice {
         }).map((item, i) => ({ value: item }));
 
         // Special handling for "Other" input
+        const otherCheckbox = document.getElementById(`${this.question.name}-other`) as HTMLInputElement;
         const otherInput = document.getElementById(`${this.question.name}-other-specify`) as HTMLInputElement;
-        if (otherInput && otherInput.style.display !== 'none') {
-            selectedOptions.push({ value: otherInput.value });
+        if (otherCheckbox && otherCheckbox.checked && otherInput.value.trim() !== '') {
+            selectedOptions.push({ value: otherInput.value.trim() });
         }
 
         const response: IQuestionResponse = {
@@ -107,7 +106,5 @@ export class MultiChoice extends AbstractChoice {
 
         this.questionDiv.dispatchEvent(new AnswerSelectedEvent(response));
     }
-
-
 
 }
