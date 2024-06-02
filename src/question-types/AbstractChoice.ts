@@ -1,6 +1,5 @@
-import type { IQuestion } from "../IQuestion.ts";
-
-import { QuestionComponent } from "./QuestionComponent.ts";
+import type { IQuestion } from "../IQuestion";
+import { QuestionComponent } from "./QuestionComponent";
 
 /**
  * An abstract base class for creating choice-based question elements. 

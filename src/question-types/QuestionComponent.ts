@@ -1,8 +1,8 @@
-import { createQuestionTitle } from './common.js';
-import type { IQuestion } from "../IQuestion.ts";
-import type { IQuestionComponent } from "../component/IQuestionComponent.ts";
-import type { IQuestionResponse } from "./IQuestionResponse.ts";
-import { EventEmitter} from '../EventEmitter.ts'
+import { createQuestionTitle } from './common';
+import type { IQuestion } from "../IQuestion";
+import type { IQuestionComponent } from "../component/IQuestionComponent";
+import type { IQuestionResponse } from "./IQuestionResponse";
+import { EventEmitter} from '../EventEmitter'
 import { ANSWER_SELECTED } from '../EventTypes';
 
 
