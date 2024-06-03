@@ -208,48 +208,15 @@ body {
 }
 
 
-
-
-
-.other-specify-input {
-    background-color: transparent;
-    box-shadow: none;
-    border: none;
-    border-radius: var(--custom-control-border-radius);
-    color: inherit;
-    display: none;
-    font-family: inherit;
-    font-size: 1.2em;
-    font-weight: lighter;
-    position: absolute;
-    left: var(--custom-control-left-position);
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    height: 100%;
-    margin-left: var(--custom-control-size);
-    padding: 8px;
-}
-
-.other-specify-input:active,
-.other-specify-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(97, 216, 78, 0.3);
-    /* Adds a subtle glow */
-}
-
-
 /** Choices Styles */
 .single-choice-question .item,
 .multi-choice-question .item {
-    display: flex;
     align-items: center;
-    margin-bottom: 8px;
-    transition: border-color 0.3s;
     border: 2px solid;
     border-color: var(--border-color);
+    display: flex;
+    margin-bottom: 8px;
+    position: relative;
 }
 
 .single-choice-question .item:hover,
@@ -310,12 +277,15 @@ body {
     font-weight: bold;
 }
 
+/*
 .single-choice-question .item label:hover,
 .multi-choice-question .item label:hover {
     background-color: #f0f0f0b0;
     color: #333;
     cursor: pointer;
 }
+*/
+
 
 /* transition for smooth color change */
 .single-choice-question .item {
@@ -356,6 +326,32 @@ body {
     background-color: var(--primary-color);
 }
 
+.other-specify-input {
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    border-radius: var(--custom-control-border-radius);
+    color: inherit;
+    display: none;
+    font-family: inherit;
+    font-size: 1.2em;
+    font-weight: lighter;
+    position: absolute;
+    left: var(--custom-control-left-position);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 100%;
+    margin-left: var(--custom-control-size);
+    padding: 8px;
+}
+
+.other-specify-input:active,
+.other-specify-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
 
 /** Follow up Question */
 .followup-question .input-group {
