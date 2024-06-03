@@ -238,9 +238,10 @@ class MultiChoice extends AbstractChoice {
       const checkbox = document.getElementById(`${this.question.name}-${i}`);
       return checkbox && checkbox.checked;
     }).map((item, i) => ({ value: item }));
+    const otherCheckbox = document.getElementById(`${this.question.name}-other`);
     const otherInput = document.getElementById(`${this.question.name}-other-specify`);
-    if (otherInput && otherInput.style.display !== "none") {
-      selectedOptions.push({ value: otherInput.value });
+    if (otherCheckbox && otherCheckbox.checked && otherInput.value.trim() !== "") {
+      selectedOptions.push({ value: otherInput.value.trim() });
     }
     const response = {
       questionName: this.question.name,
