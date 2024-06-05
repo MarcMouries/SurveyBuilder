@@ -1,4 +1,4 @@
-import type { IQuestionResponse } from "./IQuestionResponse.ts";
+import type { IQuestionResponse } from "./IQuestionResponse";
 
 
 export class AnswerSelectedEvent extends CustomEvent<IQuestionResponse> {
