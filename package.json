@@ -3,13 +3,13 @@
   "module": "src/SurveyBuilder.js",
   "type": "module",
   "scripts": {
-    "build" : "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js",
-    "dev"   : "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js --watch"
+    "build": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js",
+    "dev": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js --watch"
   },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.3.3"
   }
 }
