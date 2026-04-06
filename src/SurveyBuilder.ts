@@ -303,5 +303,5 @@ class SurveyBuilder {
     }
 }
 
-//export default SurveyBuilder;
+export default SurveyBuilder;
 window.SurveyBuilder = SurveyBuilder;

@@ -1,2 +1,2 @@
 // Re-exported from @surveybuilder/rule-engine for backwards compatibility.
-export { Interpreter } from '@surveybuilder/rule-engine';
+export { Parser } from '@surveybuilder/rule-engine';

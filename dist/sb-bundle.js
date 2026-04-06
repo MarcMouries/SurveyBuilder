@@ -2329,4 +2329,8 @@ class SurveyBuilder {
     this.completeCallback = callbackFunction;
   }
 }
+var SurveyBuilder_default = SurveyBuilder;
 window.SurveyBuilder = SurveyBuilder;
+export {
+  SurveyBuilder_default as default
+};

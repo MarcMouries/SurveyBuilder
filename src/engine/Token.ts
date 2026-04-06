@@ -1,21 +1,3 @@
-export const Token = {
-    ASSIGN: "ASSIGN",
-    BOOLEAN: "BOOLEAN",
-    DOT: "DOT",
-    EQUALS: "EQUALS",
-    NUMBER: "NUMBER",
-    STRING: "STRING",
-    IDENTIFIER: "IDENTIFIER",
-    OPERATOR: "OP",
-    NOT: "NOT",
-    NOT_EQUAL: "NOT_EQUAL",
-    AND: "AND",
-    OR: "OR",
-    LPAREN: "LPAREN",
-    RPAREN: "RPAREN",
-    CONTAINS: "CONTAINS",
-    IN: "IN",
-    COMMA: "COMMA",
-    LBRACKET: "LBRACKET",
-    RBRACKET: "RBRACKET",
-}; 
+// Re-exported from @surveybuilder/rule-engine for backwards compatibility.
+export { Token } from '@surveybuilder/rule-engine';
+export type { TokenType, TokenObj } from '@surveybuilder/rule-engine';

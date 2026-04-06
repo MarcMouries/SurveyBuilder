@@ -2,6 +2,7 @@
   "name": "surveybuilder",
   "module": "src/SurveyBuilder.js",
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
     "build": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js",
     "dev": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js --watch"
