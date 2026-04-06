@@ -1,6 +1,8 @@
 import { Parser } from './Parser';
 import { Interpreter } from './Interpreter';
 import { Environment } from './Environment';
+import { toEnvironment } from './utils';
+import type { Facts } from './utils';
 import { EvalError, RuleEngineError } from './errors';
 import type { ASTNode } from './ast/ASTNode';
 
@@ -60,9 +62,10 @@ export class ConstraintSolver {
     expression: string,
     targetVar: string,
     targetValue: number,
-    env: Environment,
+    facts: Facts = {},
     options: SolveOptions = {},
   ): SolveResult {
+    const env = toEnvironment(facts);
     const {
       min = -1e6,
       max = 1e6,

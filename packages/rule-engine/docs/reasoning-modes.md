@@ -62,6 +62,23 @@ The `ConstraintSolver` in this package uses bisection specifically because it is
 
 ## The Technical Explanation
 
+### `evaluate()` — One-Shot Expression Evaluation
+
+Before reaching for a full orchestrator, check whether you only need to evaluate a single expression. The top-level `evaluate()` function is the simplest entry point — no classes, no wiring:
+
+```ts
+import { evaluate } from "@surveybuilder/rule-engine";
+
+evaluate("age >= 18", { age: 25 });              // true
+evaluate("name == 'Alice'", { name: 'Alice' });  // true
+evaluate("x * 2 + 1", { x: 5 });                // 11
+evaluate("2 + 2");                               // 4  (no facts needed)
+```
+
+Use `evaluate()` when you have a single expression and a plain object of variables. Use the orchestrators (`RuleEngine`, `BackwardChainer`, `ConstraintSolver`) when you need multiple rules, proof tracking, or numeric solving.
+
+---
+
 ### The problem with one mode
 
 Most rule engines only offer forward chaining. That works well when you're reacting to events — a user submits a form, a sensor fires, a price changes. But two situations break it:
@@ -83,7 +100,7 @@ The three modes address these gaps directly.
 Each rule is an independent `IF condition THEN action` pair. The engine sorts rules by priority and evaluates each one in order. When a condition is true, the action fires. Rules are stateless — the engine doesn't remember what fired before.
 
 ```ts
-const engine = new RuleEngine<LayoutContext>(env);
+const engine = new RuleEngine<LayoutContext>();
 
 engine.addRule({
   name:      'stem-direction-correction',
@@ -164,12 +181,10 @@ chainer.addRule({
 });
 ```
 
-**`prove(goal, env)`** — ask whether a specific conclusion can be proved right now, and if not, what is still missing:
+**`prove(goal, facts)`** — ask whether a specific conclusion can be proved right now, and if not, what is still missing. Pass a plain object:
 
 ```ts
-const env = Environment.from({ has_shell: true, cold_blooded: true });
-
-chainer.prove('turtle', env);
+chainer.prove('turtle', { has_shell: true, cold_blooded: true });
 // {
 //   proved: false,
 //   candidates: [{
@@ -181,12 +196,10 @@ chainer.prove('turtle', env);
 // }
 ```
 
-**`bestMatch(env)`** — given current facts, which conclusion fits best? Useful when you don't know which goal to aim for:
+**`bestMatch(facts)`** — given current facts, which conclusion fits best? Useful when you don't know which goal to aim for:
 
 ```ts
-const env = Environment.from({ has_shell: true, cold_blooded: true, lays_eggs: false });
-
-chainer.bestMatch(env);
+chainer.bestMatch({ has_shell: true, cold_blooded: true, lays_eggs: false });
 // { conclusion: 'turtle', score: 0.67, satisfied: [...], missing: [...] }
 // (turtle scores 2/3; bird scores 0/3; so turtle wins)
 ```
@@ -201,8 +214,7 @@ chainer.addRule({ name: 'mammal-standard', conclusion: 'mammal',
 chainer.addRule({ name: 'mammal-platypus', conclusion: 'mammal',
   conditions: ['has_fur == true', 'warm_blooded == true', 'lays_eggs == true'] });
 
-const env = Environment.from({ has_fur: true, warm_blooded: true, lays_eggs: true });
-chainer.prove('mammal', env).proved;   // true — via mammal-platypus
+chainer.prove('mammal', { has_fur: true, warm_blooded: true, lays_eggs: true }).proved;   // true — via mammal-platypus
 ```
 
 **When to use backward chaining:**
@@ -228,14 +240,13 @@ The solver has no concept of rules. It takes an expression string, a target valu
 
 ```ts
 const solver = new ConstraintSolver();
-const env = Environment.from({ gap: 30 });
 
 // Find 'correction' such that gap + correction == 35
-solver.solve('gap + correction', 'correction', 35, env, { min: 0, max: 20 });
+solver.solve('gap + correction', 'correction', 35, { gap: 30 }, { min: 0, max: 20 });
 // { found: true, value: 5.0, iterations: 47 }
 
 // Non-linear — still works:
-solver.solve('x^2', 'x', 9, env, { min: 0, max: 10 });
+solver.solve('x^2', 'x', 9, {}, { min: 0, max: 10 });
 // { found: true, value: 3.0000..., iterations: 60 }
 ```
 
@@ -255,9 +266,11 @@ f(x) = expression(x) - target
 
 The key limitation: bisection finds exactly **one** root per call, and only if you've provided a range that contains it. `x^2 == 9` has roots at both `+3` and `-3`. To find `-3`, search `[-10, 0]`; to find `+3`, search `[0, 10]`.
 
-**Environment isolation** — the solver temporarily sets `targetVar` to its search value during iteration, then restores the original value when done:
+**Environment isolation** — the solver temporarily sets `targetVar` to its search value during iteration, then restores the original value when done. To inspect the environment afterwards, pass an `Environment` object directly:
 
 ```ts
+import { Environment } from "@surveybuilder/rule-engine";
+
 const env = Environment.from({ gap: 30, correction: 99 });
 solver.solve('gap + correction', 'correction', 35, env, { min: 0, max: 20 });
 env.get('correction');   // still 99 — restored after solving
@@ -341,13 +354,12 @@ The core pattern is: set up facts in the environment, call `evaluate()`, assert 
 
 ```ts
 import { test, expect, describe } from "bun:test";
-import { RuleEngine, Environment } from "@surveybuilder/rule-engine";
+import { RuleEngine } from "@surveybuilder/rule-engine";
 
 // ── 1. A rule fires when its condition is true ────────────────────────────────
 
 test("rule fires when condition is true", () => {
-  const env = Environment.from({ temperature: 105 });
-  const engine = new RuleEngine<{ alerts: string[] }>(env);
+  const engine = new RuleEngine<{ alerts: string[] }>({ temperature: 105 });
 
   engine.addRule({
     name:      'high-temp-alert',
@@ -366,8 +378,7 @@ test("rule fires when condition is true", () => {
 // ── 2. A rule does not fire when condition is false ───────────────────────────
 
 test("rule does not fire when condition is false", () => {
-  const env = Environment.from({ temperature: 98 });
-  const engine = new RuleEngine<{ alerts: string[] }>(env);
+  const engine = new RuleEngine<{ alerts: string[] }>({ temperature: 98 });
 
   engine.addRule({
     name:      'high-temp-alert',
@@ -385,8 +396,7 @@ test("rule does not fire when condition is false", () => {
 // ── 3. Priority order ─────────────────────────────────────────────────────────
 
 test("rules fire in descending priority order", () => {
-  const env = Environment.from({ active: true });
-  const engine = new RuleEngine<{ log: string[] }>(env);
+  const engine = new RuleEngine<{ log: string[] }>({ active: true });
   const log: string[] = [];
 
   engine.addRule({ name: 'low',  priority: 1,  condition: 'active == true', action: () => log.push('low')  });
@@ -401,8 +411,7 @@ test("rules fire in descending priority order", () => {
 // ── 4. A rule's action can update the environment for later rules ─────────────
 
 test("earlier rule can set a value used by a later rule", () => {
-  const env = Environment.from({ x: 0 });
-  const engine = new RuleEngine<{}>(env);
+  const engine = new RuleEngine<{}>({ x: 0 });
   const log: string[] = [];
 
   engine.addRule({
@@ -426,8 +435,7 @@ test("earlier rule can set a value used by a later rule", () => {
 // ── 5. evaluateWithTrace() captures all outcomes ──────────────────────────────
 
 test("evaluateWithTrace reports fired and not-fired rules", () => {
-  const env = Environment.from({ score: 85 });
-  const engine = new RuleEngine(env);
+  const engine = new RuleEngine({ score: 85 });
 
   engine.addRule({ name: 'pass',         priority: 10, condition: 'score >= 60',  action: () => {} });
   engine.addRule({ name: 'distinction',  priority: 5,  condition: 'score >= 90',  action: () => {} });
@@ -444,8 +452,7 @@ test("evaluateWithTrace reports fired and not-fired rules", () => {
 // ── 6. evaluateWithTrace() does not crash on undefined variables ──────────────
 
 test("evaluateWithTrace catches errors per-rule without crashing", () => {
-  const env = Environment.from({});       // 'score' not defined
-  const engine = new RuleEngine(env);
+  const engine = new RuleEngine({});       // 'score' not defined
 
   engine.addRule({ name: 'check', priority: 0, condition: 'score > 50', action: () => {} });
 
@@ -477,7 +484,7 @@ The core pattern is: define rules, give the chainer partial facts, assert on `pr
 
 ```ts
 import { test, expect, describe } from "bun:test";
-import { BackwardChainer, Environment } from "@surveybuilder/rule-engine";
+import { BackwardChainer } from "@surveybuilder/rule-engine";
 
 function makeChainer() {
   const chainer = new BackwardChainer();
@@ -508,13 +515,11 @@ function makeChainer() {
 
 test("proves 'premium' when all conditions are met", () => {
   const chainer = makeChainer();
-  const env = Environment.from({
+  const result = chainer.prove('premium', {
     account_age_days: 400,
     total_spend:      750,
     no_chargebacks:   true,
   });
-
-  const result = chainer.prove('premium', env);
 
   expect(result.proved).toBe(true);
   expect(result.rule).toBe('premium-eligible');
@@ -525,13 +530,11 @@ test("proves 'premium' when all conditions are met", () => {
 
 test("not proved when one condition is missing, reports which one", () => {
   const chainer = makeChainer();
-  const env = Environment.from({
+  const result = chainer.prove('premium', {
     account_age_days: 400,
     total_spend:      750,
     // no_chargebacks not provided
   });
-
-  const result = chainer.prove('premium', env);
 
   expect(result.proved).toBe(false);
   expect(result.candidates[0].missing).toEqual(['no_chargebacks == true']);
@@ -543,13 +546,11 @@ test("not proved when one condition is missing, reports which one", () => {
 
 test("a known-false condition appears in missing, not satisfied", () => {
   const chainer = makeChainer();
-  const env = Environment.from({
+  const result = chainer.prove('premium', {
     account_age_days: 400,
     total_spend:      750,
     no_chargebacks:   false,    // known, but wrong
   });
-
-  const result = chainer.prove('premium', env);
 
   expect(result.proved).toBe(false);
   expect(result.candidates[0].missing).toContain('no_chargebacks == true');
@@ -560,9 +561,7 @@ test("a known-false condition appears in missing, not satisfied", () => {
 
 test("score is 2/3 when 2 of 3 conditions are satisfied", () => {
   const chainer = makeChainer();
-  const env = Environment.from({ account_age_days: 400, total_spend: 750 }); // 2 of 3
-
-  const result = chainer.prove('premium', env);
+  const result = chainer.prove('premium', { account_age_days: 400, total_spend: 750 }); // 2 of 3
 
   expect(result.candidates[0].score).toBeCloseTo(2 / 3);
 });
@@ -571,13 +570,11 @@ test("score is 2/3 when 2 of 3 conditions are satisfied", () => {
 
 test("bestMatch returns 'basic' when only basic conditions are met", () => {
   const chainer = makeChainer();
-  const env = Environment.from({
+  const match = chainer.bestMatch({
     account_age_days: 60,
     email_verified:   true,
     // premium conditions not met
   });
-
-  const match = chainer.bestMatch(env);
 
   expect(match!.conclusion).toBe('basic');
   expect(match!.score).toBe(1);
@@ -585,9 +582,7 @@ test("bestMatch returns 'basic' when only basic conditions are met", () => {
 
 test("bestMatch returns best partial match when nothing is fully proved", () => {
   const chainer = makeChainer();
-  const env = Environment.from({ account_age_days: 400 }); // matches 1/3 premium, 1/2 basic
-
-  const match = chainer.bestMatch(env);
+  const match = chainer.bestMatch({ account_age_days: 400 }); // matches 1/3 premium, 1/2 basic
 
   // basic scores 1/2 = 0.5; premium scores 1/3 ≈ 0.33
   expect(match!.conclusion).toBe('basic');
@@ -611,8 +606,7 @@ test("conclusion proved via second rule when first rule fails", () => {
   });
 
   // Doesn't meet standard requirements but has a guarantor
-  const env = Environment.from({ credit_score: 620, income: 30000, has_guarantor: true });
-  const result = chainer.prove('approved', env);
+  const result = chainer.prove('approved', { credit_score: 620, income: 30000, has_guarantor: true });
 
   expect(result.proved).toBe(true);
   expect(result.rule).toBe('with-guarantor');
@@ -648,7 +642,7 @@ const solver = new ConstraintSolver();
 // ── 1. Linear equation ────────────────────────────────────────────────────────
 
 test("solves 2*x + 1 == 11  →  x = 5", () => {
-  const result = solver.solve('2*x + 1', 'x', 11, Environment.from({}), { min: 0, max: 20 });
+  const result = solver.solve('2*x + 1', 'x', 11, {}, { min: 0, max: 20 });
 
   expect(result.found).toBe(true);
   expect(result.value).toBeCloseTo(5, 6);    // correct to 6 decimal places
@@ -657,14 +651,14 @@ test("solves 2*x + 1 == 11  →  x = 5", () => {
 // ── 2. Non-linear equation ────────────────────────────────────────────────────
 
 test("solves x^2 == 9  →  x ≈ 3 (searching positive range)", () => {
-  const result = solver.solve('x^2', 'x', 9, Environment.from({}), { min: 0, max: 10 });
+  const result = solver.solve('x^2', 'x', 9, {}, { min: 0, max: 10 });
 
   expect(result.found).toBe(true);
   expect(result.value).toBeCloseTo(3, 5);
 });
 
 test("solves x^2 == 9  →  x ≈ -3 (searching negative range)", () => {
-  const result = solver.solve('x^2', 'x', 9, Environment.from({}), { min: -10, max: 0 });
+  const result = solver.solve('x^2', 'x', 9, {}, { min: -10, max: 0 });
 
   expect(result.found).toBe(true);
   expect(result.value).toBeCloseTo(-3, 5);
@@ -674,7 +668,7 @@ test("solves x^2 == 9  →  x ≈ -3 (searching negative range)", () => {
 
 test("returns found: false when root is not bracketed", () => {
   // x^2 is always >= 0, so x^2 == -1 has no real solution
-  const result = solver.solve('x^2', 'x', -1, Environment.from({}), { min: -100, max: 100 });
+  const result = solver.solve('x^2', 'x', -1, {}, { min: -100, max: 100 });
 
   expect(result.found).toBe(false);
   expect(result.value).toBeUndefined();
@@ -683,7 +677,7 @@ test("returns found: false when root is not bracketed", () => {
 
 test("returns found: false when solution is outside the search range", () => {
   // x == 50, but we only search 0..10
-  const result = solver.solve('x', 'x', 50, Environment.from({}), { min: 0, max: 10 });
+  const result = solver.solve('x', 'x', 50, {}, { min: 0, max: 10 });
 
   expect(result.found).toBe(false);
 });
@@ -708,21 +702,21 @@ test("other variables in env are not modified", () => {
 
 test("throws when targetVar does not appear in the expression", () => {
   expect(() =>
-    solver.solve('a + b', 'x', 10, Environment.from({ a: 3, b: 4 }))
+    solver.solve('a + b', 'x', 10, { a: 3, b: 4 })
   ).toThrow("does not appear in expression");
 });
 
 // ── 6. Tolerance is respected ─────────────────────────────────────────────────
 
 test("result is within default tolerance of 1e-9", () => {
-  const result = solver.solve('x', 'x', 3.14159, Environment.from({}), { min: 0, max: 10 });
+  const result = solver.solve('x', 'x', 3.14159, {}, { min: 0, max: 10 });
 
   expect(result.found).toBe(true);
   expect(Math.abs(result.value! - 3.14159)).toBeLessThan(1e-9);
 });
 
 test("custom tolerance is respected", () => {
-  const result = solver.solve('x', 'x', 3.14159, Environment.from({}), {
+  const result = solver.solve('x', 'x', 3.14159, {}, {
     min: 0, max: 10, tolerance: 0.01,
   });
 
@@ -737,13 +731,11 @@ test("custom tolerance is respected", () => {
 test("finds the correction that produces exactly the required note gap", () => {
   // noteXs[i] = noteXs[i-1] + baseSpacing + correction
   // We want the total spacing to equal minGap (35 staff spaces)
-  const env = Environment.from({ baseSpacing: 28 });
-
   const result = solver.solve(
     'baseSpacing + correction',
     'correction',
     35,
-    env,
+    { baseSpacing: 28 },
     { min: 0, max: 20 },
   );
 
@@ -764,8 +756,11 @@ test("finds the correction that produces exactly the required note gap", () => {
 Some scenarios exercise all three modes in sequence. This is a good integration test pattern: use forward chaining to build up facts, backward chaining to check what conclusions are reachable, and the constraint solver to fill in numeric gaps.
 
 ```ts
+import { RuleEngine, BackwardChainer, ConstraintSolver, Environment } from "@surveybuilder/rule-engine";
+
 test("full pipeline: forward → backward → numeric solve", () => {
-  // Step 1: forward chaining derives facts from raw inputs
+  // Step 1: forward chaining derives facts from raw inputs.
+  // We use Environment here so we can read derived values back after evaluate().
   const env = Environment.from({ raw_score: 72, bonus_points: 8 });
   const forwardEngine = new RuleEngine(env);
 
@@ -795,8 +790,7 @@ test("full pipeline: forward → backward → numeric solve", () => {
 
   // Step 3: numeric solve — what raw_score would produce final_score == 90?
   const solver = new ConstraintSolver();
-  const solveEnv = Environment.from({ bonus_points: 8 });
-  const result = solver.solve('raw_score + bonus_points', 'raw_score', 90, solveEnv, { min: 0, max: 100 });
+  const result = solver.solve('raw_score + bonus_points', 'raw_score', 90, { bonus_points: 8 }, { min: 0, max: 100 });
 
   expect(result.found).toBe(true);
   expect(result.value).toBeCloseTo(82, 6);

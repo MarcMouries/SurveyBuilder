@@ -1,6 +1,8 @@
 import { Parser } from './Parser';
 import { Interpreter } from './Interpreter';
 import { Environment } from './Environment';
+import { toEnvironment } from './utils';
+import type { Facts } from './utils';
 import { ParseError } from './errors';
 import type { ASTNode } from './ast/ASTNode';
 
@@ -130,8 +132,8 @@ export class BackwardChainer {
    * - `candidates` — every rule for this goal with per-condition detail,
    *   sorted by score descending so the "closest" rule is first
    */
-  prove(goal: string, env: Environment): ProveResult {
-    const interpreter = new Interpreter(env);
+  prove(goal: string, env: Facts): ProveResult {
+    const interpreter = new Interpreter(toEnvironment(env));
     const matchingRules = this.rules.filter(r => r.conclusion === goal);
 
     const candidates: CandidateResult[] = matchingRules.map(rule =>
@@ -158,8 +160,8 @@ export class BackwardChainer {
    * When multiple conclusions tie on score, the one whose rule name comes
    * first alphabetically is returned (deterministic output).
    */
-  bestMatch(env: Environment): CandidateResult | null {
-    const interpreter = new Interpreter(env);
+  bestMatch(env: Facts): CandidateResult | null {
+    const interpreter = new Interpreter(toEnvironment(env));
     let best: CandidateResult | null = null;
 
     for (const rule of this.rules) {
@@ -177,7 +179,7 @@ export class BackwardChainer {
    * For every known conclusion, return a ProveResult.
    * Useful for dashboards that show the full inference state at once.
    */
-  proveAll(env: Environment): ProveResult[] {
+  proveAll(env: Facts): ProveResult[] {
     return this.conclusions().map(goal => this.prove(goal, env));
   }
 

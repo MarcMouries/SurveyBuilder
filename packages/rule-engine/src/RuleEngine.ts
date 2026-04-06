@@ -1,6 +1,8 @@
 import { Parser } from './Parser';
 import { Interpreter } from './Interpreter';
 import { Environment } from './Environment';
+import { toEnvironment } from './utils';
+import type { Facts } from './utils';
 import type { ASTNode } from './ast/ASTNode';
 
 export interface Rule<TContext = Record<string, unknown>> {
@@ -37,10 +39,10 @@ export class RuleEngine<TContext = Record<string, unknown>> {
   private interpreter: Interpreter;
   private environment: Environment;
 
-  constructor(environment: Environment) {
-    this.environment = environment;
+  constructor(facts: Facts = {}) {
+    this.environment = toEnvironment(facts);
     this.parser = new Parser();
-    this.interpreter = new Interpreter(environment);
+    this.interpreter = new Interpreter(this.environment);
   }
 
   /** Expose the interpreter so callers can register domain functions. */
@@ -117,9 +119,9 @@ export class RuleEngine<TContext = Record<string, unknown>> {
   static fromJSON<TContext = Record<string, unknown>>(
     serialized: SerializedRule[],
     actionMap: Record<string, (ctx: TContext, env: Environment) => void>,
-    environment: Environment,
+    facts: Facts = {},
   ): RuleEngine<TContext> {
-    const engine = new RuleEngine<TContext>(environment);
+    const engine = new RuleEngine<TContext>(facts);
     for (const s of serialized) {
       const action = actionMap[s.name];
       if (!action) throw new Error(`No action registered for rule '${s.name}'`);
