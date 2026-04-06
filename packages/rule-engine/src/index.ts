@@ -11,6 +11,10 @@ export { Logger } from './Logger';
 export { RuleEngine } from './RuleEngine';
 export type { Rule, TraceEntry, SerializedRule } from './RuleEngine';
 
+// Backward chaining
+export { BackwardChainer } from './BackwardChainer';
+export type { DeductiveRule, CandidateResult, ProveResult } from './BackwardChainer';
+
 // AST nodes
 export {
   type ASTNode,
@@ -23,6 +27,10 @@ export {
 export type { ASTNodeVisitor } from './ast/ASTNodeVisitor';
 export { ASTtoJSON } from './ast/ASTtoJSON';
 export { ASTtoString } from './ast/ASTtoString';
+
+// Constraint solver
+export { ConstraintSolver, NoSolutionError } from './ConstraintSolver';
+export type { SolveOptions, SolveResult } from './ConstraintSolver';
 
 // Errors
 export { RuleEngineError, ParseError, EvalError, UndefinedVarError } from './errors';

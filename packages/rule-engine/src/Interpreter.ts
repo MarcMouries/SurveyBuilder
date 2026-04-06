@@ -166,9 +166,38 @@ export class Interpreter implements ASTNodeVisitor {
   }
 
   visitLogicalExpression(expr: LogicalExpression): boolean {
+    if (expr.operator === Token.OR) {
+      // Try left. If it throws (e.g. undefined variable), still try right —
+      // `<error> OR true` should be true, matching SQL three-valued logic.
+      let leftVal: unknown;
+      let leftErr: unknown = null;
+      try { leftVal = this.evaluate(expr.left); } catch (e) { leftErr = e; }
+      if (leftVal === true) return true;
+
+      const rightVal = this.evaluate(expr.right); // let right errors propagate
+      if (rightVal === true) return true;
+      if (leftErr) throw leftErr;  // right was falsy and left had errored
+      return false;
+    }
+
+    if (expr.operator === Token.AND) {
+      // `false AND <anything>` short-circuits to false.
+      // `<error> AND false` should be false; `<error> AND true` re-throws.
+      let leftVal: unknown;
+      let leftErr: unknown = null;
+      try { leftVal = this.evaluate(expr.left); } catch (e) { leftErr = e; }
+      if (leftVal === false) return false;
+
+      const rightVal = this.evaluate(expr.right); // let right errors propagate
+      if (leftErr) {
+        if (rightVal === false) return false; // false wins
+        throw leftErr;
+      }
+      return rightVal as boolean;
+    }
+
+    // Fallback (should not be reached with current token set)
     const left = this.evaluate(expr.left);
-    if (expr.operator === Token.OR)  { if (left === true)  return true; }
-    if (expr.operator === Token.AND) { if (left === false) return false; }
     return this.evaluate(expr.right) as boolean;
   }
 

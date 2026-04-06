@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, jest } from "bun:test";
 
-// Mocking the global document object with type assertions
+// Mock the global document object — Bun doesn't run in a browser environment
 globalThis.document = {
     createElement: (tagName: string): HTMLElement => {
         const element: Partial<HTMLElement> & {
@@ -10,7 +10,7 @@ globalThis.document = {
             addEventListener(type: string, listener: Function): void;
             click(): void;
         } = {
-            style: {} as CSSStyleDeclaration, // Mocked style object
+            style: {} as CSSStyleDeclaration,
             className: '',
             children: [],
             eventListeners: {},
@@ -32,63 +32,61 @@ globalThis.document = {
                 return this.children[0] || null;
             },
         };
-
         return element as HTMLElement;
     }
 } as any as Document;
 
-
-
-  
-
-  
-
 import { SurveyPage } from "../src/SurveyPage";
 
 describe('SurveyPage', () => {
-    let page;
+    let page: SurveyPage;
 
     beforeEach(() => {
-        page = new SurveyPage();
+        page = new SurveyPage('test-page');
     });
 
-    test('createPage should return an instance of SurveyPage', () => {
+    test('should return an instance of SurveyPage', () => {
         expect(page).toBeInstanceOf(SurveyPage);
     });
 
-    test('SurveyPage should have a container with correct initial structure', () => {
-        expect(page.container).toBeDefined();
-        expect(page.container.children.length).toBe(3); // Header, description, button container
-        expect(page.header.className).toBe('page-header');
-        expect(page.description.className).toBe('page-description');
-        expect(page.buttonContainer.className).toBe('button-container');
+    test('pageContainer should exist with the correct id and class', () => {
+        expect(page.pageContainer).toBeDefined();
+        expect(page.pageContainer.id).toBe('test-page');
+        expect(page.pageContainer.className).toBe('survey-page');
     });
 
-    test('setHeader should correctly set the header text', () => {
-        const headerText = 'Test Header';
-        page.setHeader(headerText);
-        expect(page.header.textContent).toBe(headerText);
+    test('pageContainer should contain title and content elements', () => {
+        // pageContainer appends: title, content (buttonContainer is handled by SurveyBuilder)
+        expect((page.pageContainer as any).children.length).toBe(2);
     });
 
-    test('setDescription should correctly set the description HTML', () => {
-        const descriptionHTML = '<p>This is a test</p>';
-        page.setDescription(descriptionHTML);
-        expect(page.description.innerHTML).toBe(descriptionHTML);
+    test('title element should have the correct class', () => {
+        expect(page.title).toBeDefined();
+        expect(page.title.className).toBe('survey-page-title');
     });
 
-    test('addButton should add a button to the button container', () => {
-        const buttonText = 'Click Me';
-        const buttonClass = 'test-button';
-        const mockAction = jest.fn();
+    test('content element should have the correct class', () => {
+        expect(page.content).toBeDefined();
+        expect(page.content.className).toBe('survey-page-content');
+    });
 
-        page.addButton(buttonText, buttonClass, mockAction);
-        expect(page.buttonContainer.children.length).toBe(1);
-        const button = page.buttonContainer.firstChild;
-        expect(button.textContent).toBe(buttonText);
-        expect(button.className).toBe(buttonClass);
+    test('setTitle should set the header text', () => {
+        page.setTitle('Welcome to the survey');
+        expect(page.title.textContent).toBe('Welcome to the survey');
+    });
 
-        // Simulate a button click and check if the action is called
-        button.click();
-        expect(mockAction).toHaveBeenCalled();
+    test('setContent should set the content HTML', () => {
+        page.setContent('<p>Please answer the following questions.</p>');
+        expect(page.content.innerHTML).toBe('<p>Please answer the following questions.</p>');
+    });
+
+    test('show should set display to block', () => {
+        page.show();
+        expect(page.pageContainer.style.display).toBe('block');
+    });
+
+    test('hide should set display to none', () => {
+        page.hide();
+        expect(page.pageContainer.style.display).toBe('none');
     });
 });

@@ -22,12 +22,16 @@
   - ~~Index expression must support arbitrary index sub-expressions: `arr[i+1]`, `arr[i-1]`~~
   - ~~Tests: read `arr[0]`, `arr[i]`, `arr[i+1]`; out-of-bounds throws `EvalError`; works inside larger expressions like `noteXs[i] - noteXs[i-1] < gap`~~
 
-- **Bidirectional constraint solving ("find x such that …")**
-  - New class `ConstraintSolver` in `packages/rule-engine/src/ConstraintSolver.ts`
-  - API: `solver.solve(expression, targetVar, targetValue, env)` — finds the value of `targetVar` that makes `expression == targetValue`
-  - Initial approach: interval bisection (binary search) for numeric unknowns over a caller-supplied `[min, max]` range
-  - Separate from `RuleEngine` — the solver operates on a single expression, not a rule set
-  - Tests: solve linear `2*x + 1 == 11` → `x = 5`; solve non-linear `x^2 == 9` over `[0,10]` → `x ≈ 3`; throws when no solution exists in range; throws when target variable not found in expression
+- ~~**Bidirectional constraint solving**~~ ✅
+  - `ConstraintSolver` — numeric bisection: `solver.solve('2*x+1', 'x', 11, env)` → `x=5`
+  - `BackwardChainer` — logical inference: given a goal, find what facts are needed
+
+- ~~**Backward chaining ("what needs to be true for animal == turtle?")**~~ ✅
+  - ~~New class `ConstraintSolver` in `packages/rule-engine/src/ConstraintSolver.ts`~~
+  - ~~API: `solver.solve(expression, targetVar, targetValue, env)` — finds the value of `targetVar` that makes `expression == targetValue`~~
+  - ~~Initial approach: interval bisection (binary search) for numeric unknowns over a caller-supplied `[min, max]` range~~
+  - ~~Separate from `RuleEngine` — the solver operates on a single expression, not a rule set~~
+  - ~~Tests: solve linear `2*x + 1 == 11` → `x = 5`; solve non-linear `x^2 == 9` over `[0,10]` → `x ≈ 3`; throws when no solution exists in range; throws when target variable not found in expression~~
 
 ### Survey Builder
 - clean last page of survey
