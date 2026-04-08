@@ -316,7 +316,7 @@ class RankingQuestion extends QuestionComponent {
       listItem.setAttribute("data-rank", `${index2} + 1`);
       const dragIcon = document.createElement("div");
       dragIcon.className = "drag-icon";
-      dragIcon.textContent = "\u2261";
+      dragIcon.textContent = "≡";
       listItem.appendChild(dragIcon);
       const indexDiv = document.createElement("div");
       indexDiv.className = "index";
@@ -965,7 +965,7 @@ class StarRatingComponent extends HTMLElement {
   }
 }
 customElements.define("star-rating-component", StarRatingComponent);
-// src/engine/ast/ASTNode.ts
+// ../in-check/src/ast/ASTNode.ts
 class AssignmentExpression {
   left;
   right;
@@ -1090,7 +1090,31 @@ class UnaryExpression {
   }
 }
 
-// src/engine/Token.ts
+class IndexExpression {
+  object;
+  index;
+  constructor(object, index) {
+    this.object = object;
+    this.index = index;
+  }
+  accept(visitor) {
+    return visitor.visitIndexExpression(this);
+  }
+}
+
+class CallExpression {
+  callee;
+  args;
+  constructor(callee, args) {
+    this.callee = callee;
+    this.args = args;
+  }
+  accept(visitor) {
+    return visitor.visitCallExpression(this);
+  }
+}
+
+// ../in-check/src/Token.ts
 var Token = {
   ASSIGN: "ASSIGN",
   BOOLEAN: "BOOLEAN",
@@ -1110,11 +1134,16 @@ var Token = {
   IN: "IN",
   COMMA: "COMMA",
   LBRACKET: "LBRACKET",
-  RBRACKET: "RBRACKET"
+  RBRACKET: "RBRACKET",
+  UNIT_SUFFIX: "UNIT_SUFFIX"
 };
 
-// src/engine/Tokenizer.js
+// ../in-check/src/Tokenizer.ts
 class Tokenizer {
+  compactOperators;
+  spaceSensitiveKeywords;
+  booleans;
+  tokens;
   constructor() {
     this.compactOperators = [
       { match: "==", type: Token.EQUALS, value: "==" },
@@ -1162,6 +1191,13 @@ class Tokenizer {
   isAlphaNumeric(char) {
     return this.isAlpha(char) || this.isDigit(char) || char === "_" || char === "-";
   }
+  isIdentifierContinuation(char, nextChar) {
+    if (this.isAlpha(char) || this.isDigit(char) || char === "_")
+      return true;
+    if (char === "-")
+      return nextChar !== undefined && this.isAlpha(nextChar);
+    return false;
+  }
   matchToken(input, position, tokenList) {
     for (const token of tokenList) {
       if (input.startsWith(token.match, position)) {
@@ -1176,10 +1212,13 @@ class Tokenizer {
     let column = 1;
     let line = 1;
     while (position < input.length) {
-      let char = input[position];
-      if (char === "\n") {
+      const char = input[position];
+      if (char === `
+`) {
         line++;
         column = 1;
+        position++;
+        continue;
       }
       if (/\s/.test(char)) {
         position++;
@@ -1187,36 +1226,49 @@ class Tokenizer {
         continue;
       }
       if (char === '"' || char === "'") {
-        let endChar = char;
+        const endChar = char;
         let stringLiteral = "";
         position++;
         column++;
-        char = input[position];
-        while (position < input.length && char !== endChar) {
-          stringLiteral += char;
+        let cur = input[position];
+        while (position < input.length && cur !== endChar) {
+          stringLiteral += cur;
           position++;
           column++;
-          char = input[position];
+          cur = input[position];
         }
-        if (char === endChar) {
+        if (cur === endChar) {
           this.tokens.push({ type: Token.STRING, value: stringLiteral, line, column });
           position++;
           column++;
           continue;
-        } else {
-          throw new Error("Syntax error: unclosed string literal");
         }
+        throw new Error("Syntax error: unclosed string literal");
       }
       if (this.isDigit(char)) {
         let number = "";
-        let startColumn = column;
-        while (this.isDigit(char) || char === ".") {
-          number += char;
+        const startColumn = column;
+        let c = input[position];
+        while (position < input.length && (this.isDigit(c) || c === ".")) {
+          number += c;
           position++;
           column++;
-          char = input[position];
+          c = input[position];
         }
-        this.tokens.push({ type: Token.NUMBER, value: parseFloat(number), line, column: startColumn });
+        const numVal = parseFloat(number);
+        if (position < input.length && this.isAlpha(input[position])) {
+          let suffix = "";
+          let sc = input[position];
+          while (position < input.length && this.isAlpha(sc)) {
+            suffix += sc;
+            position++;
+            column++;
+            sc = input[position];
+          }
+          this.tokens.push({ type: Token.UNIT_SUFFIX, value: numVal, line, column: startColumn, suffix });
+        } else {
+          this.tokens.push({ type: Token.NUMBER, value: numVal, line, column: startColumn });
+        }
         continue;
       }
       const compactOp = this.matchToken(input, position, this.compactOperators);
@@ -1226,7 +1278,7 @@ class Tokenizer {
         column += compactOp.match.length;
         continue;
       }
-      const boolOp = this.matchToken(input, position, this.booleans);
+      const boolOp = this.booleans.find((b) => input.startsWith(b.match, position));
       if (boolOp) {
         this.tokens.push({ type: Token.BOOLEAN, value: boolOp.match === "true", line, column });
         position += boolOp.match.length;
@@ -1238,7 +1290,7 @@ class Tokenizer {
         const operatorEndPosition = position + keyword.match.length;
         const charAfterMatch = input[operatorEndPosition];
         if (charAfterMatch === undefined || !this.isAlphaNumeric(charAfterMatch)) {
-          let tokenValue = keyword.value ? keyword.value : keyword.match;
+          const tokenValue = keyword.value !== undefined ? keyword.value : keyword.match;
           this.tokens.push({ type: keyword.type, value: tokenValue, line, column });
           position += keyword.match.length;
           column += keyword.match.length;
@@ -1247,11 +1299,14 @@ class Tokenizer {
       }
       if (this.isAlpha(char)) {
         let identifier = "";
-        while (this.isAlphaNumeric(char)) {
-          identifier += char;
+        while (position < input.length) {
+          const c = input[position];
+          const next = input[position + 1];
+          if (!this.isIdentifierContinuation(c, next))
+            break;
+          identifier += c;
           position++;
           column++;
-          char = input[position];
         }
         this.tokens.push({ type: Token.IDENTIFIER, value: identifier, line, column });
         continue;
@@ -1263,300 +1318,248 @@ class Tokenizer {
   }
 }
 
-// src/engine/Logger.js
-class Logger {
-  static depth = 0;
-  static isEnabled = true;
-  static enableLogging() {
-    Logger.isEnabled = true;
-  }
-  static disableLogging() {
-    Logger.isEnabled = false;
-  }
-  static logStart(message) {
-    if (!Logger.isEnabled)
+// ../in-check/src/Logger.ts
+var loggingEnabled = false;
+var depth = 0;
+var Logger = {
+  enableLogging() {
+    loggingEnabled = true;
+  },
+  disableLogging() {
+    loggingEnabled = false;
+  },
+  logStart(message) {
+    if (!loggingEnabled)
       return;
-    console.log(Logger.generatePrefix() + "\u250C\u2500 START " + message);
-    Logger.depth++;
-  }
-  static log(message) {
-    if (!Logger.isEnabled)
+    console.log("  ".repeat(depth) + "└─ START: " + message);
+    depth++;
+  },
+  log(message) {
+    if (!loggingEnabled)
       return;
-    console.log(Logger.generatePrefix() + "\u251C\u2500 " + message);
-  }
-  static logEnd(message) {
-    if (!Logger.isEnabled)
+    console.log("  ".repeat(depth) + "├─ " + message);
+  },
+  logEnd(message) {
+    if (!loggingEnabled)
       return;
-    Logger.depth--;
-    console.log(Logger.generatePrefix() + "\u2514\u2500 END " + message);
+    if (depth > 0)
+      depth--;
+    console.log("  ".repeat(depth) + "└─ END: " + message);
   }
-  static generatePrefix() {
-    return "\u2502  ".repeat(Logger.depth);
+};
+
+// ../in-check/src/errors.ts
+class RuleEngineError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "RuleEngineError";
   }
 }
 
-// src/engine/Parser.js
-class Parser {
-  constructor() {
+class ParseError extends RuleEngineError {
+  line;
+  col;
+  constructor(message, line = 0, col = 0) {
+    super(message);
+    this.name = "ParseError";
+    this.line = line;
+    this.col = col;
   }
+}
+
+class EvalError extends RuleEngineError {
+  ruleName;
+  constructor(message, ruleName) {
+    super(message);
+    this.name = "EvalError";
+    this.ruleName = ruleName;
+  }
+}
+
+class UndefinedVarError extends EvalError {
+  varName;
+  constructor(varName, ruleName) {
+    super(`Undefined variable name '${varName}'`, ruleName);
+    this.name = "UndefinedVarError";
+    this.varName = varName;
+  }
+}
+
+// ../in-check/src/Parser.ts
+class Parser {
   parse(input) {
     const tokenizer = new Tokenizer;
     const tokens = tokenizer.parseTokens(input);
     let current = 0;
     Logger.disableLogging();
-    function formatToken(token) {
-      if (!token)
-        return "end of input";
-      return `${token.type}(${token.value})`;
-    }
+    const formatToken = (token) => token ? `${token.type}(${token.value})` : "end of input";
     const isAtEnd = () => current >= tokens.length;
-    const peek = () => {
-      if (isAtEnd())
-        return null;
-      return tokens[current];
-    };
+    const peek = () => isAtEnd() ? null : tokens[current];
     const previous = () => tokens[current - 1];
     const advance = () => {
-      if (!isAtEnd()) {
-        const fromToken = current > 0 ? previous() : { type: "START", value: "start of input" };
-        const toToken = peek();
-        Logger.log(`Advance: Next token to process is '${formatToken(toToken)}', moving from '${formatToken(fromToken)}'`);
+      if (!isAtEnd())
         current++;
-      } else {
-        Logger.log(`Advance: At 'end of input', no more tokens to process.`);
-      }
       return previous();
     };
     const check = (...expected) => {
-      if (isAtEnd()) {
-        Logger.log(`Check: Reached 'end of input', cannot match any more tokens.`);
+      if (isAtEnd())
         return false;
-      }
-      const nextToken = peek();
-      let matchFound = expected.includes(nextToken.type) || expected.includes(nextToken.value);
-      return matchFound;
+      const next = peek();
+      return expected.includes(next.type) || expected.includes(next.value);
     };
     const match = (...types) => {
       if (check(...types)) {
-        Logger.log(`Match(): Matched  [${types.join(", ")}] -  and advanced to the next token`);
         advance();
         return true;
       }
-      Logger.log(`Match(): No match found for tokens: '${types.join(", ")}'`);
       return false;
     };
     const consume = (tokenType, message) => {
-      Logger.log(`Attempting to consume a '${tokenType}' token.`);
-      if (check(tokenType)) {
-        const token = advance();
-        Logger.log(`Success: Consumed '${tokenType}' token with value: '${token.value}'.`);
-        return token;
-      } else {
-        const actualToken = peek();
-        Logger.log(`Failure: Expected '${tokenType}', but found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
-        throw new Error(`Error: Expected '${tokenType}', found '${actualToken ? actualToken.type : "end of input"}'. ${message}`);
+      if (check(tokenType))
+        return advance();
+      const actual = peek();
+      throw new ParseError(`Expected '${tokenType}', found '${actual ? actual.type : "end of input"}'. ${message}`, actual?.line ?? 0, actual?.column ?? 0);
+    };
+    const error = (_token, message) => {
+      throw new ParseError(message);
+    };
+    const parseArrayLiteral = () => {
+      const elements = [];
+      if (!check(Token.RBRACKET)) {
+        do {
+          elements.push(parseExpression());
+        } while (match(Token.COMMA));
       }
+      consume(Token.RBRACKET, "Expect ']' after array elements.");
+      return new ArrayLiteral(elements);
     };
-    const error = (token, message) => {
-      const tokenDisplay = formatToken(token);
-      throw new Error(`Error at token ${tokenDisplay}: ${message}`);
-    };
-    const parseNumber = (token) => {
-      Logger.logStart(`parseNumber: token #${current} of type NUMBER with value: ${token.value}`);
-      Logger.logEnd(`Completed parsing token #${current} as NUMBER with value: ${token.value}`);
-      return new NumberNode(token.value);
-    };
-    const parseBoolean = (token) => {
-      Logger.logStart(`Parsing : token #${current} of type BOOLEAN with value: ${token.value}`);
-      Logger.logEnd(`Parsing BOOLEAN at position: ${current}`);
-      return new BooleanNode(token.value);
-    };
-    const parseString = (token) => {
-      Logger.logStart(`parseString: token #${current} of type STRING with value: ${token.value}`);
-      Logger.logEnd(`Parsing STRING token at position: ${current}`);
-      return new StringNode(token.value);
-    };
-    const parseIdentifier = (token) => {
-      Logger.logStart(`parseIdentifier: token #${current} of type IDENTIFIER with value: ${token.value}`);
-      Logger.logEnd(`Parsing IDENTIFIER token at position: ${current}`);
-      return new Identifier(token.value);
-    };
-    function parseGroup() {
-      Logger.logStart(`Parsing GROUP at position: ${current}`);
-      let expr = parseExpression();
-      if (expr === null) {
-        throw new Error("Expect expression within parentheses.");
+    const parsePrimary = () => {
+      if (match(Token.NUMBER))
+        return new NumberNode(previous().value);
+      if (match(Token.STRING))
+        return new StringNode(previous().value);
+      if (match(Token.BOOLEAN))
+        return new BooleanNode(previous().value);
+      if (match(Token.UNIT_SUFFIX)) {
+        const tok = previous();
+        return new BinaryExpression(new NumberNode(tok.value), "*", new Identifier(tok.suffix));
       }
-      consume("RPAREN", "Expect ')' after expression.");
-      Logger.log(`Parsing GROUP: expression = '${JSON.stringify(expr, null, 2)}'`);
-      Logger.logEnd(`Parsing GROUP at position: ${current}`);
-      return new GroupExpression(expr);
-    }
-    const parseLogicalOr = () => {
-      let expr = parseLogicalAnd();
-      while (match(Token.OR)) {
-        const operator = Token.OR;
-        const right = parseLogicalAnd();
-        expr = new LogicalExpression(expr, operator, right);
+      if (match(Token.LPAREN)) {
+        const expr = parseExpression();
+        consume(Token.RPAREN, "Expect ')' after expression.");
+        return new GroupExpression(expr);
+      }
+      if (match(Token.LBRACKET))
+        return parseArrayLiteral();
+      if (match(Token.IDENTIFIER)) {
+        const name = previous().value;
+        const id = new Identifier(name);
+        if (match(Token.LPAREN)) {
+          const args = [];
+          if (!check(Token.RPAREN)) {
+            do {
+              args.push(parseExpression());
+            } while (match(Token.COMMA));
+          }
+          consume(Token.RPAREN, "Expect ')' after function arguments.");
+          return new CallExpression(id, args);
+        }
+        let result = id;
+        for (;; ) {
+          if (match(".")) {
+            consume(Token.IDENTIFIER, "Expect property name after '.'.");
+            result = new MemberExpression(result, new Identifier(previous().value));
+          } else if (match(Token.LBRACKET)) {
+            const index = parseExpression();
+            consume(Token.RBRACKET, "Expect ']' after index expression.");
+            result = new IndexExpression(result, index);
+          } else {
+            break;
+          }
+        }
+        return result;
+      }
+      error(peek(), `Unexpected token: ${formatToken(peek())}`);
+    };
+    const parseUnary = () => {
+      if (match("-", "!")) {
+        const op = previous().value;
+        return new UnaryExpression(op, parseUnary());
+      }
+      return parsePrimary();
+    };
+    const parseExponent = () => {
+      let base = parseUnary();
+      while (match("^")) {
+        const op = previous().value;
+        base = new BinaryExpression(base, op, parseExponent());
+      }
+      return base;
+    };
+    const parseFactor = () => {
+      let expr = parseExponent();
+      while (match("*", "/")) {
+        const op = previous().value;
+        expr = new BinaryExpression(expr, op, parseExponent());
+      }
+      return expr;
+    };
+    const parseTerm = () => {
+      let expr = parseFactor();
+      while (match("+", "-")) {
+        const op = previous().value;
+        expr = new BinaryExpression(expr, op, parseFactor());
+      }
+      return expr;
+    };
+    const parseComparison = () => {
+      let expr = parseTerm();
+      while (match(">", ">=", "<", "<=", "contains", "in")) {
+        const op = previous().value;
+        expr = new BinaryExpression(expr, op, parseTerm());
+      }
+      return expr;
+    };
+    const parseEquality = () => {
+      let expr = parseComparison();
+      while (match("==", "!=")) {
+        const op = previous().value;
+        expr = new BinaryExpression(expr, op, parseComparison());
       }
       return expr;
     };
     const parseLogicalAnd = () => {
       let expr = parseEquality();
       while (match(Token.AND)) {
-        const operator = Token.AND;
-        const right = parseEquality();
-        expr = new LogicalExpression(expr, operator, right);
+        expr = new LogicalExpression(expr, Token.AND, parseEquality());
       }
       return expr;
     };
-    const parsePrimary = () => {
-      Logger.logStart(`parsePrimary`);
-      let result = null;
-      if (match(Token.NUMBER))
-        result = parseNumber(previous());
-      else if (match(Token.STRING))
-        result = parseString(previous());
-      else if (match(Token.BOOLEAN))
-        result = parseBoolean(previous());
-      else if (match(Token.LPAREN))
-        result = parseGroup();
-      else if (match(Token.LBRACKET))
-        result = parseArrayLiteral();
-      else if (match(Token.IDENTIFIER))
-        result = parseIdentifier(previous());
-      while (match(".")) {
-        consume(Token.IDENTIFIER, "Expect property name after '.'.");
-        const property = previous();
-        result = new MemberExpression(result, new Identifier(property.value));
+    const parseLogicalOr = () => {
+      let expr = parseLogicalAnd();
+      while (match(Token.OR)) {
+        expr = new LogicalExpression(expr, Token.OR, parseLogicalAnd());
       }
-      Logger.logEnd(`parsePrimary`);
-      return result;
-    };
-    const parseTerm = (left) => {
-      Logger.logStart(`Parsing term for potential addition/subtraction operations`);
-      var expr = parseFactor();
-      while (match("+", "-")) {
-        Logger.log(`Matched + or -: ${previous().type}`);
-        const operator = previous().value;
-        const right = parseFactor();
-        if (right === null) {
-          throw new Error(`Missing expression after '${operator}' `);
-        }
-        expr = new BinaryExpression(expr, operator, right);
-      }
-      Logger.logEnd(`Completed parsing term`);
-      return expr;
-    };
-    const parseExponent = () => {
-      Logger.logStart("Parsing exponentiation operations");
-      let base = parseUnary();
-      while (match("^")) {
-        Logger.log("Found exponentiation operator ^");
-        const operator = previous().value;
-        const exponent = parseExponent();
-        if (exponent === null) {
-          throw new Error(`Missing exponent after '${operator}'`);
-        }
-        base = new BinaryExpression(base, operator, exponent);
-      }
-      Logger.logEnd("Parsed exponentiation operation");
-      return base;
-    };
-    const parseFactor = () => {
-      Logger.logStart("Parsing factors for multiplication/division");
-      let expr = parseExponent();
-      while (match("*", "/")) {
-        const operator = previous().value;
-        const right = parseExponent();
-        if (right === null) {
-          throw new Error(`Missing expression after '${operator}'`);
-        }
-        expr = new BinaryExpression(expr, operator, right);
-      }
-      Logger.logEnd("Parsed factor");
-      return expr;
-    };
-    const parseUnary = () => {
-      Logger.logStart("Parsing Unary");
-      while (match("-", "!")) {
-        const operator = previous().value;
-        const right = parseUnary();
-        return new UnaryExpression(operator, right);
-      }
-      Logger.logEnd("Parsed Unary");
-      return parsePrimary();
-    };
-    const parseArrayLiteral = () => {
-      const elements = [];
-      if (!check(Token.RBRACKET)) {
-        do {
-          const element = parseExpression();
-          elements.push(element);
-        } while (match(Token.COMMA));
-      }
-      consume(Token.RBRACKET, "Expect ']' after array elements.");
-      return new ArrayLiteral(elements);
-    };
-    const parseEquality = () => {
-      Logger.logStart(`Parsing equality/non-equality operators between expressions`);
-      var expr = parseComparison();
-      while (match("==", "!=")) {
-        const operator = previous().value;
-        const right = parseComparison();
-        if (right === null) {
-          throw new Error(`Missing expression after '${operator}'`);
-        }
-        expr = new BinaryExpression(expr, operator, right);
-      }
-      Logger.logEnd(`parseEquality`);
       return expr;
     };
     const parseAssignment = () => {
-      Logger.logStart(`parseAssignment`);
-      let expr = parseLogicalOr();
+      const expr = parseLogicalOr();
       if (match("=")) {
-        const equals = previous();
         const value = parseAssignment();
-        if (value === null) {
-          throw new Error(`Missing expression after '='`);
-        }
-        if (expr instanceof Identifier) {
+        if (expr instanceof Identifier)
           return new AssignmentExpression(expr, value);
-        }
-        if (expr instanceof MemberExpression) {
+        if (expr instanceof MemberExpression)
           return new AssignmentExpression(expr, value);
-        }
-        error(equals, "Invalid assignment target.");
+        error(previous(), "Invalid assignment target.");
       }
-      Logger.logEnd(`parseAssignment`);
       return expr;
     };
-    const parseExpression = () => {
-      Logger.logStart(`parseExpression: '${input}'`);
-      const result = parseAssignment();
-      Logger.logEnd(`parseExpression`);
-      return result;
-    };
-    const parseComparison = () => {
-      Logger.logStart(`Parsing comparison operators between expressions`);
-      var expr = parseTerm();
-      while (match(">", ">=", "<", "<=", "contains", "in")) {
-        const operator = previous().value;
-        const right = parseTerm();
-        if (right === null) {
-          throw new Error(`Missing expression after '${operator}'`);
-        }
-        expr = new BinaryExpression(expr, operator, right);
-      }
-      Logger.logEnd(`parseComparison`);
-      return expr;
-    };
+    const parseExpression = () => parseAssignment();
     return parseExpression();
   }
 }
 
-// src/engine/Environment.ts
+// ../in-check/src/Environment.ts
 class Environment {
   values = new Map;
   define(name, value) {
@@ -1569,48 +1572,107 @@ class Environment {
     if (this.values.has(name)) {
       return this.values.get(name);
     }
-    throw new Error(`Undefined variable name '${name}'`);
+    throw new UndefinedVarError(name);
+  }
+  getOrDefault(name, defaultValue) {
+    return this.values.has(name) ? this.values.get(name) : defaultValue;
+  }
+  static from(values) {
+    const env = new Environment;
+    if (values instanceof Map) {
+      values.forEach((v, k) => env.define(k, v));
+    } else {
+      for (const [k, v] of Object.entries(values)) {
+        env.define(k, v);
+      }
+    }
+    return env;
+  }
+  snapshot() {
+    return Object.fromEntries(this.values);
   }
   toString() {
     let result = "Environment {";
     if (this.values.size > 0) {
-      const entries = Array.from(this.values).map(([key, value]) => `\n    "${key}": ${JSON.stringify(value, null, 4).replace(/\n/g, "\n    ")}`);
-      result += entries.join(",") + "\n";
+      const entries = Array.from(this.values).map(([key, value]) => `
+    "${key}": ${JSON.stringify(value, null, 4).replace(/\n/g, `
+    `)}`);
+      result += entries.join(",") + `
+`;
     }
     result += "}";
     return result;
   }
 }
 
-// src/engine/Interpreter.ts
+// ../in-check/src/Interpreter.ts
 class Interpreter {
   environment;
+  functions = new Map;
   constructor(environment) {
-    this.environment = environment ? environment : new Environment;
+    this.environment = environment ?? new Environment;
+    this.registerBuiltins();
+  }
+  registerBuiltins() {
+    this.functions.set("abs", (x) => Math.abs(x));
+    this.functions.set("sqrt", (x) => Math.sqrt(x));
+    this.functions.set("pow", (x, y) => Math.pow(x, y));
+    this.functions.set("log", (x) => Math.log(x));
+    this.functions.set("log2", (x) => Math.log2(x));
+    this.functions.set("log10", (x) => Math.log10(x));
+    this.functions.set("exp", (x) => Math.exp(x));
+    this.functions.set("sin", (x) => Math.sin(x));
+    this.functions.set("cos", (x) => Math.cos(x));
+    this.functions.set("tan", (x) => Math.tan(x));
+    this.functions.set("asin", (x) => Math.asin(x));
+    this.functions.set("acos", (x) => Math.acos(x));
+    this.functions.set("atan", (x) => Math.atan(x));
+    this.functions.set("round", (x) => Math.round(x));
+    this.functions.set("floor", (x) => Math.floor(x));
+    this.functions.set("ceil", (x) => Math.ceil(x));
+    this.functions.set("trunc", (x) => Math.trunc(x));
+    this.functions.set("min", (x, y) => Math.min(x, y));
+    this.functions.set("max", (x, y) => Math.max(x, y));
+  }
+  registerFunction(name, fn) {
+    this.functions.set(name, fn);
   }
   static extractIdentifiers(node) {
     const identifiers = new Set;
-    const traverse = (node2) => {
-      if (!node2)
+    const traverse = (n) => {
+      if (!n)
         return;
-      if (node2 instanceof Identifier) {
-        identifiers.add(node2.name);
-      } else if (node2 instanceof BinaryExpression || node2 instanceof LogicalExpression || node2 instanceof AssignmentExpression) {
-        traverse(node2.left);
-        traverse(node2.right);
-      } else if (node2 instanceof MemberExpression) {
-        traverse(node2.object);
-      } else if (node2 instanceof GroupExpression) {
-        traverse(node2.expression);
-      } else if (node2 instanceof ArrayLiteral) {
-        node2.elements.forEach((element) => traverse(element));
+      if (n instanceof Identifier) {
+        identifiers.add(n.name);
+      } else if (n instanceof BinaryExpression || n instanceof LogicalExpression || n instanceof AssignmentExpression) {
+        traverse(n.left);
+        traverse(n.right);
+      } else if (n instanceof MemberExpression) {
+        traverse(n.object);
+      } else if (n instanceof GroupExpression) {
+        traverse(n.expression);
+      } else if (n instanceof ArrayLiteral) {
+        n.elements.forEach((e) => traverse(e));
+      } else if (n instanceof CallExpression) {
+        n.args.forEach((a) => traverse(a));
+      } else if (n instanceof IndexExpression) {
+        traverse(n.object);
+        traverse(n.index);
+      } else if (n instanceof UnaryExpression) {
+        traverse(n.operand);
       }
     };
     traverse(node);
     return Array.from(identifiers);
   }
+  interpret(expression) {
+    return this.evaluate(expression);
+  }
+  evaluate(expression) {
+    return expression.accept(this);
+  }
   visitArrayLiteral(node) {
-    return node.elements.map((element) => this.evaluate(element));
+    return node.elements.map((e) => this.evaluate(e));
   }
   visitAssignmentExpression(expr) {
     const value = this.evaluate(expr.right);
@@ -1619,98 +1681,140 @@ class Interpreter {
       return value;
     }
     if (expr.left instanceof MemberExpression) {
-      const objectExpr = expr.left.object;
-      const propertyExpr = expr.left.property;
-      if (!(propertyExpr instanceof Identifier)) {
-        throw new Error("Only simple identifiers are supported for property names in assignments.");
+      const objExpr = expr.left.object;
+      const propExpr = expr.left.property;
+      if (!(propExpr instanceof Identifier)) {
+        throw new EvalError("Only simple identifiers are supported for property names in assignments.");
       }
-      if (objectExpr instanceof Identifier) {
-        const objectName = objectExpr.name;
-        const object = this.environment.get(objectName);
-        if (object && typeof object === "object") {
-          object[propertyExpr.name] = value;
-          this.environment.set(objectName, object);
+      if (objExpr instanceof Identifier) {
+        const obj = this.environment.get(objExpr.name);
+        if (obj && typeof obj === "object") {
+          obj[propExpr.name] = value;
+          this.environment.set(objExpr.name, obj);
           return value;
-        } else {
-          throw new Error(`Object '${objectName}' not found or not an object`);
         }
+        throw new EvalError(`Object '${objExpr.name}' not found or not an object`);
       }
     }
-  }
-  visitMemberExpression(expr) {
-    const object = this.evaluate(expr.object);
-    if (!(expr.property instanceof Identifier)) {
-      throw new Error("Only simple identifiers are supported for property names.");
-    }
-    const propertyName = expr.property.name;
-    if (object && typeof object === "object" && propertyName in object) {
-      return object[propertyName];
-    }
-    throw new Error(`Property '${propertyName}' not found`);
-  }
-  interpret(expression) {
-    const value = this.evaluate(expression);
-    return value;
-  }
-  evaluate(expression) {
-    return expression.accept(this);
+    throw new EvalError("Invalid assignment target.");
   }
   visitBinaryExpression(expr) {
-    const leftVal = this.evaluate(expr.left);
-    const rightVal = this.evaluate(expr.right);
+    const l = this.evaluate(expr.left);
+    const r = this.evaluate(expr.right);
     switch (expr.operator) {
       case "+":
-        return leftVal + rightVal;
+        return l + r;
       case "-":
-        return leftVal - rightVal;
+        return l - r;
       case "*":
-        return leftVal * rightVal;
+        return l * r;
       case "/":
-        if (rightVal === 0)
-          throw new Error("Division by zero");
-        return leftVal / rightVal;
+        if (r === 0)
+          throw new EvalError("Division by zero");
+        return l / r;
       case ">":
-        return leftVal > rightVal;
+        return l > r;
       case "<":
-        return leftVal < rightVal;
+        return l < r;
       case ">=":
-        return leftVal >= rightVal;
+        return l >= r;
       case "<=":
-        return leftVal <= rightVal;
+        return l <= r;
       case "==":
-        return leftVal == rightVal;
+        return l == r;
+      case "!=":
+        return l != r;
       case "^":
-        return Math.pow(leftVal, rightVal);
+        return Math.pow(l, r);
       case "contains":
-        if (!Array.isArray(leftVal)) {
-          throw new Error("Operator 'contains' requires an array on the left side");
-        }
-        return leftVal.includes(rightVal);
+        if (!Array.isArray(l))
+          throw new EvalError("Operator 'contains' requires an array on the left side");
+        return l.includes(r);
       case "in":
-        if (!Array.isArray(rightVal)) {
-          throw new Error("Operator 'in' requires an array on the right side");
-        }
-        return rightVal.includes(leftVal);
+        if (!Array.isArray(r))
+          throw new EvalError("Operator 'in' requires an array on the right side");
+        return r.includes(l);
       default:
-        throw new Error(`Unsupported operator '${expr.operator}'`);
+        throw new EvalError(`Unsupported operator '${expr.operator}'`);
     }
   }
   visitBooleanNode(node) {
     return node.value;
   }
+  visitCallExpression(expr) {
+    const fn = this.functions.get(expr.callee.name);
+    if (!fn)
+      throw new EvalError(`Unknown function '${expr.callee.name}'`);
+    const args = expr.args.map((a) => this.evaluate(a));
+    return fn(...args);
+  }
+  visitIndexExpression(expr) {
+    const obj = this.evaluate(expr.object);
+    const idx = this.evaluate(expr.index);
+    if (!Array.isArray(obj)) {
+      throw new EvalError(`Index operator '[]' requires an array, got ${typeof obj}`);
+    }
+    const i = idx;
+    if (!Number.isInteger(i) || i < 0 || i >= obj.length) {
+      throw new EvalError(`Array index ${i} out of bounds (length ${obj.length})`);
+    }
+    return obj[i];
+  }
   visitGroupExpression(expr) {
     return this.evaluate(expr.expression);
   }
+  visitIdentifier(node) {
+    return this.environment.get(node.name);
+  }
   visitLogicalExpression(expr) {
-    const left = this.evaluate(expr.left);
     if (expr.operator === Token.OR) {
-      if (left === true)
+      let leftVal;
+      let leftErr = null;
+      try {
+        leftVal = this.evaluate(expr.left);
+      } catch (e) {
+        leftErr = e;
+      }
+      if (leftVal === true)
         return true;
-    } else if (expr.operator === Token.AND) {
-      if (left === false)
-        return false;
+      const rightVal = this.evaluate(expr.right);
+      if (rightVal === true)
+        return true;
+      if (leftErr)
+        throw leftErr;
+      return false;
     }
+    if (expr.operator === Token.AND) {
+      let leftVal;
+      let leftErr = null;
+      try {
+        leftVal = this.evaluate(expr.left);
+      } catch (e) {
+        leftErr = e;
+      }
+      if (leftVal === false)
+        return false;
+      const rightVal = this.evaluate(expr.right);
+      if (leftErr) {
+        if (rightVal === false)
+          return false;
+        throw leftErr;
+      }
+      return rightVal;
+    }
+    const left = this.evaluate(expr.left);
     return this.evaluate(expr.right);
+  }
+  visitMemberExpression(expr) {
+    const obj = this.evaluate(expr.object);
+    if (!(expr.property instanceof Identifier)) {
+      throw new EvalError("Only simple identifiers are supported for property names.");
+    }
+    const prop = expr.property.name;
+    if (obj && typeof obj === "object" && prop in obj) {
+      return obj[prop];
+    }
+    throw new EvalError(`Property '${prop}' not found`);
   }
   visitNumberNode(node) {
     return node.value;
@@ -1720,16 +1824,308 @@ class Interpreter {
   }
   visitUnaryExpression(expr) {
     const right = this.evaluate(expr.operand);
-    if (expr.operator == "-")
+    if (expr.operator === "-")
       return -right;
-    if (expr.operator == "!")
+    if (expr.operator === "!")
       return !right;
-  }
-  visitIdentifier(node) {
-    return this.environment.get(node.name);
+    throw new EvalError(`Unsupported unary operator '${expr.operator}'`);
   }
 }
 
+// ../in-check/src/utils.ts
+function toEnvironment(facts) {
+  if (facts instanceof Environment)
+    return facts;
+  return Environment.from(facts);
+}
+
+// ../in-check/src/evaluate.ts
+var parser = new Parser;
+// ../in-check/src/RuleEngine.ts
+class RuleEngine {
+  rules = [];
+  compiledConditions = new Map;
+  parser;
+  interpreter;
+  environment;
+  constructor(facts = {}) {
+    this.environment = toEnvironment(facts);
+    this.parser = new Parser;
+    this.interpreter = new Interpreter(this.environment);
+  }
+  get interp() {
+    return this.interpreter;
+  }
+  addRule(rule) {
+    const compiled = this.parser.parse(rule.condition);
+    this.compiledConditions.set(rule.name, compiled);
+    this.rules = this.rules.filter((r) => r.name !== rule.name);
+    this.rules.push(rule);
+    this.rules.sort((a, b) => b.priority - a.priority);
+  }
+  removeRule(name) {
+    this.rules = this.rules.filter((r) => r.name !== name);
+    this.compiledConditions.delete(name);
+  }
+  evaluate(context) {
+    const fired = [];
+    for (const rule of this.rules) {
+      const compiled = this.compiledConditions.get(rule.name);
+      const result = this.interpreter.interpret(compiled);
+      if (result === true) {
+        rule.action(context, this.environment);
+        fired.push(rule.name);
+      }
+    }
+    return fired;
+  }
+  evaluateWithTrace(context) {
+    return this.rules.map((rule) => {
+      const compiled = this.compiledConditions.get(rule.name);
+      try {
+        const result = this.interpreter.interpret(compiled);
+        const fired = result === true;
+        if (fired)
+          rule.action(context, this.environment);
+        return { name: rule.name, priority: rule.priority, fired };
+      } catch (err) {
+        return { name: rule.name, priority: rule.priority, fired: false, error: err.message };
+      }
+    });
+  }
+  toJSON() {
+    return this.rules.map(({ name, priority, condition, description }) => ({
+      name,
+      priority,
+      condition,
+      ...description ? { description } : {}
+    }));
+  }
+  static fromJSON(serialized, actionMap, facts = {}) {
+    const engine = new RuleEngine(facts);
+    for (const s of serialized) {
+      const action = actionMap[s.name];
+      if (!action)
+        throw new Error(`No action registered for rule '${s.name}'`);
+      engine.addRule({ ...s, action });
+    }
+    return engine;
+  }
+}
+// ../in-check/src/BackwardChainer.ts
+class BackwardChainer {
+  rules = [];
+  parser = new Parser;
+  conditionCache = new Map;
+  addRule(rule) {
+    for (const cond of rule.conditions) {
+      this.compile(cond);
+    }
+    this.rules = this.rules.filter((r) => r.name !== rule.name);
+    this.rules.push(rule);
+  }
+  removeRule(name) {
+    this.rules = this.rules.filter((r) => r.name !== name);
+  }
+  conclusions() {
+    return [...new Set(this.rules.map((r) => r.conclusion))];
+  }
+  prove(goal, env) {
+    const interpreter = new Interpreter(toEnvironment(env));
+    const matchingRules = this.rules.filter((r) => r.conclusion === goal);
+    const candidates = matchingRules.map((rule) => this.evaluateRule(rule, interpreter));
+    candidates.sort((a, b) => b.score - a.score);
+    const winner = candidates.find((c) => c.missing.length === 0);
+    return {
+      goal,
+      proved: !!winner,
+      rule: winner?.rule,
+      candidates
+    };
+  }
+  bestMatch(env) {
+    const interpreter = new Interpreter(toEnvironment(env));
+    let best = null;
+    for (const rule of this.rules) {
+      const candidate = this.evaluateRule(rule, interpreter);
+      if (!best || candidate.score > best.score || candidate.score === best.score && candidate.rule < best.rule) {
+        best = candidate;
+      }
+    }
+    return best;
+  }
+  proveAll(env) {
+    return this.conclusions().map((goal) => this.prove(goal, env));
+  }
+  compile(condition) {
+    if (!this.conditionCache.has(condition)) {
+      this.conditionCache.set(condition, this.parser.parse(condition));
+    }
+    return this.conditionCache.get(condition);
+  }
+  evaluateRule(rule, interpreter) {
+    const satisfied = [];
+    const missing = [];
+    for (const cond of rule.conditions) {
+      try {
+        const result = interpreter.interpret(this.compile(cond));
+        (result === true ? satisfied : missing).push(cond);
+      } catch {
+        missing.push(cond);
+      }
+    }
+    const total = rule.conditions.length;
+    const score = total === 0 ? 1 : satisfied.length / total;
+    return { rule: rule.name, conclusion: rule.conclusion, satisfied, missing, score };
+  }
+}
+// ../in-check/src/ConstraintSolver.ts
+class ConstraintSolver {
+  parser = new Parser;
+  solve(expression, targetVar, targetValue, facts = {}, options = {}) {
+    const env = toEnvironment(facts);
+    const {
+      min = -1e6,
+      max = 1e6,
+      tolerance = 0.000000001,
+      maxIterations = 100
+    } = options;
+    if (min >= max) {
+      throw new RuleEngineError(`solve(): min (${min}) must be less than max (${max})`);
+    }
+    const ast = this.parser.parse(expression);
+    const identifiers = Interpreter.extractIdentifiers(ast);
+    if (!identifiers.includes(targetVar)) {
+      throw new RuleEngineError(`solve(): variable '${targetVar}' does not appear in expression: ${expression}`);
+    }
+    const originalValue = env.getOrDefault(targetVar, undefined);
+    const restore = () => {
+      if (originalValue === undefined) {} else {
+        env.set(targetVar, originalValue);
+      }
+    };
+    const interp = new Interpreter(env);
+    const f = (x) => {
+      env.set(targetVar, x);
+      const result = interp.interpret(ast);
+      if (typeof result !== "number") {
+        throw new EvalError(`solve(): expression must evaluate to a number, got ${typeof result}`);
+      }
+      return result - targetValue;
+    };
+    try {
+      const fLo = f(min);
+      const fHi = f(max);
+      if (Math.sign(fLo) === Math.sign(fHi)) {
+        restore();
+        return { found: false, iterations: 0 };
+      }
+      let lo = min;
+      let hi = max;
+      let iterations = 0;
+      while (iterations < maxIterations) {
+        const mid = (lo + hi) / 2;
+        const fMid = f(mid);
+        iterations++;
+        if (Math.abs(fMid) < tolerance) {
+          restore();
+          return { found: true, value: mid, iterations };
+        }
+        if (Math.sign(fMid) === Math.sign(f(lo))) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      const value = (lo + hi) / 2;
+      restore();
+      return { found: true, value, iterations };
+    } catch (err) {
+      restore();
+      throw err;
+    }
+  }
+  solveAll(expression, targetVar, targetValue, facts = {}, options = {}) {
+    const env = toEnvironment(facts);
+    const {
+      min = -1e6,
+      max = 1e6,
+      tolerance = 0.000000001,
+      maxIterations = 100
+    } = options;
+    if (min >= max) {
+      throw new RuleEngineError(`solveAll(): min (${min}) must be less than max (${max})`);
+    }
+    const ast = this.parser.parse(expression);
+    const identifiers = Interpreter.extractIdentifiers(ast);
+    if (!identifiers.includes(targetVar)) {
+      throw new RuleEngineError(`solveAll(): variable '${targetVar}' does not appear in expression: ${expression}`);
+    }
+    const originalValue = env.getOrDefault(targetVar, undefined);
+    const restore = () => {
+      if (originalValue !== undefined) {
+        env.set(targetVar, originalValue);
+      }
+    };
+    const interp = new Interpreter(env);
+    const f = (x) => {
+      env.set(targetVar, x);
+      const result = interp.interpret(ast);
+      if (typeof result !== "number") {
+        throw new EvalError(`solveAll(): expression must evaluate to a number, got ${typeof result}`);
+      }
+      return result - targetValue;
+    };
+    const solutions = [];
+    let totalIterations = 0;
+    try {
+      const interval = max - min;
+      const scanPoints = Math.min(500, Math.max(50, Math.ceil(interval / 100)));
+      const step = interval / scanPoints;
+      let prevX = min;
+      let prevF = f(min);
+      for (let i = 1;i <= scanPoints; i++) {
+        const currX = min + i * step;
+        const currF = f(currX);
+        if (Math.sign(prevF) !== Math.sign(currF) && Math.sign(prevF) !== 0 && Math.sign(currF) !== 0) {
+          let lo = prevX;
+          let hi = currX;
+          let iterations = 0;
+          while (iterations < maxIterations) {
+            const mid = (lo + hi) / 2;
+            const fMid = f(mid);
+            iterations++;
+            totalIterations++;
+            if (Math.abs(fMid) < tolerance) {
+              solutions.push(mid);
+              break;
+            }
+            const fLo = f(lo);
+            if (Math.sign(fMid) === Math.sign(fLo)) {
+              lo = mid;
+            } else {
+              hi = mid;
+            }
+          }
+          if (iterations >= maxIterations) {
+            solutions.push((lo + hi) / 2);
+          }
+        }
+        prevX = currX;
+        prevF = currF;
+      }
+      restore();
+      return {
+        solutions,
+        count: solutions.length,
+        totalIterations
+      };
+    } catch (err) {
+      restore();
+      throw err;
+    }
+  }
+}
 // src/Question.ts
 class Question {
   static currentQuestionNumber = 0;
@@ -2076,7 +2472,7 @@ class SurveyPageFactory {
     return landingPage;
   }
   static createErrorPage(mainMessage, detailedMessage) {
-    const errorIcon = "\u26A0\uFE0F";
+    const errorIcon = "⚠️";
     let errorPage = new SurveyPage("error-page");
     errorPage.setTitle("Error Page");
     errorPage.setContent(`

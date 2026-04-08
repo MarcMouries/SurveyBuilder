@@ -1,4 +1,4 @@
-import { Parser, Interpreter, Environment } from "@surveybuilder/rule-engine";
+import { Parser, Interpreter, Environment } from "in-check";
 import { Question } from './Question';
 import { EventEmitter } from './EventEmitter'
 import { SURVEY_STARTED, TITLE_UPDATED } from './EventTypes';

@@ -7,6 +7,9 @@
     "build": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js",
     "dev": "bun build ./src/SurveyBuilder.ts --outfile=./dist/sb-bundle.js --watch"
   },
+  "dependencies": {
+    "in-check": "file:../in-check"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
